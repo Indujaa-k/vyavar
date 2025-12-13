@@ -3,7 +3,7 @@ import multer from "multer";
 import XLSX from "xlsx";
 import Product from "../models/productModel.js";
 import User from "../models/userModel.js";
-const sendEmail = require("../utils/mailSender.js");
+
 
 // @desc Fetch all products
 // @route GET /api/products
@@ -521,100 +521,100 @@ const uploadProducts = asyncHandler(async (req, res) => {
 // @desc Create new Review
 // @route PUT /api/products/:id/reviews
 // @access Private
-// const createproductreview = asyncHandler(async (req, res) => {
-//   console.log("Incoming Review Request:", req.body);
-//   const { rating, comment } = req.body;
-//   const product = await Product.findById(req.params.id);
-//   if (product) {
-//     const alreadyReviewed = product.reviews.find(
-//       (r) => r.user.toString() === req.user._id.toString()
-//     );
-//     if (alreadyReviewed) {
-//       res.status(404);
-//       throw new Error("Product Already Review");
-//     }
-//     if (!product) {
-//       console.log("❌ Product not found");
-//       return res.status(404).json({ message: "Product not found" });
-//     }
-//     const review = {
-//       name: req.user.name,
-//       rating: Number(rating),
-//       comment,
-//       user: req.user._id,
-//       approved: false,
-//     };
-//     product.reviews.push(review);
-//     product.numReviews = product.reviews.length;
-//     product.rating =
-//       product.reviews.reduce((acc, item) => item.rating + acc, 0) /
-//       product.reviews.length;
-//     await product.save();
-//     res.status(201).json({ message: "Review added" });
-//   } else {
-//     res.status(404);
-//     throw new Error("Product Not found");
-//   }
-// }); 
-
 const createproductreview = asyncHandler(async (req, res) => {
   console.log("Incoming Review Request:", req.body);
-
   const { rating, comment } = req.body;
   const product = await Product.findById(req.params.id);
-
-  if (!product) {
-    return res.status(404).json({ message: "Product not found" });
+  if (product) {
+    const alreadyReviewed = product.reviews.find(
+      (r) => r.user.toString() === req.user._id.toString()
+    );
+    if (alreadyReviewed) {
+      res.status(404);
+      throw new Error("Product Already Review");
+    }
+    if (!product) {
+      console.log("❌ Product not found");
+      return res.status(404).json({ message: "Product not found" });
+    }
+    const review = {
+      name: req.user.name,
+      rating: Number(rating),
+      comment,
+      user: req.user._id,
+      approved: false,
+    };
+    product.reviews.push(review);
+    product.numReviews = product.reviews.length;
+    product.rating =
+      product.reviews.reduce((acc, item) => item.rating + acc, 0) /
+      product.reviews.length;
+    await product.save();
+    res.status(201).json({ message: "Review added" });
+  } else {
+    res.status(404);
+    throw new Error("Product Not found");
   }
+}); 
 
-  const alreadyReviewed = product.reviews.find(
-    (r) => r.user.toString() === req.user._id.toString()
-  );
+// const createproductreview = asyncHandler(async (req, res) => {
+//   console.log("Incoming Review Request:", req.body);
 
-  if (alreadyReviewed) {
-    res.status(400);
-    throw new Error("Product Already Reviewed");
-  }
+//   const { rating, comment } = req.body;
+//   const product = await Product.findById(req.params.id);
 
-  const review = {
-    name: req.user.name,
-    rating: Number(rating),
-    comment,
-    user: req.user._id,
-    approved: false,
-  };
+//   if (!product) {
+//     return res.status(404).json({ message: "Product not found" });
+//   }
 
-  product.reviews.push(review);
-  product.numReviews = product.reviews.length;
-  product.rating =
-    product.reviews.reduce((acc, item) => item.rating + acc, 0) /
-    product.reviews.length;
+//   const alreadyReviewed = product.reviews.find(
+//     (r) => r.user.toString() === req.user._id.toString()
+//   );
 
-  await product.save();
+//   if (alreadyReviewed) {
+//     res.status(400);
+//     throw new Error("Product Already Reviewed");
+//   }
 
-  // ⭐ Email notification to admin
-  const adminEmail = process.env.ADMIN_EMAIL;
+//   const review = {
+//     name: req.user.name,
+//     rating: Number(rating),
+//     comment,
+//     user: req.user._id,
+//     approved: false,
+//   };
 
-  const emailMessage = `
-    <h2>New Review Submitted</h2>
-    <p>A new review has been submitted and needs your approval.</p>
-    <h3>Review Details</h3>
-    <p><strong>User:</strong> ${req.user.name}</p>
-    <p><strong>Rating:</strong> ${rating}</p>
-    <p><strong>Comment:</strong> ${comment}</p>
-    <p><strong>Product:</strong> ${product.brandname}</p>
-    <br/>
-    <a href="https://your-admin-panel-url.com/reviews">Click here to approve reviews</a>
-  `;
+//   product.reviews.push(review);
+//   product.numReviews = product.reviews.length;
+//   product.rating =
+//     product.reviews.reduce((acc, item) => item.rating + acc, 0) /
+//     product.reviews.length;
 
-  await sendEmail(
-    adminEmail,
-    "New Product Review Awaiting Approval",
-    emailMessage
-  );
+//   await product.save();
 
-  res.status(201).json({ message: "Review added & admin notified" });
-});
+//   // ⭐ Email notification to admin
+//   const adminEmail = process.env.ADMIN_EMAIL;
+
+//   const emailMessage = `
+//     <h2>New Review Submitted</h2>
+//     <p>A new review has been submitted and needs your approval.</p>
+//     <h3>Review Details</h3>
+//     <p><strong>User:</strong> ${req.user.name}</p>
+//     <p><strong>Rating:</strong> ${rating}</p>
+//     <p><strong>Comment:</strong> ${comment}</p>
+//     <p><strong>Product:</strong> ${product.brandname}</p>
+//     <br/>
+//     <a href="https://your-admin-panel-url.com/reviews">Click here to approve reviews</a>
+//   `;
+
+//   await sendEmail(
+//     adminEmail,
+//     "New Product Review Awaiting Approval",
+//     emailMessage
+//   );
+
+//   res.status(201).json({ message: "Review added & admin notified" });
+// });
 
 // @desc Approve Review
 // @route PUT /api/products/approve review
