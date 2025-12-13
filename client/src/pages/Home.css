@@ -1,0 +1,59 @@
+.cards-container {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 20px;
+  
+  flex-wrap: wrap; /* Ensures responsiveness */
+}
+
+.women-card,
+.men-card {
+  margin-top: 90px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%; /* Wider cards for better visual impact */
+  height: 50px;
+  border-radius: 12px;
+  overflow: visible;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  padding: 10px 20px;
+  border: 2px solid transparent;
+}
+
+/* Background and Borders */
+.women-card {
+  background: linear-gradient(135deg, #ff5cac, #ff99cc);
+  border-color: #8079ff;
+}
+
+.men-card {
+  background: linear-gradient(135deg, #004488, #0077cc);
+  border-color: #0077cc;
+}
+
+/* Image Styling */
+.women-card img,
+.men-card img {
+  width: 65px;
+  height: auto;
+  position: absolute;
+  top: 24%;
+  transform: translateY(-50%);
+  left: 15px;
+  object-fit: cover;
+}
+
+/* Title Styling */
+.women-card h3,
+.men-card h3 {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  width: 100%;
+}

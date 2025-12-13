@@ -1,0 +1,129 @@
+.aboutcontainer {
+  width: 100%;
+  overflow: hidden;
+}
+
+/* ============ Parallax Sections ============ */
+.parallax-banner,
+.parallax-banner2,
+.story {
+  position: relative;
+  background-attachment: fixed;
+  background-position: center;
+  background-size: cover;
+  height: 85vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  text-align: center;
+}
+
+.overlay {
+  background: rgba(0, 0, 0, 0.5);
+  padding: 60px;
+  border-radius: 12px;
+  max-width: 800px;
+}
+
+.parallax-banner h1 {
+  font-size: 3.8rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+.parallax-banner p {
+  font-size: 1.3rem;
+  line-height: 1.8;
+  color: #f0f0f0;
+}
+
+.story h2 {
+  font-size: 3rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 20px;
+}
+
+.story p {
+  font-size: 1.2rem;
+  color: #eee;
+  line-height: 1.8;
+}
+
+/* ============ Content Sections ============ */
+.Content1,
+.Content2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 100px 10%;
+  gap: 60px;
+  color: #333;
+}
+
+.text h1 {
+  font-size: 2.6rem;
+  font-weight: 700;
+  color: #111;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+.text p {
+  font-size: 1.1rem;
+  line-height: 1.9;
+  color: #444;
+  text-align: justify;
+}
+
+.imagecontainer .mImage {
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  transition: transform 0.5s ease;
+}
+
+.imagecontainer .mImage:hover {
+  transform: scale(1.05);
+}
+
+/* ============ Quote Section ============ */
+.parallax-banner2 h2 {
+  font-size: 2.8rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 15px;
+}
+
+.parallax-banner2 p {
+  font-size: 1.2rem;
+  color: #ddd;
+}
+
+/* ============ Responsiveness ============ */
+@media (max-width: 900px) {
+  .Content1,
+  .Content2 {
+    flex-direction: column;
+    text-align: center;
+    padding: 80px 5%;
+  }
+
+  .parallax-banner,
+  .parallax-banner2,
+  .story {
+    height: 60vh;
+    padding: 40px 10px;
+  }
+
+  .parallax-banner h1 {
+    font-size: 2.5rem;
+  }
+
+  .story h2 {
+    font-size: 2rem;
+  }
+}

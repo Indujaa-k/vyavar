@@ -1,0 +1,198 @@
+/* CreateProduct.css */
+
+/* Container Styling */
+.create-product-container {
+  width: 100%;
+  max-width: 1200px; /* You can adjust this as needed */
+  margin: 20px auto;
+  padding: 30px;
+  background-color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+}
+
+/* Heading Styling */
+.create-product-container h2 {
+  font-size: 28px;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+/* Form Styling */
+.create-product-container .form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+/* Form control styling */
+.create-product-container .FormControl {
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+/* Input Field Styling */
+.create-product-container input[type="text"],
+.create-product-container input[type="number"],
+.create-product-container select,
+.create-product-container textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  background-color: #f9f9f9;
+}
+
+/* Hover effect for input fields */
+.create-product-container input[type="text"]:hover,
+.create-product-container input[type="number"]:hover,
+.create-product-container select:hover,
+.create-product-container textarea:hover {
+  border-color: #4c9efc;
+}
+
+/* Form Label Styling */
+.create-product-container .FormLabel {
+  font-weight: 600;
+  font-size: 14px;
+  color: #555;
+}
+
+/* Button Styling */
+.create-product-container button {
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 16px;
+  text-transform: uppercase;
+  font-weight: bold;
+  background-color: #1b3c56;
+  color: white;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.3s ease;
+  width: 100%; /* Full width */
+}
+
+.create-product-container button:hover {
+  background-color: #0f2c3f;
+}
+
+.create-product-container button:disabled {
+  background-color: #d3d3d3;
+}
+
+/* Stock Count & Price Section */
+.create-product-container .flex-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+}
+
+/* Image Upload Section */
+.create-product-container img {
+  border-radius: 8px;
+  cursor: pointer;
+  object-fit: cover;
+}
+
+.create-product-container button[type="submit"] {
+  background-color: #4caf50;
+  color: white;
+  font-weight: 600;
+}
+
+/* Flexbox for image upload */
+.create-product-container .flex-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.create-product-container .upload-container {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.create-product-container .upload-container img {
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+}
+
+.create-product-container .upload-button {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  background-color: #1b3c56;
+  border-radius: 50%;
+  padding: 5px;
+  color: white;
+  cursor: pointer;
+}
+
+/* Additional Styles for Error and Message */
+.create-product-container .error-message {
+  color: red;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.create-product-container .success-message {
+  color: green;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.create-product-container textarea {
+  resize: vertical;
+}
+
+.create-product-container select {
+  background-color: #fff;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.create-product-container select:focus {
+  border-color: #4c9efc;
+  background-color: #f9f9f9;
+}
+.urls {
+  height: max-content;
+}
+.postionbtnupdate {
+  position: relative;
+  top: 80px;
+  margin-bottom: 50px;
+}
+.white-bg {
+  background-color: white;
+}
+
+/* For mobile responsiveness */
+@media (max-width: 768px) {
+  .create-product-container .flex-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .create-product-container .upload-container {
+    width: 80px;
+    height: 80px;
+  }
+
+  .create-product-container button {
+    width: 100%; /* Make button full width on small screens */
+  }
+}

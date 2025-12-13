@@ -1,0 +1,105 @@
+/* Box container */
+.product-info-box {
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  padding: 15px;
+  margin: 20px 0;
+  font-size: 16px;
+  width: 100%;
+}
+
+/* List styles */
+.product-info-box ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* List item styles */
+.product-info-box li {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px solid #eee;
+}
+
+/* Last item no border */
+.product-info-box li:last-child {
+  border-bottom: none;
+}
+
+/* Status styling */
+.in-stock {
+  color: green;
+  font-weight: bold;
+}
+
+.out-of-stock {
+  color: red;
+  font-weight: bold;
+}
+.product-info-table {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #fff;
+  padding: 15px;
+  width: 100%;
+  margin: 20px auto;
+}
+
+/* Header Styles */
+.product-info-header {
+  display: flex;
+  justify-content: center;
+  font-weight: bold;
+  border-bottom: 2px solid black;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.product-info-content.two-column-layout {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* Three columns */
+  grid-template-rows: repeat(2, auto); /* Two rows with auto height */
+  gap: 8px; /* Space between items */
+}
+/* Column Styling */
+.product-info-column {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top-down label-value layout */
+.info-item {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+}
+
+.info-item span {
+  font-size: 14px;
+  color: #555;
+  font-weight: normal;
+}
+
+.info-item strong {
+  font-size: 16px;
+  color: black;
+  font-weight: bold;
+}
+.chakra-tabs__tablist {
+  border-bottom: none !important; /* Light grey border for the tab container */
+}
+
+.chakra-tabs__tab {
+  color: #4a5568; /* Default text color for inactive tabs */
+  border-bottom: 2px solid transparent; /* No underline for inactive tabs */
+}
+
+.chakra-tabs__tab[aria-selected="true"] {
+  color: #000; /* Active tab text color */
+  border-bottom: 2px solid #000; /* Active tab underline color */
+  font-weight: bold; /* Optional: Makes the active tab text bolder */
+}

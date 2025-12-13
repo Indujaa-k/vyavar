@@ -1,0 +1,20 @@
+.logoimg img {
+  height: 40px;
+  width: auto;
+}
+
+.logoimg {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding:0 30px;
+  width: 100%;
+  width: auto;
+}
+.logoimg-text {
+  font-size: 1.5rem;
+  font-weight: bold;
+  font-family: cursive;
+  color: #f64749;
+  white-space: nowrap;
+}

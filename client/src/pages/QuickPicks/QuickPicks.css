@@ -1,0 +1,49 @@
+.quick-picks {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  color: white;
+  text-align: center;
+
+}
+
+.quick-picks h2 {
+  font-size: 24px;
+}
+
+.quick-picks-grid {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.quick-pick-card {
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.quick-pick-card:hover {
+  transform: translateY(-10px);
+}
+
+.quick-pick-image {
+  width: 150px;
+  height: 140px;
+  border-radius: 10px;
+  overflow: visible;
+}
+
+.quick-pick-image img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.quick-pick-name {
+  font-size: 16px;
+  color: black;
+  margin-top: 34px;
+  font-weight: bold;
+}

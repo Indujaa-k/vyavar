@@ -1,0 +1,53 @@
+/* BRAND LIST DROPDOWN */
+.brandlist-container {
+  max-height: none; /* Remove fixed height */
+  overflow-y: auto;
+  background-color: black;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(255, 255, 255, 0.1);
+  padding: 8px;
+  width: auto; /* Auto width to fit content */
+  min-width: 180px; /* Ensure minimum width */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Search Bar in Dropdown */
+.search-input {
+  margin-bottom: 10px;
+  padding: 8px;
+  width: 100%;
+  font-size: 14px;
+  border: none;
+  border-radius: 4px;
+  background-color: #333;
+  color: white;
+}
+
+.search-input::placeholder {
+  color: #aaa;
+}
+
+/* Scrollbar Styling */
+.brandlist-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.brandlist-container::-webkit-scrollbar-thumb {
+  background-color: #555;
+  border-radius: 4px;
+}
+
+.brand-link {
+  display: block;
+  color: #fff;
+  text-decoration: none;
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.brand-link:hover {
+  background-color: #444;
+}
