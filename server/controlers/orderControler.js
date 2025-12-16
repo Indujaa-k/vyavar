@@ -453,22 +453,42 @@ const StripePayment = asyncHandler(async (req, res) => {
 // @access  private/admin
 const updateOrderStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
-  const order = await Order.findById(req.params.id);
 
-  if (order) {
-    // Update the correct field based on status
-    if (status === "Packed") order.isPacked = true;
-    if (status === "Shipped") order.isAcceptedByDelivery = true;
-    if (status === "Delivered") order.isDelivered = true;
-    if (status === "Returned") order.isReturned = true;
+  const order = await Order.findById(req.params.id).populate(
+    "user",
+    "email name"
+  ); // ✅ MUST
 
-    await order.save();
-    res.json({ message: "Order status updated", order });
-  } else {
+  if (!order) {
     res.status(404);
     throw new Error("Order not found");
   }
+
+  // ✅ Update flags
+  if (status === "Packed") order.isPacked = true;
+  if (status === "Shipped") order.isAcceptedByDelivery = true;
+  if (status === "Delivered") order.isDelivered = true;
+  if (status === "Returned") order.isReturned = true;
+
+  await order.save();
+
+  // ✅ SEND EMAIL ONLY FOR THESE STATUSES
+  if (["Shipped", "Delivered"].includes(status)) {
+    await sendEmail({
+      email: order.user.email,
+      status,
+      orderId: order._id,
+    });
+
+    console.log(`📧 ${status} mail sent to`, order.user.email);
+  }
+
+  res.json({
+    message: `Order updated to ${status} and mail sent`,
+    order,
+  });
 });
+
 // @desc   Get order statuses count
 // @route  GET /api/orders/status-count
 // @access Admin

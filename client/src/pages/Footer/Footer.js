@@ -28,7 +28,7 @@ const Footer = () => {
           </ul>
         </div>
 
-        <div className="footerCategorie">
+        {/* <div className="footerCategorie">
           <h1>Quick Links</h1>
           <ul>
             <li>
@@ -38,7 +38,7 @@ const Footer = () => {
               <Link to="/?gender=Women">Girls</Link>
             </li>
           </ul>
-        </div>
+        </div> */}
         <div className="footerCategorie">
           <h1>TopCategories</h1>
           <ul>
