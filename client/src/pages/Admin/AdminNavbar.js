@@ -1,6 +1,6 @@
 import React from "react";
 import { useRef } from "react";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import {
   Box,
   Flex,
@@ -22,14 +22,24 @@ import "./Adminstyling.css";
 import { NavLink } from "react-router-dom";
 import { CgProfile } from "react-icons/cg";
 import { useSelector } from "react-redux";
+import { Navigate } from "react-router-dom";
+import { getUserDetails } from "../../actions/userActions";
+import { useEffect } from "react";
 
 const AdminNavbar = () => {
-  const userProfile = useSelector((state) => state.userDetails);
-  const { user } = userProfile;
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const userDetails = useSelector((state) => state.userDetails);
+  const { loading, error, user } = userDetails;
 
   const cancelRef = useRef();
-  const dispatch = useDispatch();
   const { isOpen, onOpen, onClose } = useDisclosure();
+
+  useEffect(() => {
+    dispatch(getUserDetails("profile")); // 🔥 REQUIRED
+  }, [dispatch]);
+
   const logoutHandler = () => {
     dispatch(logout());
     onClose();
@@ -60,28 +70,72 @@ const AdminNavbar = () => {
 
         {/* Navbar Links */}
         <HStack spacing={6} ms={9}>
-          <div className="ic_sett_dis">
-            <RouterLink to="/profile" className="user-profile">
-              {user?.profilePicture ? (
-                <img
-                  src={
-                    user.profilePicture.startsWith("http")
-                      ? user.profilePicture
-                      : `http://localhost:5000${user.profilePicture}`
-                  }
-                  alt="Profile"
-                  className="profile-img"
-                  onError={(e) => (e.target.style.display = "none")}
-                />
-              ) : (
-                <CgProfile size="25" className="settingIcon" />
-              )}
-              <span style={{ color: "black" }}>{user?.name}</span>
-            </RouterLink>
-          </div>
+         <div className="ic_sett_dis">
+  <RouterLink
+    to="/profile"
+    className="user-profile"
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "6px",
+      textDecoration: "none",
+    }}
+  >
+    {/* Profile Image */}
+    {user?.profilePicture && (
+      <img
+        src={
+          user.profilePicture.startsWith("http")
+            ? user.profilePicture
+            : `http://localhost:5000${user.profilePicture}`
+        }
+        alt="Profile"
+        style={{
+          width: "32px",
+          height: "32px",
+          borderRadius: "50%",
+          objectFit: "cover",
+        }}
+        onError={(e) => {
+          e.target.style.display = "none";
+          e.target.nextSibling.style.display = "flex";
+        }}
+      />
+    )}
+
+    {/* Default Empty Profile Icon */}
+    <CgProfile
+      size={25}
+      style={{
+        display: user?.profilePicture ? "none" : "flex",
+        color: "#666",
+      }}
+    />
+
+    <span style={{ color: "black", fontWeight: "500" }}>
+      {user?.name || "Admin"}
+    </span>
+  </RouterLink>
+</div>
+
+          <button
+           onClick={() => navigate("/?gender=Men")}
+
+            style={{
+              padding: "8px 16px",
+              backgroundColor: "#000",
+              color: "#fff",
+              border: "none",
+              cursor: "pointer",
+              borderRadius: "4px",
+            }}
+          >
+            Preview
+          </button>
           <Button bg="violet" onClick={onOpen}>
             Logout
           </Button>
+
           <AlertDialog
             isOpen={isOpen}
             leastDestructiveRef={cancelRef}

@@ -1,79 +1,163 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { ListUsers } from "../../actions/userActions";
 import {
   Box,
+  SimpleGrid,
+  Stat,
+  StatLabel,
+  StatNumber,
+  Spinner,
+  Progress,
+  Flex,
+  Heading,
+  Text,
   Table,
   Thead,
   Tbody,
   Tr,
   Th,
   Td,
-  Avatar,
-  Text,
+  Icon,
+  Badge,
 } from "@chakra-ui/react";
-import { useNavigate } from "react-router-dom";
+import { FaClipboardList, FaCheckCircle, FaBox, FaTruck } from "react-icons/fa";
+import { listOrders } from "../../actions/orderActions";
 
-const DeliveryDetails = () => {
+const OrderStatusSummary = () => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
 
-  const userList = useSelector((state) => state.userList);
-  const { loading, error, users } = userList;
+  const orderList = useSelector((state) => state.orderList);
+  const { loading, orders = [] } = orderList;
 
   useEffect(() => {
-    dispatch(ListUsers());
+    dispatch(listOrders());
   }, [dispatch]);
 
-  const deliveryUsers = users?.filter((user) => user.isDelivery);
+  const totalOrders = orders.length;
+  const confirmed = orders.filter((order) => order.orderStatus === "confirmed").length;
+  const packed = orders.filter((order) => order.orderStatus === "packed").length;
+  const delivered = orders.filter((order) => order.orderStatus === "delivered").length;
+
+  const lastFiveOrders = orders.slice(-5).reverse(); // last 5 orders
+
+  if (loading)
+    return (
+      <Flex justify="center" align="center" h="200px">
+        <Spinner size="xl" />
+      </Flex>
+    );
 
   return (
-    <Box p={5} m={10}>
-    
-      {loading ? (
-        <Text>Loading...</Text>
-      ) : error ? (
-        <Text color="red.500">Error loading users</Text>
-      ) : deliveryUsers.length === 0 ? (
-        <Text>No delivery users found.</Text>
-      ) : (
-        <Table variant="striped" bg={"pink.100"}>
-          <Thead>
-            <Tr>
-              <Th>Profile</Th>
-              <Th>Name</Th>
-              <Th>Email</Th>
-              <Th>Phone</Th>
-              <Th>Address</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {deliveryUsers.map((user) => (
-              <Tr key={user._id}>
-                <Td>
-                  <Avatar
-                    size="sm"
-                    name={user.name}
-                    src={
-                      user.profilePicture || "https://via.placeholder.com/50"
-                    }
-                  />
-                </Td>
-                <Td>{user.name}</Td>
-                <Td>{user.email}</Td>
-                <Td>{user.address?.phoneNumber || "N/A"}</Td>
-                <Td>
-                  {user.address
-                    ? `${user.address.street}, ${user.address.city}, ${user.address.state}, ${user.address.pin}`
-                    : "N/A"}
-                </Td>
+    <Box p={8} mt={8}>
+      <Heading mb={6} textAlign="center">
+        Order Status Summary
+      </Heading>
+
+      {/* Stats Cards */}
+      <SimpleGrid columns={{ base: 2, md: 4 }} spacing={6} mb={8}>
+        <Stat
+          p={4}
+          shadow="md"
+          borderRadius="md"
+          bg="pink.100"
+          _hover={{ transform: "scale(1.05)", transition: "0.2s" }}
+        >
+          <StatLabel>
+            <Icon as={FaClipboardList} mr={2} /> Total Orders
+          </StatLabel>
+          <StatNumber>{totalOrders}</StatNumber>
+          <Progress value={100} mt={2} colorScheme="pink" />
+        </Stat>
+
+        <Stat
+          p={4}
+          shadow="md"
+          borderRadius="md"
+          bg="yellow.100"
+          _hover={{ transform: "scale(1.05)", transition: "0.2s" }}
+        >
+          <StatLabel>
+            <Icon as={FaCheckCircle} mr={2} /> Confirmed
+          </StatLabel>
+          <StatNumber>{confirmed}</StatNumber>
+          <Progress value={totalOrders ? (confirmed / totalOrders) * 100 : 0} mt={2} colorScheme="yellow" />
+        </Stat>
+
+        <Stat
+          p={4}
+          shadow="md"
+          borderRadius="md"
+          bg="orange.100"
+          _hover={{ transform: "scale(1.05)", transition: "0.2s" }}
+        >
+          <StatLabel>
+            <Icon as={FaBox} mr={2} /> Packed
+          </StatLabel>
+          <StatNumber>{packed}</StatNumber>
+          <Progress value={totalOrders ? (packed / totalOrders) * 100 : 0} mt={2} colorScheme="orange" />
+        </Stat>
+
+        <Stat
+          p={4}
+          shadow="md"
+          borderRadius="md"
+          bg="green.100"
+          _hover={{ transform: "scale(1.05)", transition: "0.2s" }}
+        >
+          <StatLabel>
+            <Icon as={FaTruck} mr={2} /> Delivered
+          </StatLabel>
+          <StatNumber>{delivered}</StatNumber>
+          <Progress value={totalOrders ? (delivered / totalOrders) * 100 : 0} mt={2} colorScheme="green" />
+        </Stat>
+      </SimpleGrid>
+
+      {/* Recent Orders Table */}
+      <Box>
+        <Heading size="md" mb={4}>
+          Recent Orders
+        </Heading>
+        {lastFiveOrders.length === 0 ? (
+          <Text>No recent orders</Text>
+        ) : (
+          <Table variant="simple" bg="gray.50" borderRadius="md">
+            <Thead>
+              <Tr>
+                <Th>Order ID</Th>
+                <Th>Status</Th>
+                <Th>Total Price</Th>
+                <Th>Date</Th>
               </Tr>
-            ))}
-          </Tbody>
-        </Table>
-      )}
+            </Thead>
+            <Tbody>
+              {lastFiveOrders.map((order) => (
+                <Tr key={order._id}>
+                  <Td>{order._id}</Td>
+                  <Td>
+                    <Badge
+                      colorScheme={
+                        order.orderStatus === "confirmed"
+                          ? "yellow"
+                          : order.orderStatus === "packed"
+                          ? "yellow"
+                          : order.orderStatus === "delivered"
+                          ? "green"
+                          : "gyellow"
+                      }
+                    >
+                      {order.orderStatus.toUpperCase()}
+                    </Badge>
+                  </Td>
+                  <Td>₹{order.totalPrice.toFixed(2)}</Td>
+                  <Td>{new Date(order.createdAt).toLocaleDateString()}</Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+        )}
+      </Box>
     </Box>
   );
 };
 
-export default DeliveryDetails;
+export default OrderStatusSummary;

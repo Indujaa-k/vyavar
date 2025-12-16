@@ -81,7 +81,7 @@ const Order = () => {
   return (
     <Box mx="auto" px={40} py={10} bg="white">
       <Helmet>
-        <title>Order Details</title>
+        <title>Orderr Details</title>
       </Helmet>
 
       {loading || loadingDeliver ? (
@@ -124,7 +124,7 @@ const Order = () => {
               >
                 <AlertIcon boxSize="40px" mr={0} />
                 <AlertTitle mt={4} mb={1} fontSize="lg">
-                  🎉 Thank You for Your Order! 🎉
+                  Thank You for Your Order!
                 </AlertTitle>
                 <AlertDescription maxW="sm">
                   Your order is being processed and will be delivered soon.

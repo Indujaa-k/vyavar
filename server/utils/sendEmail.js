@@ -9,23 +9,36 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendEmail = async ({ email, status, orderId }) => {
+  let subject = "";
+  let message = "";
+
+  if (status === "Created") {
+    subject = "Order Confirmed Successfully!!";
+    message = `Your order ${orderId} has been placed successfully.`;
+  } 
+  else if (status === "Shipped") {
+    subject = "Your Order Has Been Shipped!!!!";
+    message = `Good news! Your order ${orderId} is on the way.`;
+  } 
+  else if (status === "Delivered") {
+    subject = "Order Delivered Successfully!! ";
+    message = `Your order ${orderId} has been delivered. Thank you for shopping with us!`;
+  } 
+  else {
+    subject = "Order Status Update";
+    message = `Your order ${orderId} status is ${status}.`;
+  }
+
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: email,
-    subject: `Your Order ${orderId} is now ${status}`,
-    text: `Hello, your order with ID ${orderId} has been updated to status: ${status}.`,
-    html: `<p>Hello, your order with ID <strong>${orderId}</strong> has been updated to status: <strong>${status}</strong>.</p><p>Thank you for shopping with us!</p>`,
+    subject,
+    text: message,
+    html: `<p>${message}</p>`,
   };
-  console.log("Sending email to:", email);
-  console.log("Email options:", mailOptions);
-  console.log("Status:", status);
-  console.log("Transporter:", transporter);
-  try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Email sent:", info.response);
-  } catch (error) {
-    console.error("Email send failed:", error);
-  }
+
+  await transporter.sendMail(mailOptions);
 };
 
-export default sendEmail;
+
+export default sendEmail;

@@ -69,24 +69,26 @@ const ProfileScreen = () => {
     navigate("/login");
   };
 
-  useEffect(() => {
-    if (!userInfo) {
-      navigate("/login");
+ useEffect(() => {
+  if (!userInfo) {
+    navigate("/login");
+  } else {
+    if (!user || !user.name) {
+      dispatch(getUserDetails("profile"));
     } else {
-      if (!user.name) {
-        dispatch(getUserDetails("profile"));
-        // dispatch(listMyOrders());
-      } else {
-        setName(user.name);
-        setEmail(user.email);
-        setAddress(user.address || {});
-        setProfilePicture(user.profilePicture || null);
-        setGender(user.gender || "");
-        setDateOfBirth(user.dateOfBirth ? user.dateOfBirth.split("T")[0] : "");
-        setLastName(user.lastName || "");
-      }
+      setName(user.name || "");
+      setEmail(user.email || "");
+      setAddress(user.address || {});
+      setProfilePicture(user.profilePicture || null);
+      setGender(user.gender || "");
+      setDateOfBirth(
+        user.dateOfBirth ? user.dateOfBirth.split("T")[0] : ""
+      );
+      setLastName(user.lastName || "");
     }
-  }, [dispatch, navigate, userInfo, user]);
+  }
+}, [dispatch, navigate, userInfo, user]);
+
   // Fetch orders when user opens the Orders section
   useEffect(() => {
     if (activeSection === "orders") {

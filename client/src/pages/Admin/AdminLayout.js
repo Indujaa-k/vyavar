@@ -113,6 +113,7 @@ const AdminLayout = ({ children }) => {
           transition="width 0.3s ease-in-out"
           overflowX="hidden"
           overflowY="auto"
+          zIndex={1000}
           sx={{
             // Hide scrollbar for WebKit (Chrome, Safari)
             "&::-webkit-scrollbar": {
@@ -194,7 +195,7 @@ const AdminLayout = ({ children }) => {
                       leftIcon="•"
                       fontSize="md"
                     >
-                      Order Stats
+                      Order Status
                     </Button>
                     <Button
                       as={RouterLink}

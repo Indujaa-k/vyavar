@@ -1,7 +1,7 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import { listOrders } from "../../actions/orderActions";
+import { useParams, Link } from "react-router-dom";
+import { listOrders, updateOrderStatus } from "../../actions/orderActions";
 import {
   Box,
   Spinner,
@@ -15,68 +15,84 @@ import {
   Tr,
   Th,
   Td,
-  Stack,
   HStack,
   Image,
   Badge,
+  Select,
   Button,
+  Stack,
 } from "@chakra-ui/react";
 import { AiOutlineEdit } from "react-icons/ai";
-import { useState } from "react";
 
 const OrdersScreen = () => {
   const [selectedDate, setSelectedDate] = useState("");
-  const { status } = useParams(); // Get status from URL
-  const navigate = useNavigate();
+  const [statusUpdates, setStatusUpdates] = useState({}); // For storing dropdown selections
+  const { status } = useParams();
   const dispatch = useDispatch();
+
   const orderList = useSelector((state) => state.orderList);
   const { loading, error, orders } = orderList;
 
+  const orderStatusUpdate = useSelector((state) => state.orderStatusUpdate);
+  const { success } = orderStatusUpdate;
+
   useEffect(() => {
-    dispatch(listOrders(status)); // Fetch orders based on status
-  }, [dispatch, status]);
+    dispatch(listOrders(status));
+  }, [dispatch, status, success]); // refetch on status change success
 
- 
-
-  const getOrderStatus = (order) => {
-    if (order.isReturned) {
-      return { label: "Returned", color: "red" };
-    } else if (order.isDelivered) {
-      return { label: "Delivered", color: "green" };
-    } else if (order.isAcceptedByDelivery) {
-      return { label: "Shipped", color: "blue" };
-    } else if (order.isPacked) {
-      return { label: "Packed", color: "orange" };
-    } else {
-      return { label: "Ordered", color: "gray" };
-    }
-  };
-  // Handle Date Change
   const handleDateChange = (e) => {
     setSelectedDate(e.target.value);
   };
 
-  // Filter orders based on selected date
+  const handleStatusChange = (orderId, newStatus) => {
+    setStatusUpdates({ ...statusUpdates, [orderId]: newStatus });
+  };
+
+  const handleStatusUpdate = (orderId) => {
+    const newStatus = statusUpdates[orderId];
+    if (newStatus) {
+      dispatch(updateOrderStatus(orderId, newStatus));
+    }
+  };
+
   const filteredOrders = selectedDate
     ? orders.filter(
         (order) => order.createdAt.substring(0, 10) === selectedDate
       )
     : orders;
+
+  const getOrderStatus = (order) => {
+    if (order.isReturned) return { label: "Returned", color: "red" };
+    else if (order.isDelivered) return { label: "Delivered", color: "green" };
+    else if (order.isAcceptedByDelivery)
+      return { label: "Shipped", color: "blue" };
+    else if (order.isPacked) return { label: "Packed", color: "orange" };
+    else return { label: "Ordered", color: "gray" };
+  };
+
   return (
     <Box p={8}>
-      <Heading fontSize="lg" mb={4} mt="10">
-        {status ? `${status.toUpperCase()} Orders` : "All Orders"}
-      </Heading>
-      <Box mb={4} display="flex" alignItems="center" gap={4}>
-        <Input
-          type="date"
-          value={selectedDate}
-          onChange={handleDateChange}
-          width="200px"
-          placeholder="Select Date"
-          bg="white"
-        />
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={4}
+        mt={8}
+        w="100%"
+      >
+        <Heading fontSize="lg">
+          {status ? `${status.toUpperCase()} Orders` : "All Orders"}
+        </Heading>
+        <Box maxW="200px" flexShrink={0}>
+          <Input
+            type="date"
+            value={selectedDate}
+            onChange={handleDateChange}
+            bg="white"
+          />
+        </Box>
       </Box>
+
       {loading ? (
         <Spinner size="xl" />
       ) : error ? (
@@ -85,8 +101,9 @@ const OrdersScreen = () => {
         <VStack spacing={4} align="stretch">
           {filteredOrders.length > 0 ? (
             filteredOrders.map((order) => {
-              const status = getOrderStatus(order);
+              const statusObj = getOrderStatus(order);
               const shipment = order.shipmentDetails?.[0] || {};
+              const currentStatus = statusUpdates[order._id] || statusObj.label;
 
               return (
                 <Box
@@ -98,7 +115,6 @@ const OrdersScreen = () => {
                   boxShadow="md"
                   _hover={{ shadow: "lg" }}
                 >
-                  {/* Order Table */}
                   <Table variant="simple">
                     <Thead>
                       <Tr>
@@ -111,7 +127,9 @@ const OrdersScreen = () => {
                         <Th textAlign="center">Status</Th>
                         <Th textAlign="center">Tracking No</Th>
                         <Th textAlign="center">Product Image</Th>
+                         <Th textAlign="center">size</Th>
                         <Th textAlign="center">Actions</Th>
+                        
                       </Tr>
                     </Thead>
                     <Tbody>
@@ -137,9 +155,22 @@ const OrdersScreen = () => {
                           {order.paymentMethod || "N/A"}
                         </Td>
                         <Td textAlign="center">
-                          <Badge colorScheme={status.color}>
-                            {status.label}
-                          </Badge>
+                          <Select
+                            value={
+                              statusUpdates[order._id] ||
+                              getOrderStatus(order).label
+                            }
+                            onChange={(e) =>
+                              handleStatusChange(order._id, e.target.value)
+                            }
+                            minW="150px"
+                          >
+                            <option value="Ordered">Ordered</option>
+                            <option value="Packed">Packed</option>
+                            <option value="Shipped">Shipped</option>
+                            <option value="Delivered">Delivered</option>
+                            <option value="Returned">Returned</option>
+                          </Select>
                         </Td>
                         <Td textAlign="center">
                           {shipment.trackingNumber || "N/A"}
@@ -163,19 +194,17 @@ const OrdersScreen = () => {
                         </Td>
                         <Td textAlign="center">
                           <Stack spacing={2}>
-                            <Button size="xs" colorScheme="blue">
-                              <Link to={`/order/${order._id}`}>
-                                <AiOutlineEdit size="14" /> Details
-                              </Link>
-                            </Button>
                             <Button
                               size="xs"
-                              colorScheme="teal"
-                              onClick={() =>
-                                navigate(`/${order._id}/orderscreenstatus`)
-                              }
+                              colorScheme="green"
+                              onClick={() => handleStatusUpdate(order._id)}
                             >
-                              Order Status
+                              Update
+                            </Button>
+                            <Button size="xs" colorScheme="blue">
+                              <Link to={`/order/${order._id}`}>
+                                <AiOutlineEdit size={14} /> Details
+                              </Link>
                             </Button>
                           </Stack>
                         </Td>
