@@ -4,7 +4,6 @@ import XLSX from "xlsx";
 import Product from "../models/productModel.js";
 import User from "../models/userModel.js";
 
-
 // @desc Fetch all products
 // @route GET /api/products
 // @access Public
@@ -48,7 +47,12 @@ const getProducts = asyncHandler(async (req, res) => {
   if (type) filterCriteria["productdetails.type"] = type;
   if (color) filterCriteria["productdetails.color"] = color;
   if (fabric) filterCriteria["productdetails.fabric"] = fabric;
-  if (sizes) filterCriteria["productdetails.sizes"] = sizes;
+  if (sizes) {
+    filterCriteria["productdetails.stockBySize"] = {
+      $elemMatch: { size: sizes, stock: { $gt: 0 } },
+    };
+  }
+
   if (offerfilter) {
     switch (offerfilter) {
       case "under499":
@@ -125,37 +129,94 @@ const getProductById = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc add to cart product
-// @route post /api/products/addtocart
+// @desc Add product to cart
+// @route POST /api/products/:id/addtocart
 // @access Private
-
 const addToCart = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  const { qty } = req.body;
+  const qty = Number(req.body.qty);
+  const size = req.body.size;
+
+  if (qty < 0) {
+    return res.status(400).json({ message: "Invalid quantity" });
+  }
+
   const product = await Product.findById(req.params.id);
   const user = await User.findById(userId).populate("cartItems.product");
+
   if (!product) {
     res.status(404);
     throw new Error("Product not found");
-  } else {
-    // Find existing cart item
-    const existingCartItem = user.cartItems.find(
-      (item) => item.product._id.toString() === product._id.toString()
+  }
+
+  user.cartItems = user.cartItems || [];
+
+  // Find size stock
+  const sizeStock = product.productdetails.stockBySize.find(
+    (s) => s.size === size
+  );
+
+  if (!sizeStock) {
+    return res.status(400).json({ message: "Size not available" });
+  }
+
+  // Find existing cart item
+  const existingCartItem = user.cartItems.find(
+    (item) =>
+      item.product._id.toString() === product._id.toString() &&
+      item.size === size
+  );
+
+  // If qty = 0, remove item
+  if (existingCartItem && qty === 0) {
+    sizeStock.stock += existingCartItem.qty;
+    user.cartItems = user.cartItems.filter(
+      (item) => item._id.toString() !== existingCartItem._id.toString()
     );
 
-    if (existingCartItem) {
-      // Update quantity if item exists
-      existingCartItem.qty = qty;
-      existingCartItem.price = qty * product.price;
-    } else {
-      // Add new item to cart if it doesn't exist
-      user.cartItems.push({ product, qty, price: qty * product.price });
-    }
+    await product.save();
+    await user.save();
+
+    const updatedCart = await User.findById(userId).populate(
+      "cartItems.product"
+    );
+    return res.status(200).json(updatedCart);
   }
+
+  // Check stock availability
+  if (
+    sizeStock.stock < qty &&
+    (!existingCartItem || qty > existingCartItem.qty)
+  ) {
+    return res.status(400).json({ message: "Not enough stock" });
+  }
+
+  if (existingCartItem) {
+    const diff = qty - existingCartItem.qty; // +ve = increase, -ve = decrease
+
+    existingCartItem.qty = qty;
+    existingCartItem.price = qty * product.price;
+
+    sizeStock.stock -= diff;
+  } else {
+    user.cartItems.push({
+      product,
+      qty,
+      size,
+      price: qty * product.price,
+    });
+    sizeStock.stock -= qty;
+  }
+  sizeStock.stock = Math.max(0, sizeStock.stock);
+  await product.save();
   await user.save();
+
   const updatedCart = await User.findById(userId).populate("cartItems.product");
   res.status(200).json(updatedCart);
 });
+
+
+
 // @desc get cart product
 // @route get /api/products/getcart
 // @access Private
@@ -173,31 +234,81 @@ const getCart = asyncHandler(async (req, res) => {
 // @route delete /api/products/deletecart
 // @access Private
 
+// const deleteCartItem = asyncHandler(async (req, res) => {
+//   const userId = req.user._id; // Logged-in user's ID
+//   const { cartItemId } = req.params; // Cart item ID to delete
+
+//   console.log("Cart Item ID from request:", cartItemId);
+
+//   // Use MongoDB's $pull operator to remove the item by its `_id`
+//   const updatedUser = await User.findByIdAndUpdate(
+//     userId,
+//     {
+//       $pull: { cartItems: { _id: cartItemId } }, // Match by cart item `_id`
+//     },
+//     { new: true } // Return the updated document
+//   ).populate("cartItems.product"); // Populate product details after update
+
+//   if (!updatedUser) {
+//     res.status(404);
+//     throw new Error("User not found");
+//   }
+
+//   console.log("Updated Cart Items:", updatedUser.cartItems);
+
+//   // Send the updated cart back to the client
+//   res.status(200).json(updatedUser);
+// });
+
 const deleteCartItem = asyncHandler(async (req, res) => {
-  const userId = req.user._id; // Logged-in user's ID
-  const { cartItemId } = req.params; // Cart item ID to delete
+  const userId = req.user._id;
+  const { cartItemId } = req.params;
 
-  console.log("Cart Item ID from request:", cartItemId);
+  const user = await User.findById(userId).populate("cartItems.product");
 
-  // Use MongoDB's $pull operator to remove the item by its `_id`
-  const updatedUser = await User.findByIdAndUpdate(
-    userId,
-    {
-      $pull: { cartItems: { _id: cartItemId } }, // Match by cart item `_id`
-    },
-    { new: true } // Return the updated document
-  ).populate("cartItems.product"); // Populate product details after update
-
-  if (!updatedUser) {
+  if (!user) {
     res.status(404);
     throw new Error("User not found");
   }
 
-  console.log("Updated Cart Items:", updatedUser.cartItems);
+  // 🔍 Find cart item
+  const cartItem = user.cartItems.find(
+    (item) => item._id.toString() === cartItemId
+  );
 
-  // Send the updated cart back to the client
-  res.status(200).json(updatedUser);
+  if (!cartItem) {
+    return res.status(404).json({ message: "Cart item not found" });
+  }
+
+  const product = await Product.findById(cartItem.product._id);
+
+  if (!product) {
+    return res.status(404).json({ message: "Product not found" });
+  }
+
+  // 🔁 Restore stock for that size
+  const sizeStock = product.productdetails.stockBySize.find(
+    (s) => s.size === cartItem.size
+  );
+
+  if (sizeStock) {
+    sizeStock.stock += cartItem.qty;
+    sizeStock.stock = Math.max(0, sizeStock.stock);
+
+  }
+
+  // 🗑 Remove cart item
+  user.cartItems = user.cartItems.filter(
+    (item) => item._id.toString() !== cartItemId
+  );
+
+  await product.save();
+  await user.save();
+
+  const updatedUser = await User.findById(userId).populate("cartItems.product");
+  res.status(200).json(updatedUser.cartItems);
 });
+
 // @desc Delete a product
 // @route GET /api/products/:id
 // @access Private/Admin
@@ -220,10 +331,8 @@ const createProduct = asyncHandler(async (req, res) => {
   const {
     brandname,
     price,
-
     description,
     productdetails,
-    countInStock,
     discount,
     oldPrice,
     SKU,
@@ -252,6 +361,7 @@ const createProduct = asyncHandler(async (req, res) => {
     color,
     fabric,
     sizes,
+    stockBySize,
   } = parsedProductDetails;
   // Ensure sizes is an array (in case it's sent as a string)
   const formattedSizes = Array.isArray(sizes) ? sizes : sizes.split(",");
@@ -297,9 +407,9 @@ const createProduct = asyncHandler(async (req, res) => {
       color,
       fabric,
       sizes: formattedSizes,
+      stockBySize,
     },
     shippingDetails: completeShippingDetails,
-    countInStock,
     numReviews: 0,
     isFeatured,
   });
@@ -323,7 +433,6 @@ const updateProduct = asyncHandler(async (req, res) => {
       SKU,
       shippingDetails,
       isFeatured,
-      countInStock,
     } = req.body;
 
     console.log("Received request body:", req.body);
@@ -371,6 +480,7 @@ const updateProduct = asyncHandler(async (req, res) => {
       color = "",
       fabric = "",
       sizes = [],
+      stockBySize = [],
     } = parsedProductDetails;
     // Ensure sizes is an array (fixes the `.split is not a function` error)
     const formattedSizes =
@@ -391,8 +501,8 @@ const updateProduct = asyncHandler(async (req, res) => {
         color,
         fabric,
         sizes: formattedSizes,
+        stockBySize,
       };
-      product.countInStock = countInStock;
       product.shippingDetails = completeShippingDetails;
       product.SKU = SKU;
       product.isFeatured = isFeatured;
@@ -453,7 +563,7 @@ const uploadProducts = asyncHandler(async (req, res) => {
     const products = [];
 
     for (const row of sheetData) {
-      if (!row.brandname || !row.countInStock || !row.productdetails) {
+      if (!row.brandname || !row.productdetails) {
         return res.status(400).json({ message: "Invalid data in Excel file" });
       }
 
@@ -480,6 +590,7 @@ const uploadProducts = asyncHandler(async (req, res) => {
         color,
         fabric,
         sizes,
+        stockBySize,
       } = parsedProductDetails;
       const oldPrice = parseFloat(row.oldPrice);
       const discount = parseFloat(row.discount);
@@ -487,11 +598,10 @@ const uploadProducts = asyncHandler(async (req, res) => {
       products.push({
         user: req.user._id,
         brandname: row.brandname,
-        price: calculatedPrice.toFixed(2),
+        price: Number(calculatedPrice.toFixed(2)),
         oldPrice: row.oldPrice,
         discount: row.discount,
         description: row.description,
-        countInStock: row.countInStock,
         images: row.images ? row.images.split(",") : [],
         productdetails: {
           gender,
@@ -502,6 +612,7 @@ const uploadProducts = asyncHandler(async (req, res) => {
           color,
           fabric,
           sizes,
+          stockBySize,
         },
       });
     }
@@ -555,7 +666,7 @@ const createproductreview = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("Product Not found");
   }
-}); 
+});
 
 // const createproductreview = asyncHandler(async (req, res) => {
 //   console.log("Incoming Review Request:", req.body);

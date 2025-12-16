@@ -11,19 +11,46 @@ import {
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-export const addToCart = (id, qty) => async (dispatch, getState) => {
+// export const addToCart = (id, qty) => async (dispatch, getState) => {
+//   const {
+//     userLogin: { userInfo },
+//   } = getState();
+//   const config = {
+//     headers: { Authorization: `Bearer ${userInfo.token}` },
+//   };
+
+//   const { data } = await axios.post(
+//     `${API_URL}/api/products/${id}/addtocart`,
+//     { id, qty },
+//     config
+//   );
+//   console.log("Cart Items data", data);
+//   dispatch({
+//     type: CART_ADD_ITEM,
+//     payload: data.cartItems,
+//   });
+// };
+
+export const addToCart = (id, qty, size) => async (dispatch, getState) => {
   const {
     userLogin: { userInfo },
   } = getState();
+
+  if (!size) {
+    console.error("Size is required!");
+    return;
+  }
+
   const config = {
     headers: { Authorization: `Bearer ${userInfo.token}` },
   };
 
   const { data } = await axios.post(
     `${API_URL}/api/products/${id}/addtocart`,
-    { id, qty },
+    { id, qty, size }, // Pass size to backend
     config
   );
+
   console.log("Cart Items data", data);
   dispatch({
     type: CART_ADD_ITEM,
@@ -90,11 +117,11 @@ export const savepaymentmethod = (data) => (dispatch, getState) => {
 };
 
 export const saveShippingCost = (shippingCost) => ({
-  type: "SAVE_SHIPPING_COST",
+  type: SAVE_SHIPPING_COST,
   payload: shippingCost,
 });
 
 export const saveShippingRates = (shippingRates) => ({
-  type: "SAVE_SHIPPING_RATES",
+  type: SAVE_SHIPPING_RATES,
   payload: shippingRates,
 });

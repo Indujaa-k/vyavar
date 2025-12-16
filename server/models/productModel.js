@@ -48,6 +48,14 @@ const videoBannerSchema = mongoose.Schema(
   },
   { timestamps: true }
 );
+// Stock per size schema
+const sizeStockSchema = mongoose.Schema(
+  {
+    size: { type: String, required: true },
+    stock: { type: Number, required: true, min: 0 },
+  },
+  { _id: false }
+);
 const productSchema = mongoose.Schema(
   {
     user: {
@@ -98,16 +106,8 @@ const productSchema = mongoose.Schema(
         type: String,
         required: true,
       },
-      sizes: {
-        type: [String],
-        required: true,
-      },
-      quantity:{
-        type:Number,
-        min:1,
-        max:5,
-        require:true,
-      }
+      sizes: { type: [String], required: true },
+      stockBySize: { type: [sizeStockSchema], required: true },
     },
     reviews: [reviewSchema],
     rating: {
@@ -132,11 +132,6 @@ const productSchema = mongoose.Schema(
     discount: {
       type: Number,
       default: 0, // Percentage discount (e.g., 20 for 20%)
-    },
-    countInStock: {
-      type: Number,
-      required: true,
-      default: 0,
     },
     banners: [bannerSchema],
     VideoBanner: [videoBannerSchema],

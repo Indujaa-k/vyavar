@@ -60,94 +60,136 @@ const CartPage = () => {
               <Text fontSize="lg" fontWeight="bold" mt={5}>
                 ITEMS({cartItems.length})
               </Text>
-              {cartItems.map((item) => (
-                <Flex
-                  key={item._id}
-                  border="1px solid #E2E8F0"
-                  borderRadius="md"
-                  p={4}
-                  alignItems="center"
-                  mb={3}
-                  position="relative"
-                >
-                  {/* Image Section */}
-                  <Box w="100px" h="130px" borderRadius="md" overflow="hidden">
-                    <Link to={`/product/${item.product._id}`}>
-                      <Image
-                        objectFit="cover"
-                        src={item.product.images[0]}
-                        w="full"
-                        h="full"
-                      />
-                    </Link>
-                  </Box>
+              {cartItems.map((item) => {
+                const selectedSize = item.size;
 
-                  {/* Details Section */}
-                  <Box flex="1" ml={4}>
-                    <Text fontWeight="bold">{item.product.brandname}</Text>
-                    <Text fontSize="sm" color="gray.500">
-                      {item.product.name}
-                    </Text>
-                    <Text fontSize="sm" color="gray.500">
-                      {item.product.description}
-                    </Text>
-                    <Flex gap={3} mt={2}>
-                      <Select
-                        defaultValue={item.product.size || "XS"}
-                        w="80px"
-                        size="sm"
-                      >
-                        {["XS", "S", "M", "L", "XL"].map((size) => (
-                          <option key={size} value={size}>
-                            {size}
-                          </option>
-                        ))}
-                      </Select>
+                const availableSizes = item.product.productdetails?.sizes || [];
 
-                      <Select
-                        defaultValue={item.qty}
-                        onChange={(e) =>
-                          dispatch(
-                            addToCart(item.product._id, Number(e.target.value))
-                          )
-                        }
-                        w="80px"
-                        size="sm"
-                      >
-                        {[...Array(item.product.countInStock).keys()].map(
-                          (x) => (
+                // Get stock for the selected size
+                const sizeStock =
+                  item.product.productdetails.stockBySize?.find(
+                    (s) => s.size === selectedSize
+                  )?.stock || 0;
+
+                return (
+                  <Flex
+                    key={item._id}
+                    border="1px solid #E2E8F0"
+                    borderRadius="md"
+                    p={4}
+                    alignItems="center"
+                    mb={3}
+                    position="relative"
+                  >
+                    {/* Image Section */}
+                    <Box
+                      w="100px"
+                      h="130px"
+                      borderRadius="md"
+                      overflow="hidden"
+                    >
+                      <Link to={`/product/${item.product._id}`}>
+                        <Image
+                          objectFit="cover"
+                          src={item.product.images[0]}
+                          w="full"
+                          h="full"
+                        />
+                      </Link>
+                    </Box>
+
+                    {/* Details Section */}
+                    <Box flex="1" ml={4}>
+                      <Text fontWeight="bold">{item.product.brandname}</Text>
+                      <Text fontSize="sm" color="gray.500">
+                        {item.product.name}
+                      </Text>
+                      <Text fontSize="sm" color="gray.500">
+                        {item.product.description}
+                      </Text>
+
+                      <Flex gap={3} mt={2}>
+                        {/* Size Selector */}
+                        <Select
+                          value={selectedSize}
+                          onChange={(e) =>
+                            dispatch(
+                              addToCart(
+                                item.product._id,
+                                item.qty,
+                                e.target.value
+                              )
+                            )
+                          }
+                          w="80px"
+                          size="sm"
+                        >
+                          {availableSizes.map((size) => (
+                            <option
+                              key={size}
+                              value={size}
+                              disabled={
+                                item.product.productdetails.stockBySize?.find(
+                                  (s) => s.size === size
+                                )?.stock === 0
+                              }
+                            >
+                              {size}{" "}
+                              {item.product.productdetails.stockBySize?.find(
+                                (s) => s.size === size
+                              )?.stock === 0 && "(Out of Stock)"}
+                            </option>
+                          ))}
+                        </Select>
+
+                        {/* Quantity Selector */}
+                        <Select
+                          value={item.qty}
+                          onChange={(e) =>
+                            dispatch(
+                              addToCart(
+                                item.product._id,
+                                Number(e.target.value),
+                                selectedSize
+                              )
+                            )
+                          }
+                          w="80px"
+                          size="sm"
+                        >
+                          {[...Array(sizeStock).keys()].map((x) => (
                             <option key={x + 1} value={x + 1}>
                               {x + 1}
                             </option>
-                          )
-                        )}
-                      </Select>
-                    </Flex>
+                          ))}
+                        </Select>
+                      </Flex>
 
-                    <Flex gap={2} mt={2}>
-                      <Text fontWeight="bold">₹{item.product.price}</Text>
-                      <Text as="s" color="gray.400">
-                        ₹ {item.product.oldPrice}
-                      </Text>
-                      <Text color="yellow.500" fontWeight="bold">
-                        {item.product.discount}% Off
-                      </Text>
-                    </Flex>
-                  </Box>
+                      <Flex gap={2} mt={2}>
+                        <Text fontWeight="bold">₹{item.product.price}</Text>
+                        <Text as="s" color="gray.400">
+                          ₹ {item.product.oldPrice}
+                        </Text>
+                        <Text color="yellow.500" fontWeight="bold">
+                          {item.product.discount}% Off
+                        </Text>
+                      </Flex>
+                    </Box>
 
-                  {/* Remove Icon */}
-                  <IconButton
-                    icon={<VscChromeClose />}
-                    colorScheme="red"
-                    variant="ghost"
-                    aria-label="Remove item"
-                    position="absolute"
-                    top="10px"
-                    right="10px"
-                    onClick={() => removeFromCartHandler(item._id)}
-                  />
-                </Flex>
-              ))}
+                    {/* Remove Icon */}
+                    <IconButton
+                      icon={<VscChromeClose />}
+                      colorScheme="red"
+                      variant="ghost"
+                      aria-label="Remove item"
+                      position="absolute"
+                      top="10px"
+                      right="10px"
+                      onClick={() => removeFromCartHandler(item._id)}
+                    />
+                  </Flex>
+                );
+              })}
             </GridItem>
             {/* Right Side - Order Summary */}
             <GridItem>
