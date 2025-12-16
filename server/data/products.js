@@ -1,6 +1,5 @@
 const products = [
   {
-   
     brandname: "Nike",
     SKU: "Boy123",
     images: [
@@ -19,19 +18,18 @@ const products = [
       fabric: "Polyester",
       sizes: ["S", "M", "L", "XL"],
     },
-    rating: 0,
-    numReviews: 0,
     price: 960,
     oldPrice: 1200,
     discount: 20,
-    countInStock: 10,
+    stockBySize: [
+      { size: "S", stock: 3 },
+      { size: "M", stock: 2 },
+      { size: "L", stock: 4 },
+      { size: "XL", stock: 11 },
+    ],
     shippingDetails: {
       weight: 55,
-      dimensions: {
-        length: 11,
-        width: 11,
-        height: 11,
-      },
+      dimensions: { length: 11, width: 11, height: 11 },
       originAddress: {
         street1: "Kumaranathapuram",
         street2: "",
@@ -50,37 +48,10 @@ const products = [
         subtitle: "dfdsfds",
         gender: "male",
         isActive: true,
-       
-      },
-      {
-        image: "/uploads/1742818357911-boysadbanner.jpg",
-        title: "dafdsf",
-        subtitle: "dfsdf",
-        gender: "female",
-        isActive: true,
-       
-      },
-      {
-        image: "/uploads/1742818395027-kidsadimage.jpg",
-        title: "asdfs",
-        subtitle: "asfas",
-        gender: "female",
-        isActive: true,
-       
-      },
-      {
-        image: "/uploads/1742818625569-boysadbanner.jpg",
-        title: "asdfas",
-        subtitle: "asdfas",
-        gender: "male",
-        isActive: true,
-      
       },
     ],
-
   },
   {
-  
     brandname: "Nike",
     SKU: "Boys456",
     images: [
@@ -99,19 +70,18 @@ const products = [
       fabric: "Polyester",
       sizes: ["S", "M", "L", "XL"],
     },
-    rating: 0,
-    numReviews: 0,
     price: 600,
     oldPrice: 1000,
     discount: 40,
-    countInStock: 5,
+    stockBySize: [
+      { size: "S", stock: 2 },
+      { size: "M", stock: 2 },
+      { size: "L", stock: 1 },
+      { size: "XL", stock: 0 },
+    ],
     shippingDetails: {
       weight: 55,
-      dimensions: {
-        length: 11,
-        width: 11,
-        height: 11,
-      },
+      dimensions: { length: 11, width: 11, height: 11 },
       originAddress: {
         street1: "Kumaranathapuram",
         street2: "",
@@ -125,10 +95,8 @@ const products = [
     reviews: [],
     banners: [],
     VideoBanner: [],
-   
   },
   {
-   
     brandname: "Nike",
     SKU: "Boy489",
     images: [
@@ -147,19 +115,18 @@ const products = [
       fabric: "Polyester",
       sizes: ["S", "M", "L", "XL"],
     },
-    rating: 0,
-    numReviews: 0,
     price: 400,
     oldPrice: 500,
     discount: 20,
-    countInStock: 4,
+    stockBySize: [
+      { size: "S", stock: 1 },
+      { size: "M", stock: 1 },
+      { size: "L", stock: 1 },
+      { size: "XL", stock: 1 },
+    ],
     shippingDetails: {
       weight: 20,
-      dimensions: {
-        length: 11,
-        width: 11,
-        height: 11,
-      },
+      dimensions: { length: 11, width: 11, height: 11 },
       originAddress: {
         street1: "Kumaranathapuram",
         street2: "",
@@ -173,7 +140,6 @@ const products = [
     reviews: [],
     banners: [],
     VideoBanner: [],
-    
   },
   {
     brandname: "TommyHilfigher",
@@ -194,19 +160,18 @@ const products = [
       fabric: "Cotton",
       sizes: ["S", "M", "L", "XL"],
     },
-    rating: 0,
-    numReviews: 0,
     price: 450,
     oldPrice: 500,
     discount: 10,
-    countInStock: 4,
+    stockBySize: [
+      { size: "S", stock: 2 },
+      { size: "M", stock: 1 },
+      { size: "L", stock: 1 },
+      { size: "XL", stock: 0 },
+    ],
     shippingDetails: {
       weight: 50,
-      dimensions: {
-        length: 11,
-        width: 11,
-        height: 11,
-      },
+      dimensions: { length: 11, width: 11, height: 11 },
       originAddress: {
         street1: "Kumaranathapuram",
         street2: "",
@@ -220,10 +185,8 @@ const products = [
     reviews: [],
     banners: [],
     VideoBanner: [],
-    
   },
   {
-   
     brandname: "Allensolley",
     SKU: "Boys123",
     images: [
@@ -242,19 +205,18 @@ const products = [
       fabric: "Cotton",
       sizes: ["M", "S", "L", "XL"],
     },
-    rating: 0,
-    numReviews: 0,
     price: 560,
     oldPrice: 800,
     discount: 30,
-    countInStock: 5,
+    stockBySize: [
+      { size: "S", stock: 1 },
+      { size: "M", stock: 2 },
+      { size: "L", stock: 1 },
+      { size: "XL", stock: 10 },
+    ],
     shippingDetails: {
       weight: 20,
-      dimensions: {
-        length: 11,
-        width: 11,
-        height: 11,
-      },
+      dimensions: { length: 11, width: 11, height: 11 },
       originAddress: {
         street1: "Kumaranathapuram",
         street2: "",
@@ -268,10 +230,8 @@ const products = [
     reviews: [],
     banners: [],
     VideoBanner: [],
-   
   },
   {
-   
     brandname: "Nike",
     SKU: "Boys1566",
     images: [
@@ -290,19 +250,18 @@ const products = [
       fabric: "Cotton",
       sizes: ["S", "M", "L", "XL"],
     },
-    rating: 0,
-    numReviews: 0,
     price: 720,
     oldPrice: 900,
     discount: 20,
-    countInStock: 5,
+    stockBySize: [
+      { size: "S", stock: 1 },
+      { size: "M", stock: 1 },
+      { size: "L", stock: 2 },
+      { size: "XL", stock: 1 },
+    ],
     shippingDetails: {
       weight: 23,
-      dimensions: {
-        length: 11,
-        width: 11,
-        height: 11,
-      },
+      dimensions: { length: 11, width: 11, height: 11 },
       originAddress: {
         street1: "Kumaranathapuram",
         street2: "",
@@ -316,58 +275,9 @@ const products = [
     reviews: [],
     banners: [],
     VideoBanner: [],
-   
   },
+
   {
-   
-    brandname: "Nike",
-    SKU: "Girls0126",
-    images: [
-      "/uploads/1742823877319-img3.1.jpg",
-      "/uploads/1742823877324-img3.2.jpg",
-      "/uploads/1742823877338-img3.3.jpg",
-    ],
-    description: "Fitty One",
-    productdetails: {
-      gender: "Women",
-      category: "Topwear",
-      subcategory: "Shirts",
-      type: "Formal",
-      ageRange: "Kids",
-      color: "Blue",
-      fabric: "Cotton",
-      sizes: ["S", "M", "L", "XL"],
-    },
-    rating: 0,
-    numReviews: 0,
-    price: 540,
-    oldPrice: 600,
-    discount: 10,
-    countInStock: 5,
-    shippingDetails: {
-      weight: 11,
-      dimensions: {
-        length: 11,
-        width: 11,
-        height: 11,
-      },
-      originAddress: {
-        street1: "Kumaranathapuram",
-        street2: "",
-        city: "Tiruppur",
-        state: "TN",
-        zip: 641602,
-        country: "India",
-      },
-    },
-    isFeatured: true,
-    reviews: [],
-    banners: [],
-    VideoBanner: [],
-    
-  },
-  {
-  
     brandname: "Nike",
     SKU: "Girls136",
     images: [
@@ -391,7 +301,12 @@ const products = [
     price: 640,
     oldPrice: 800,
     discount: 20,
-    countInStock: 5,
+    stockBySize: [
+      { size: "S", stock: 1 },
+      { size: "M", stock: 1 },
+      { size: "L", stock: 2 },
+      { size: "XL", stock: 1 },
+    ],
     shippingDetails: {
       weight: 15,
       dimensions: {
@@ -412,10 +327,8 @@ const products = [
     reviews: [],
     banners: [],
     VideoBanner: [],
-   
   },
   {
-   
     brandname: "Nike",
     SKU: "Girl666",
     images: [
@@ -439,7 +352,12 @@ const products = [
     price: 480,
     oldPrice: 600,
     discount: 20,
-    countInStock: 5,
+    stockBySize: [
+      { size: "S", stock: 4 },
+      { size: "M", stock: 5 },
+      { size: "L", stock: 5 },
+      { size: "XL", stock: 1 },
+    ],
     shippingDetails: {
       weight: 44,
       dimensions: {
@@ -460,10 +378,8 @@ const products = [
     reviews: [],
     banners: [],
     VideoBanner: [],
-   
   },
   {
-   
     brandname: "Puma",
     SKU: "Girls456",
     images: [
@@ -487,7 +403,12 @@ const products = [
     price: 400,
     oldPrice: 500,
     discount: 20,
-    countInStock: 6,
+    stockBySize: [
+      { size: "S", stock: 5 },
+      { size: "M", stock: 3 },
+      { size: "L", stock: 4 },
+      { size: "XL", stock: 1 },
+    ],
     shippingDetails: {
       weight: 50,
       dimensions: {
@@ -508,10 +429,8 @@ const products = [
     reviews: [],
     banners: [],
     VideoBanner: [],
-   
   },
   {
-   
     brandname: "Nike",
     SKU: "Boys4123",
     images: [
@@ -535,7 +454,12 @@ const products = [
     price: 1120,
     oldPrice: 1600,
     discount: 30,
-    countInStock: 8,
+    stockBySize: [
+      { size: "S", stock: 3 },
+      { size: "M", stock: 6 },
+      { size: "L", stock: 2 },
+      { size: "XL", stock: 1 },
+    ],
     shippingDetails: {
       weight: 50,
       dimensions: {
@@ -556,10 +480,8 @@ const products = [
     reviews: [],
     banners: [],
     VideoBanner: [],
-   
   },
   {
-  
     brandname: "Nike",
     SKU: "Boys423",
     images: [
@@ -583,7 +505,12 @@ const products = [
     price: 640,
     oldPrice: 800,
     discount: 20,
-    countInStock: 10,
+    stockBySize: [
+      { size: "S", stock: 5 },
+      { size: "M", stock: 1 },
+      { size: "L", stock: 3 },
+      { size: "XL", stock: 1 },
+    ],
     shippingDetails: {
       weight: 50,
       dimensions: {
@@ -604,10 +531,8 @@ const products = [
     reviews: [],
     banners: [],
     VideoBanner: [],
-  
   },
   {
-   
     brandname: "Puma",
     SKU: "boys265",
     images: [
@@ -631,7 +556,12 @@ const products = [
     price: 1120,
     oldPrice: 1600,
     discount: 30,
-    countInStock: 10,
+    stockBySize: [
+      { size: "S", stock: 3 },
+      { size: "M", stock: 4 },
+      { size: "L", stock: 2 },
+      { size: "XL", stock: 1 },
+    ],
     shippingDetails: {
       weight: 15,
       dimensions: {
@@ -652,10 +582,8 @@ const products = [
     reviews: [],
     banners: [],
     VideoBanner: [],
-   
   },
   {
-   
     brandname: "Puma",
     SKU: "Boys2165",
     images: [
@@ -679,7 +607,13 @@ const products = [
     price: 720,
     oldPrice: 900,
     discount: 20,
-    countInStock: 8,
+    stockBySize: [
+      { size: "XS", stock: 3 },
+      { size: "S", stock: 1 },
+      { size: "M", stock: 6 },
+      { size: "L", stock: 2 },
+      { size: "XL", stock: 7 },
+    ],
     shippingDetails: {
       weight: 16,
       dimensions: {
@@ -700,10 +634,8 @@ const products = [
     reviews: [],
     banners: [],
     VideoBanner: [],
-   
   },
   {
-   
     brandname: "Puma",
     SKU: "Boys652",
     images: [
@@ -727,7 +659,13 @@ const products = [
     price: 700,
     oldPrice: 1000,
     discount: 30,
-    countInStock: 10,
+    stockBySize: [
+      { size: "XS", stock: 3 },
+      { size: "S", stock: 2 },
+      { size: "M", stock: 3 },
+      { size: "L", stock: 2 },
+      { size: "XL", stock: 7 },
+    ],
     shippingDetails: {
       weight: 40,
       dimensions: {
@@ -748,10 +686,8 @@ const products = [
     reviews: [],
     banners: [],
     VideoBanner: [],
-  
   },
   {
-  
     brandname: "Nike",
     SKU: "Girls1233",
     images: [
@@ -775,7 +711,13 @@ const products = [
     price: 1080,
     oldPrice: 1200,
     discount: 10,
-    countInStock: 6,
+    stockBySize: [
+      { size: "XS", stock: 23 },
+      { size: "S", stock: 12 },
+      { size: "M", stock: 6 },
+      { size: "L", stock: 22 },
+      { size: "XL", stock: 7 },
+    ],
     shippingDetails: {
       weight: 50,
       dimensions: {
@@ -796,10 +738,8 @@ const products = [
     reviews: [],
     banners: [],
     VideoBanner: [],
-  
   },
   {
-   
     brandname: "Nike",
     SKU: "girls159",
     images: [
@@ -823,7 +763,13 @@ const products = [
     price: 1050,
     oldPrice: 1500,
     discount: 30,
-    countInStock: 9,
+    stockBySize: [
+      { size: "XS", stock: 5 },
+      { size: "S", stock: 12 },
+      { size: "M", stock: 2 },
+      { size: "L", stock: 2 },
+      { size: "XL", stock: 7 },
+    ],
     shippingDetails: {
       weight: 50,
       dimensions: {
@@ -844,10 +790,8 @@ const products = [
     reviews: [],
     banners: [],
     VideoBanner: [],
-   
   },
   {
-  
     brandname: "Puma",
     SKU: "Girls789",
     images: [
@@ -871,7 +815,13 @@ const products = [
     price: 2100,
     oldPrice: 3000,
     discount: 30,
-    countInStock: 10,
+    stockBySize: [
+      { size: "XS", stock: 4 },
+      { size: "S", stock: 11 },
+      { size: "M", stock: 6 },
+      { size: "L", stock: 5 },
+      { size: "XL", stock: 7 },
+    ],
     shippingDetails: {
       weight: 50,
       dimensions: {
@@ -892,10 +842,8 @@ const products = [
     reviews: [],
     banners: [],
     VideoBanner: [],
-  
   },
   {
-   
     brandname: "TommyHilfigher",
     SKU: "Girls2645",
     images: [
@@ -919,7 +867,13 @@ const products = [
     price: 1280,
     oldPrice: 1600,
     discount: 20,
-    countInStock: 10,
+    stockBySize: [
+      { size: "XS", stock: 7 },
+      { size: "S", stock: 2 },
+      { size: "M", stock: 6 },
+      { size: "L", stock: 8 },
+      { size: "XL", stock: 7 },
+    ],
     shippingDetails: {
       weight: 30,
       dimensions: {
@@ -940,10 +894,8 @@ const products = [
     reviews: [],
     banners: [],
     VideoBanner: [],
-    
   },
   {
-   
     brandname: "Puma",
     SKU: "Girls36987",
     images: [
@@ -967,7 +919,13 @@ const products = [
     price: 480,
     oldPrice: 600,
     discount: 20,
-    countInStock: 10,
+    stockBySize: [
+      { size: "XS", stock: 8 },
+      { size: "S", stock: 22 },
+      { size: "M", stock: 16 },
+      { size: "L", stock: 2 },
+      { size: "XL", stock: 7 },
+    ],
     shippingDetails: {
       weight: 50,
       dimensions: {
@@ -990,4 +948,5 @@ const products = [
     VideoBanner: [],
   },
 ];
+
 export default products;

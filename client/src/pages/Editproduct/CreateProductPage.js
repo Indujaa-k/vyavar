@@ -40,9 +40,9 @@ const CreateProductPage = () => {
     ageRange: "",
     color: "",
     fabric: "",
-    sizes: "",
+    sizes: [],
   });
-  const [countInStock, setcountInStock] = useState(0);
+
   const [newImages, setNewImages] = useState([]);
   const [message, setMessage] = useState(null);
   const [sizeChartFile, setSizeChartFile] = useState("");
@@ -94,7 +94,9 @@ const CreateProductPage = () => {
     fabric: ["Cotton", "Polyester", "Leather"],
     sizes: ["S", "M", "L", "XL", "XXL"],
   };
-
+  const [stockBySize, setStockBySize] = useState(
+    options.sizes.map((size) => ({ size, stock: 0 }))
+  );
   const calculatedPrice = () => {
     const oldPriceNum = Number(oldPrice);
     const discountNum = Number(discount);
@@ -119,8 +121,27 @@ const CreateProductPage = () => {
     formData.append("oldPrice", oldPrice);
     formData.append("discount", discount);
     formData.append("description", description);
-    formData.append("countInStock", countInStock);
-    formData.append("productdetails", JSON.stringify(productdetails));
+    const selectedStock = stockBySize.filter((s) =>
+      productdetails.sizes.includes(s.size)
+    );
+
+    const invalidStock = selectedStock.some((s) => s.stock <= 0);
+
+    if (invalidStock) {
+      setMessage("Please enter stock greater than 0 for all selected sizes");
+      return;
+    }
+
+    formData.append(
+      "productdetails",
+      JSON.stringify({
+        ...productdetails,
+        sizes: selectedStock.map((s) => s.size),
+        stockBySize: selectedStock,
+      })
+    );
+
+    // formData.append("productdetails", JSON.stringify(productdetails));
     formData.append("isFeatured", isFeatured);
     formData.append("shippingDetails", JSON.stringify(shippingDetails));
     formData.append("SKU", SKU);
@@ -158,6 +179,14 @@ const CreateProductPage = () => {
       return { ...prevDetails, sizes: newSizes };
     });
   };
+  const handleStockChange = (size, value) => {
+    const num = value === "" ? 0 : Math.max(0, Number(value));
+
+    setStockBySize((prev) =>
+      prev.map((s) => (s.size === size ? { ...s, stock: num } : s))
+    );
+  };
+
   return (
     <Box
       maxW="container.md"
@@ -225,7 +254,7 @@ const CreateProductPage = () => {
             <Input type="number" value={calculatedPrice()} readOnly />
           </FormControl>
         </Flex>
-        <FormControl isRequired>
+        {/* <FormControl isRequired>
           <FormLabel>Stock Count</FormLabel>
           <Input
             type="number"
@@ -233,7 +262,7 @@ const CreateProductPage = () => {
             placeholder="Enter stock count"
             onChange={(e) => setcountInStock(e.target.value)}
           />
-        </FormControl>
+        </FormControl> */}
         <FormControl>
           <FormLabel>Description</FormLabel>
           <Stack direction="column" spacing={4}>
@@ -380,6 +409,28 @@ const CreateProductPage = () => {
                 {size}
               </Checkbox>
             ))}
+          </Stack>
+        </FormControl>
+        <FormControl mt={4}>
+          <FormLabel>Stock per Size</FormLabel>
+          <Stack direction="column" spacing={2}>
+            {stockBySize.map(
+              (s) =>
+                productdetails.sizes.includes(s.size) && (
+                  <Flex key={s.size} gap={2} align="center">
+                    <Text w="50px">{s.size}</Text>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={s.stock}
+                      placeholder={`Stock for ${s.size}`}
+                      onChange={(e) =>
+                        handleStockChange(s.size, e.target.value)
+                      }
+                    />
+                  </Flex>
+                )
+            )}
           </Stack>
         </FormControl>
         {/* Size Chart PDF Upload */}

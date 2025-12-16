@@ -173,16 +173,11 @@ const Products = () => {
               </Thead>
               <Tbody>
                 {products.map((product) => {
-                  let stockStatus = "On Demand"; // Default
-
-                  // Use countInStock to determine stock status
-                  if (product.countInStock !== undefined) {
-                    if (product.countInStock > 10)
-                      stockStatus = `In Stock (${product.countInStock})`;
-                    else if (product.countInStock > 0)
-                      stockStatus = `Low Inventory (${product.countInStock})`; // Fixed casing
-                    else stockStatus = `Out of Stock (${product.countInStock})`;
-                  }
+                  const totalStock =
+                    product.productdetails?.stockBySize?.reduce(
+                      (sum, s) => sum + s.stock,
+                      0
+                    ) || 0;
 
                   return (
                     <Tr key={product._id}>
@@ -198,20 +193,29 @@ const Products = () => {
                           : product.productdetails?.sizes || "N/A"}
                       </Td>
                       <Td>
-                        <Text
-                          color={
-                            stockStatus.includes("In Stock")
-                              ? "green"
-                              : stockStatus.includes("Low Inventory")
-                              ? "orange" // Fixed casing
-                              : stockStatus.includes("Out of Stock")
-                              ? "red"
-                              : "blue"
-                          }
-                        >
-                          {stockStatus}
-                        </Text>
+                        {product.productdetails?.stockBySize &&
+                        product.productdetails.stockBySize.length > 0 ? (
+                          <Stack spacing={1}>
+                            {product.productdetails.stockBySize.map((s) => (
+                              <Text
+                                key={s.size}
+                                color={
+                                  s.stock > 10
+                                    ? "green"
+                                    : s.stock > 0
+                                    ? "orange"
+                                    : "red"
+                                }
+                              >
+                                {s.size}: {s.stock}
+                              </Text>
+                            ))}
+                          </Stack>
+                        ) : (
+                          <Text color="gray.500">No stock data</Text>
+                        )}
                       </Td>
+
                       {/* Display Product Images */}
                       <Td>
                         <Stack spacing={2} align="center">

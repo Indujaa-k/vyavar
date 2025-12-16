@@ -78,6 +78,7 @@ const Productpage = () => {
     productReviewCreate;
   const availableSizes = product?.productdetails?.sizes || [];
   const [selectedSize, setSelectedSize] = useState("");
+  const [sizeStock, setSizeStock] = useState({});
   const [showPDF, setShowPDF] = useState(false);
   const [showAllReviews, setShowAllReviews] = useState(false);
   const togglePDF = () => setShowPDF((prev) => !prev);
@@ -136,6 +137,17 @@ const Productpage = () => {
       dispatch(Listproductbyfiters({ category: product.category }));
     }
   }, [dispatch, id, successProductReview, userInfo, product.category]);
+  useEffect(() => {
+    if (product?.productdetails?.stockBySize) {
+      const stockMap = {};
+
+      product.productdetails.stockBySize.forEach((item) => {
+        stockMap[item.size] = item.stock;
+      });
+
+      setSizeStock(stockMap);
+    }
+  }, [product]);
 
   // product.reviews
   const submithanlder = () => {
@@ -160,8 +172,34 @@ const Productpage = () => {
       navigate("/login");
       return;
     }
-    dispatch(addToCart(product._id, qty));
+
+    if (!selectedSize) {
+      toast({
+        title: "Size Required",
+        description: "Please select a size before adding to cart.",
+        status: "warning",
+        duration: 4000,
+        position: "top-right",
+        isClosable: true,
+      });
+      return;
+    }
+
+    if (qty > sizeStock[selectedSize]) {
+      toast({
+        title: "Quantity exceeds stock",
+        description: `Only ${sizeStock[selectedSize]} items available`,
+        status: "warning",
+        duration: 4000,
+        position: "top-right",
+        isClosable: true,
+      });
+      return;
+    }
+
+    dispatch(addToCart(product._id, qty, selectedSize));
     navigate("/cart");
+
     toast({
       title: "Product added to cart",
       description: "View your product in the cart page.",
@@ -171,6 +209,7 @@ const Productpage = () => {
       isClosable: true,
     });
   };
+
   const handleMouseMove = (e) => {
     const { left, top, width, height } = e.target.getBoundingClientRect();
     const x = ((e.pageX - left) / width) * 100;
@@ -183,6 +222,11 @@ const Productpage = () => {
     setHoveredImageIndex(index);
   };
   const handleMouseLeave = () => setIsZoomVisible(false);
+
+  const isAllSizesOutOfStock =
+    Object.values(sizeStock).length > 0 &&
+    Object.values(sizeStock).every((stock) => stock === 0);
+
   return (
     <>
       <Helmet>
@@ -298,13 +342,14 @@ const Productpage = () => {
                           _hover={{
                             bg: selectedSize === size ? "black" : "gray.100",
                           }}
-                          px={6} // Increase padding for width
-                          py={4} // Increase padding for height
-                          minW="60px" // Ensures buttons are wider
+                          px={6}
+                          py={4}
+                          minW="60px"
                           minH="60px"
                           fontSize="lg"
+                          disabled={sizeStock[size] === 0} // 🔹 Disable if out of stock
                         >
-                          {size}
+                          {size} {sizeStock[size] === 0 && "(Out of Stock)"}
                         </Button>
                       ))}
                     </HStack>
@@ -353,7 +398,9 @@ const Productpage = () => {
                       <Button
                         onClick={addToCartHandler}
                         type="button"
-                        disabled={product.countInStock === 0}
+                        disabled={
+                          !selectedSize || sizeStock[selectedSize] === 0
+                        }
                         border="2px solid"
                         borderColor="black"
                         bg="white"
@@ -372,7 +419,9 @@ const Productpage = () => {
                       <Button
                         onClick={addToCartHandler}
                         type="button"
-                        disabled={product.countInStock === 0}
+                        disabled={
+                          !selectedSize || sizeStock[selectedSize] === 0
+                        }
                         bg="black"
                         color="white"
                         px={8} // Increase padding for width
@@ -386,7 +435,7 @@ const Productpage = () => {
                       </Button>
                     </HStack>
 
-                    {product.countInStock === 0 && (
+                    {isAllSizesOutOfStock && (
                       <Text
                         fontSize="lg"
                         fontWeight="bold"
@@ -398,7 +447,7 @@ const Productpage = () => {
                         <MdDoNotDisturb
                           size="24"
                           style={{ marginRight: "5px" }}
-                        />{" "}
+                        />
                         OUT OF STOCK
                       </Text>
                     )}
