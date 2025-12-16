@@ -21,9 +21,9 @@ import {
   TRANSACTION_LIST_REQUEST,
   TRANSACTION_LIST_SUCCESS,
   TRANSACTION_LIST_FAIL,
-  STRIPE_PAYMENT_REQUEST,
-  STRIPE_PAYMENT_SUCCESS,
-  
+  RAZORPAY_PAYMENT_REQUEST,
+  RAZORPAY_PAYMENT_SUCCESS,
+  RAZORPAY_PAYMENT_FAIL,
 } from "../constants/orderConstants";
 import {
   ORDER_STATUS_REQUEST,
@@ -59,7 +59,6 @@ import {
   INCOME_BY_CITY_REQUEST,
   INCOME_BY_CITY_SUCCESS,
   INCOME_BY_CITY_FAIL,
-  STRIPE_PAYMENT_FAIL,
 } from "../constants/orderConstants";
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -565,37 +564,40 @@ export const listTransactions = (filters) => async (dispatch, getState) => {
     });
   }
 };
-// Action to process Stripe payment
-export const processStripePayment = (amount) => async (dispatch, getState) => {
-  try {
-    dispatch({ type: STRIPE_PAYMENT_REQUEST });
+// Action to process Razorpay payment
+export const processRazorpayPayment =
+  (amount) => async (dispatch, getState) => {
+    try {
+      dispatch({ type: RAZORPAY_PAYMENT_REQUEST });
 
-    const {
-      userLogin: { userInfo },
-    } = getState();
-    const config = {
-      headers: {
-        Authorization: `Bearer ${userInfo.token}`,
-      },
-    };
+      const {
+        userLogin: { userInfo },
+      } = getState();
 
-    const { data } = await axios.post(
-      `${API_URL}/api/orders/stripePayment`,
-      { amount },
-      config
-    );
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
 
-    dispatch({
-      type: STRIPE_PAYMENT_SUCCESS,
-      payload: data.clientSecret,
-    });
-  } catch (error) {
-    dispatch({
-      type: STRIPE_PAYMENT_FAIL,
-      payload: error.response?.data?.message || "Payment failed",
-    });
-  }
-};
+      const { data } = await axios.post(
+        `${API_URL}/api/orders/razorpay`,
+        { amount },
+        config
+      );
+
+      dispatch({
+        type: RAZORPAY_PAYMENT_SUCCESS,
+        payload: data, // { id, amount, currency, keyId }
+      });
+    } catch (error) {
+      dispatch({
+        type: RAZORPAY_PAYMENT_FAIL,
+        payload: error.response?.data?.message || "Razorpay payment failed",
+      });
+    }
+  };
 export const updateOrderStatus =
   (orderId, status) => async (dispatch, getState) => {
     try {

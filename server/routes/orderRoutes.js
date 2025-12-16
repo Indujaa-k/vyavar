@@ -22,22 +22,24 @@ import {
   getOrderStatusCounts,
   createBillingInvoice,
   getBillingInvoiceByNumber,
+  createRazorpayOrder,
+  verifyRazorpayPayment,
 } from "../controlers/orderControler.js";
-import { protect, admin, isDelivery } from "../middleware/authMiddleware.js";
+import { protect, adminOrSeller, isDelivery} from "../middleware/authMiddleware.js";
 
 
 router.route("/delivery").get(protect, isDelivery, getOrdersForDeliveryPerson);
 
-router.route("/status-count").get(protect, admin, getOrderStatusCounts);
+router.route("/status-count").get(protect, adminOrSeller, getOrderStatusCounts);
 
 // userroutes
-router.route("/transactions").get(protect, admin, getTransactions);
+router.route("/transactions").get(protect, adminOrSeller, getTransactions);
 
 // user routes
 router.route("/myorders").get(protect, GetMyOrders);
-router.route("/").post(protect, addorderitems).get(protect, admin, GetOrders);
+router.route("/").post(protect, addorderitems).get(protect, adminOrSeller, GetOrders);
 router.route("/:id/pay").put(protect, updateOrderToPaid);
-router.route("/:id/deliver").put(protect, admin, updateOrderToDelivered);
+router.route("/:id/deliver").put(protect, adminOrSeller, updateOrderToDelivered);
 router.route("/stripePayment").post(protect, StripePayment);
 router.route("/:id").get(protect, getOrderById);
 
@@ -52,15 +54,16 @@ router
   .put(protect, isDelivery, markOrderAsReturned);
 
 // admin routes
-router.route("/undelivered").get(protect, admin, getUndeliveredOrders);
-router.route("/:id/updateorderstatus").put(protect, admin, updateOrderStatus);
+router.route("/undelivered").get(protect, adminOrSeller, getUndeliveredOrders);
+router.route("/:id/updateorderstatus").put(protect,updateOrderStatus);
 
 router
   .route("/admin/orders/assign/:id")
-  .put(protect, admin, assignOrderToDeliveryPerson);
+  .put(protect, assignOrderToDeliveryPerson);
 router.route("/admin/order/:id/invoice").get(protect, generateInvoice);
-router.route("/admin/incomebycity").get(protect, admin, incomebycity);
-router.route("/billinginvoice").post(protect, admin, createBillingInvoice);
-router.route("/:invoiceNumber").get(protect, admin, getBillingInvoiceByNumber);
-
+router.route("/admin/incomebycity").get(protect, adminOrSeller,incomebycity);
+router.route("/billinginvoice").post(protect, adminOrSeller, createBillingInvoice);
+router.route("/:invoiceNumber").get(protect, adminOrSeller, getBillingInvoiceByNumber);
+router.post("/razorpay", createRazorpayOrder);
+router.post("/razorpay/verify", verifyRazorpayPayment);
 export default router;

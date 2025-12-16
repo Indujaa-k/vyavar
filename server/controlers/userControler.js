@@ -18,6 +18,7 @@ const authUser = asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
       isAdmin: user.isAdmin,
+      isSeller:user.isSeller,
       isDelivery: user.isDelivery,
       token: generateToken(user._id),
     });
@@ -63,6 +64,7 @@ const registerUser = asyncHandler(async (req, res) => {
     email: user.email,
     isAdmin: user.isAdmin,
     isDelivery: user.isDelivery,
+    isSeller: user .isSeller,
     token: generateToken(user._id),
   });
 });
@@ -295,6 +297,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
       email: updatedUser.email,
       profilePicture: updatedUser.profilePicture,
       isAdmin: updatedUser.isAdmin,
+      isSeller:updatedUser.isSeller,
       address: updatedUser.address,
       lastName: updatedUser.lastName,
       gender: updatedUser.gender,
@@ -319,6 +322,7 @@ const updateUser = asyncHandler(async (req, res) => {
     user.email = req.body.email || user.email;
     user.isAdmin = req.body.isAdmin;
     user.isDelivery = req.body.isDelivery;
+    user.isSeller = req.body.isSeller;
 
     const updatedUser = await user.save();
     res.json({
@@ -327,6 +331,7 @@ const updateUser = asyncHandler(async (req, res) => {
       email: updatedUser.email,
       isAdmin: updatedUser.isAdmin,
       isDelivery: updatedUser.isDelivery,
+      isSeller: updatedUser.isSeller,
     });
   } else {
     res.status(404);

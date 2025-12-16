@@ -36,7 +36,7 @@ const Users = () => {
   const { success: successDelete } = userDelete;
 
   useEffect(() => {
-    if (userInfo && userInfo.isAdmin) {
+    if ((userInfo && userInfo.isAdmin) || userInfo.isSeller) {
       dispatch(ListUsers());
     } else {
       navigate("/login");
@@ -83,7 +83,7 @@ const Users = () => {
                   Admin
                 </Th>
                 <Th textAlign="center" w="10%">
-                  Delivery
+                  Seller
                 </Th>
                 <Th textAlign="center" w="10%">
                   Orders
@@ -137,13 +137,12 @@ const Users = () => {
                     )}
                   </Td>
                   <Td>
-                    {user.isDelivery ? (
+                    {user.isSeller ? (
                       <div className="paid">YES</div>
                     ) : (
                       <div className="notpaid">NO</div>
                     )}
                   </Td>
-
                   <Td textAlign="center">
                     <Button colorScheme="purple" size="xs" fontWeight="bold">
                       {user.orderHistory?.length
@@ -154,27 +153,28 @@ const Users = () => {
                   </Td>
 
                   <Td>
-                    <Stack>
-                      <Link to={`/admin/user/${user._id}/edit`}>
+                    {userInfo?.isAdmin && !userInfo?.isSeller && (
+                      <Stack>
+                        <Link to={`/admin/user/${user._id}/edit`}>
+                          <Button
+                            leftIcon={<AiOutlineEdit size="16" />}
+                            colorScheme="blue"
+                            size="xs"
+                          >
+                            EDIT
+                          </Button>
+                        </Link>
+
                         <Button
-                          leftIcon={<AiOutlineEdit size="16" />}
-                          colorScheme="blue"
+                          colorScheme="red"
+                          leftIcon={<AiFillDelete size="16" />}
                           size="xs"
+                          onClick={() => deletehandler(user._id)}
                         >
-                          EDIT
+                          DELETE
                         </Button>
-                      </Link>
-                      <Button
-                        colorScheme="red"
-                        leftIcon={<AiFillDelete size="16" />}
-                        size="xs"
-                        onClick={() => {
-                          deletehandler(user._id);
-                        }}
-                      >
-                        DELETE
-                      </Button>
-                    </Stack>
+                      </Stack>
+                    )}
                   </Td>
                 </Tr>
               ))}
