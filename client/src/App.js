@@ -70,7 +70,7 @@ const App = () => {
                 path="/login"
                 element={
                   userInfo ? (
-                    userInfo.isAdmin ? (
+                    userInfo.isAdmin || userInfo.isSeller ?  (
                       <Navigate to="/admin" replace />
                     ) : userInfo.isDelivery ? (
                       <Navigate to="/deliveryhomepage" replace />
@@ -103,7 +103,7 @@ const App = () => {
                   />
                 </Routes>
               </DeliveryLayout>
-            ) : userInfo && userInfo.isAdmin ? (
+            ) : userInfo && (userInfo.isAdmin || userInfo.isSeller) ? (
               <AdminLayout>
                 <Routes>
                   <Route path="/admin" element={<AdminDashboard />} />

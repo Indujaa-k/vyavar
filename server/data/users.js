@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { adminOrSeller } from "../middleware/authMiddleware";
 
 const Users = [
   {
@@ -8,6 +9,7 @@ const Users = [
     // password: "$2a$10$R9e0zByk1KdrYxihSCOzmu0X7aWv8ZDaZ0cFefR6UqYF1q5v0Sd4K",
     isAdmin: true,
     isDelivery: false,
+    isSeller:false,
     profilePicture: "/uploads/default.png",
     lastName: "",
     dateOfBirth: null,
@@ -32,6 +34,7 @@ const Users = [
     password: "$2a$10$1tiRqzeyG1B9AoLCg3sn1OW3XurxdbBkklVZnwScUzas3WhidpfTm",
     isAdmin: false,
     isDelivery: false,
+    isSeller:false,
     profilePicture: "/uploads/1742802039244-image.jpg",
     lastName: "Kumar",
     

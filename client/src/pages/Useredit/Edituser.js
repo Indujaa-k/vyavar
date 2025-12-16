@@ -20,6 +20,7 @@ const Edituser = () => {
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [isSeller, setisSeller] = useState(false);
   const [isAdmin, setisAdmin] = useState(false);
   const [message, setMessage] = useState(null);
   const [isDelivery, setIsDelivery] = useState(false);
@@ -50,6 +51,7 @@ const Edituser = () => {
         setEmail(user.email);
         setisAdmin(user.isAdmin);
         setIsDelivery(user.isDelivery);
+        setisSeller(user.isSeller);
       }
     }
 
@@ -58,7 +60,9 @@ const Edituser = () => {
 
   const submitHandler = (e) => {
     e.preventDefault();
-    dispatch(updateUser({ _id: userId, name, email, isAdmin, isDelivery }));
+    dispatch(
+      updateUser({ _id: userId, name, email, isAdmin, isDelivery, isSeller })
+    );
   };
 
   const inputs = document.querySelectorAll(".inputa");
@@ -140,18 +144,31 @@ const Edituser = () => {
                         console.log(isAdmin);
                       }}
                     >
-                      isAdmin
+                      Promote as Admin
                     </Checkbox>
                   </div>
-                  <div className="input-div passs">
-                    <div className="div">
-                      <Checkbox
-                        isChecked={isDelivery}
-                        onChange={(e) => setIsDelivery(e.target.checked)}
-                      >
-                        isDelivery
-                      </Checkbox>
-                    </div>
+                </div>
+                <div className="input-div passs">
+                  <div className="div">
+                    <Checkbox
+                      isChecked={isDelivery}
+                      onChange={(e) => setIsDelivery(e.target.checked)}
+                    >
+                      isDelivery
+                    </Checkbox>
+                  </div>
+                </div>
+                <div className="input-div passs">
+                  <div className="div">
+                    <Checkbox
+                      isChecked={isSeller}
+                      onChange={(e) => {
+                        setisSeller(e.target.checked);
+                        console.log(isSeller);
+                      }}
+                    >
+                      Hide User Management
+                    </Checkbox>
                   </div>
                 </div>
                 {message && <h4 className="Message">{message}</h4>}

@@ -560,14 +560,9 @@ const Productpage = () => {
             )}
 
             {/* If user logged in but has NOT purchased */}
-            {userInfo && !isPurchased && (
-              <p style={{ color: "gray", fontWeight: "bold" }}>
-                Only verified buyers can write a review.
-              </p>
-            )}
 
             {/* If user logged in AND has purchased */}
-            {userInfo && isPurchased && (
+            {userInfo && (
               <FormControl>
                 <FormLabel>Rating :</FormLabel>
                 <Select onChange={(e) => setrating(e.target.value)}>

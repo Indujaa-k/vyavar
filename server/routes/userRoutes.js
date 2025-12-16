@@ -17,9 +17,9 @@ import {
   resetPasswordWithOtp,
 } from "../controlers/userControler.js";
 import { uploadProfileImage } from "../multer/multer.js";
-import { admin, protect } from "../middleware/authMiddleware.js";
+import { adminOrSeller,adminOnly, protect } from "../middleware/authMiddleware.js";
 
-router.route("/").post(registerUser).get(protect, admin, getUsers);
+router.route("/").post(registerUser).get(protect, adminOrSeller, getUsers);
 router.route("/sendOtp").post(sendOtpToEmail);
 router.route("/verifyOtp").post(verifyOtp);
 router.post("/forgotPassword", PasswordResetOtp);
@@ -36,8 +36,8 @@ router
 
 router
   .route("/:id")
-  .delete(protect, admin, deleteUser)
-  .get(protect, admin, getUserByID)
-  .put(protect, admin, updateUser);
+  .delete(protect, adminOnly, deleteUser)
+  .get(protect, adminOnly, getUserByID)
+  .put(protect, adminOnly, updateUser);
 
 export default router;

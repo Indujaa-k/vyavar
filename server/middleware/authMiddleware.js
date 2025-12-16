@@ -30,13 +30,12 @@ const protect = asyncHandler(async (req, res, next) => {
   }
 });
 
-const admin = (req, res, next) => {
-  if (req.user && req.user.isAdmin) {
-    console.log("Admin check for:", req.user?.name);
+const adminOrSeller = (req, res, next) => {
+  if (req.user && (req.user.isAdmin || req.user.isSeller)) {
     next();
   } else {
-    res.status(401);
-    throw new Error("Not Authorized as an admin");
+    res.status(403);
+    throw new Error("Not authorized as Admin or Seller");
   }
 };
 const isDelivery = (req, res, next) => {
@@ -47,5 +46,13 @@ const isDelivery = (req, res, next) => {
     throw new Error("Not authorized as a delivery person");
   }
 };
+const adminOnly = (req, res, next) => {
+  if (req.user && req.user.isAdmin && !req.user.isSeller) {
+    next();
+  } else {
+    res.status(403);
+    throw new Error("Not authorized as Admin without seller privileges");
+  }
+};
 
-export { protect, admin, isDelivery };
+export { protect, adminOrSeller, isDelivery, adminOnly };

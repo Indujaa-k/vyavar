@@ -4,7 +4,7 @@ import {
   createShipment,
   shipmentrates,
 } from "../controlers/deliveryController.js";
-import { protect, admin } from "../middleware/authMiddleware.js";
+import { protect, adminOrSeller } from "../middleware/authMiddleware.js";
 
 router.route("/shipmentrates").post(protect, shipmentrates);
 router.route("/createShipment").post(protect, createShipment);

@@ -9,22 +9,22 @@ import {
   getUserVideoBanners,
 } from "../controlers/bannerController.js";
 import { uploadSingleImage, uploadSingleVideo } from "../multer/multer.js";
-import { protect, admin } from "../middleware/authMiddleware.js";
+import { protect, adminOrSeller } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 // Banner Routes
 // router.route("/banner").post(protect, admin, addBanner);
-router.route("/banner").post(protect, admin, uploadSingleImage, addBanner);
-router.route("/banners/:id").delete(protect, admin, deleteBanner);
+router.route("/banner").post(protect, adminOrSeller, uploadSingleImage, addBanner);
+router.route("/banners/:id").delete(protect, adminOrSeller, deleteBanner);
 router.route("/banners").get(getBanners);
 router
   .route("/addvideobanner")
-  .post(protect, admin, uploadSingleVideo, addvideobanner);
+  .post(protect, adminOrSeller, uploadSingleVideo, addvideobanner);
 router.route("/getvideobanner").get(getvideobanner);
 router
   .route("/deletevideobanner/:productId/:videoId")
-  .delete(protect, admin, deletevideobanner);
+  .delete(protect, adminOrSeller, deletevideobanner);
 router.route("/getuservideobanners").get(getUserVideoBanners);
 
 export default router;

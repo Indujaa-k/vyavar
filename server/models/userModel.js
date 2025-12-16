@@ -27,6 +27,11 @@ const userSchema = mongoose.Schema(
       required: true,
       default: false,
     },
+    isSeller:{
+      type: Boolean,
+      required: true,
+      default:false,
+    },
     profilePicture: { type: String, default: "" },
     lastName: { type: String, default: "" },
     dateOfBirth: { type: Date, default: null },

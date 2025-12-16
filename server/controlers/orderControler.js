@@ -3,6 +3,8 @@ import User from "../models/userModel.js";
 import Order from "../models/orderModel.js";
 import BillingInvoice from "../models/billingInvoiceModel.js";
 import sendEmail from "../utils/sendEmail.js";
+import Razorpay from "razorpay";
+
 
 // @desc Create new order
 // @route POST /api/orders
@@ -424,6 +426,66 @@ const getTransactions = asyncHandler(async (req, res) => {
   res.json(transactions);
 });
 
+
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
+
+// CREATE ORDER
+const createRazorpayOrder = async (req, res) => {
+  try {
+    const amount = req.body.amount;
+
+    const order = await razorpay.orders.create({
+      amount: amount * 100,
+      currency: "INR",
+      receipt: "order_" + Date.now(),
+    });
+
+    res.json({
+      id: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      keyId: process.env.RAZORPAY_KEY_ID,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// VERIFY PAYMENT
+const verifyRazorpayPayment = async (req, res) => {
+  try {
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+    } = req.body;
+
+    const sign = razorpay_order_id + "|" + razorpay_payment_id;
+
+    const expectedSign = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(sign)
+      .digest("hex");
+
+    if (expectedSign === razorpay_signature) {
+      res.json({
+        success: true,
+        message: "Payment verified successfully",
+        paymentId: razorpay_payment_id,
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: "Invalid payment signature",
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 // @desc    Stripe payments
 // @route   post /api/orders/stripe
 // @access  public/users
@@ -594,6 +656,8 @@ export {
   generateInvoice,
   incomebycity,
   getTransactions,
+  createRazorpayOrder,
+  verifyRazorpayPayment,
   StripePayment,
   updateOrderStatus,
   getOrderStatusCounts,

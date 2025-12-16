@@ -10,7 +10,7 @@ import {
   getPendingWithdrawals,
   approveWithdrawal,
 } from "../controlers/transactionController.js";
-import { protect, admin, isDelivery } from "../middleware/authMiddleware.js";
+import { protect, adminOrSeller, isDelivery } from "../middleware/authMiddleware.js";
 // Delivery Person Routes
 router.route("/delivery/deposit").post(protect, isDelivery, requestDeposit);
 
@@ -23,23 +23,23 @@ router
   .get(protect, isDelivery, getMyTransactions);
 
 // Admin Routes
-router.route("/admin/pending-deposits").get(protect, admin, getPendingDeposits);
+router.route("/admin/pending-deposits").get(protect, adminOrSeller, getPendingDeposits);
 
 router
   .route("/admin/confirm-deposit/:orderId/:transactionId")
-  .put(protect, admin, confirmDeposit);
+  .put(protect, adminOrSeller, confirmDeposit);
 
 
 router
   .route("/admin/pending-withdrawals")
-  .get(protect, admin, getPendingWithdrawals);
+  .get(protect, adminOrSeller, getPendingWithdrawals);
 
 
 router
   .route("/admin/approve-withdraw/:orderId/:transactionId")
-  .put(protect, admin, approveWithdrawal);
+  .put(protect, adminOrSeller, approveWithdrawal);
 router
   .route("/admin/reject-withdraw/:orderId/:transactionId")
-  .put(protect, admin, rejectWithdrawal);
+  .put(protect, adminOrSeller, rejectWithdrawal);
 
 export default router;
