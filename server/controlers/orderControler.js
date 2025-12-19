@@ -481,8 +481,6 @@ const createRazorpayOrder = async (req, res) => {
 // VERIFY PAYMENT
 const verifyRazorpayPayment = async (req, res) => {
   try {
-    console.log("🔍 Verify Payment Body:", req.body);
-
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
       req.body;
 

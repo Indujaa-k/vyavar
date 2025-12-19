@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Box,
@@ -19,12 +19,14 @@ import {
   Td,
   Icon,
   Badge,
+  Button,
 } from "@chakra-ui/react";
 import { FaClipboardList, FaCheckCircle, FaBox, FaTruck } from "react-icons/fa";
 import { listOrders } from "../../actions/orderActions";
 
 const OrderStatusSummary = () => {
   const dispatch = useDispatch();
+  const [selectedStatus, setSelectedStatus] = useState("ALL");
 
   const orderList = useSelector((state) => state.orderList);
   const { loading, orders = [] } = orderList;
@@ -33,19 +35,73 @@ const OrderStatusSummary = () => {
     dispatch(listOrders());
   }, [dispatch]);
 
+  /* ===== STATUS COUNTS ===== */
   const totalOrders = orders.length;
-  const confirmed = orders.filter((order) => order.orderStatus === "confirmed").length;
-  const packed = orders.filter((order) => order.orderStatus === "packed").length;
-  const delivered = orders.filter((order) => order.orderStatus === "delivered").length;
+  const confirmed = orders.filter(
+    (order) =>
+      order.isPaid &&
+      !order.isPacked &&
+      !order.isAcceptedByDelivery &&
+      !order.isDelivered
+  ).length;
 
-  const lastFiveOrders = orders.slice(-5).reverse(); // last 5 orders
+  const packed = orders.filter(
+    (order) =>
+      order.isPacked && !order.isAcceptedByDelivery && !order.isDelivered
+  ).length;
 
-  if (loading)
+  const shipped = orders.filter(
+    (order) => order.isAcceptedByDelivery && !order.isDelivered
+  ).length;
+
+  const delivered = orders.filter((order) => order.isDelivered).length;
+
+  /* ===== FILTER BASED ON CLICK ===== */
+  const filteredOrders = orders.filter((order) => {
+    if (selectedStatus === "CONFIRMED") {
+      return (
+        order.isPaid === true &&
+        order.isPacked === false &&
+        order.isAcceptedByDelivery === false &&
+        order.isDelivered === false
+      );
+    }
+
+    if (selectedStatus === "PACKED") {
+      return (
+        order.isPacked === true &&
+        order.isAcceptedByDelivery === false &&
+        order.isDelivered === false
+      );
+    }
+
+    if (selectedStatus === "SHIPPED") {
+      return order.isAcceptedByDelivery === true && order.isDelivered === false;
+    }
+
+    if (selectedStatus === "DELIVERED") {
+      return order.isDelivered === true;
+    }
+
+    return true; // ALL
+  });
+
+  /* ===== STATUS BADGE ===== */
+  const getStatusBadge = (order) => {
+    if (order.isDelivered) return <Badge colorScheme="green">DELIVERED</Badge>;
+    if (order.isAcceptedByDelivery)
+      return <Badge colorScheme="blue">SHIPPED</Badge>;
+    if (order.isPacked) return <Badge colorScheme="orange">PACKED</Badge>;
+    return <Badge colorScheme="yellow">CONFIRMED</Badge>;
+  };
+
+  if (loading) {
     return (
       <Flex justify="center" align="center" h="200px">
         <Spinner size="xl" />
       </Flex>
     );
+  }
 
   return (
     <Box p={8} mt={8}>
@@ -53,20 +109,21 @@ const OrderStatusSummary = () => {
         Order Status Summary
       </Heading>
 
-      {/* Stats Cards */}
-      <SimpleGrid columns={{ base: 2, md: 4 }} spacing={6} mb={8}>
+      {/* ===== STATUS CARDS ===== */}
+      <SimpleGrid columns={{ base: 2, md: 4 }} spacing={6} mb={6}>
         <Stat
           p={4}
           shadow="md"
           borderRadius="md"
           bg="pink.100"
-          _hover={{ transform: "scale(1.05)", transition: "0.2s" }}
+          cursor="pointer"
+          onClick={() => setSelectedStatus("ALL")}
         >
           <StatLabel>
             <Icon as={FaClipboardList} mr={2} /> Total Orders
           </StatLabel>
           <StatNumber>{totalOrders}</StatNumber>
-          <Progress value={100} mt={2} colorScheme="pink" />
+          <Progress value={100} mt={2} />
         </Stat>
 
         <Stat
@@ -74,13 +131,13 @@ const OrderStatusSummary = () => {
           shadow="md"
           borderRadius="md"
           bg="yellow.100"
-          _hover={{ transform: "scale(1.05)", transition: "0.2s" }}
+          cursor="pointer"
+          onClick={() => setSelectedStatus("CONFIRMED")}
         >
           <StatLabel>
             <Icon as={FaCheckCircle} mr={2} /> Confirmed
           </StatLabel>
           <StatNumber>{confirmed}</StatNumber>
-          <Progress value={totalOrders ? (confirmed / totalOrders) * 100 : 0} mt={2} colorScheme="yellow" />
         </Stat>
 
         <Stat
@@ -88,13 +145,13 @@ const OrderStatusSummary = () => {
           shadow="md"
           borderRadius="md"
           bg="orange.100"
-          _hover={{ transform: "scale(1.05)", transition: "0.2s" }}
+          cursor="pointer"
+          onClick={() => setSelectedStatus("PACKED")}
         >
           <StatLabel>
             <Icon as={FaBox} mr={2} /> Packed
           </StatLabel>
           <StatNumber>{packed}</StatNumber>
-          <Progress value={totalOrders ? (packed / totalOrders) * 100 : 0} mt={2} colorScheme="orange" />
         </Stat>
 
         <Stat
@@ -102,60 +159,50 @@ const OrderStatusSummary = () => {
           shadow="md"
           borderRadius="md"
           bg="green.100"
-          _hover={{ transform: "scale(1.05)", transition: "0.2s" }}
+          cursor="pointer"
+          onClick={() => setSelectedStatus("DELIVERED")}
         >
           <StatLabel>
             <Icon as={FaTruck} mr={2} /> Delivered
           </StatLabel>
           <StatNumber>{delivered}</StatNumber>
-          <Progress value={totalOrders ? (delivered / totalOrders) * 100 : 0} mt={2} colorScheme="green" />
         </Stat>
       </SimpleGrid>
 
-      {/* Recent Orders Table */}
-      <Box>
-        <Heading size="md" mb={4}>
-          Recent Orders
-        </Heading>
-        {lastFiveOrders.length === 0 ? (
-          <Text>No recent orders</Text>
-        ) : (
-          <Table variant="simple" bg="gray.50" borderRadius="md">
-            <Thead>
-              <Tr>
-                <Th>Order ID</Th>
-                <Th>Status</Th>
-                <Th>Total Price</Th>
-                <Th>Date</Th>
+      {/* ===== RESET BUTTON ===== */}
+      <Button
+        mb={4}
+        colorScheme="gray"
+        onClick={() => setSelectedStatus("ALL")}
+      >
+        Show All Orders
+      </Button>
+
+      {/* ===== ORDERS TABLE ===== */}
+      {filteredOrders.length === 0 ? (
+        <Text>No orders found</Text>
+      ) : (
+        <Table variant="simple" bg="gray.50" borderRadius="md">
+          <Thead>
+            <Tr>
+              <Th>Order ID</Th>
+              <Th>Status</Th>
+              <Th>Total</Th>
+              <Th>Date</Th>
+            </Tr>
+          </Thead>
+          <Tbody>
+            {filteredOrders.map((order) => (
+              <Tr key={order._id}>
+                <Td>{order._id}</Td>
+                <Td>{getStatusBadge(order)}</Td>
+                <Td>₹{order.totalPrice.toFixed(2)}</Td>
+                <Td>{order.createdAt.substring(0, 10)}</Td>
               </Tr>
-            </Thead>
-            <Tbody>
-              {lastFiveOrders.map((order) => (
-                <Tr key={order._id}>
-                  <Td>{order._id}</Td>
-                  <Td>
-                    <Badge
-                      colorScheme={
-                        order.orderStatus === "confirmed"
-                          ? "yellow"
-                          : order.orderStatus === "packed"
-                          ? "yellow"
-                          : order.orderStatus === "delivered"
-                          ? "green"
-                          : "gyellow"
-                      }
-                    >
-                      {order.orderStatus.toUpperCase()}
-                    </Badge>
-                  </Td>
-                  <Td>₹{order.totalPrice.toFixed(2)}</Td>
-                  <Td>{new Date(order.createdAt).toLocaleDateString()}</Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
-        )}
-      </Box>
+            ))}
+          </Tbody>
+        </Table>
+      )}
     </Box>
   );
 };

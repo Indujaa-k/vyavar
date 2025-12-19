@@ -69,6 +69,7 @@ const Placeorder = () => {
           name: item.product.brandname,
           price: item.product.price,
           qty: item.qty,
+          size: item.size,
         })),
         shippingAddress: recipientAddress,
         shippingRates,
