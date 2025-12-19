@@ -75,20 +75,22 @@ import { addToCart, removeFromCart } from "../actions/cartActions";
 import { useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
 
-const Productoncart = ({ product }) => {
+const Productoncart = ({ item }) => {
   const dispatch = useDispatch();
 
   // State for quantity and selected size
-  const [qty, setQty] = useState(product.qty || 1);
-  const [selectedSize, setSelectedSize] = useState(
-    product.size || product.productdetails?.sizes?.[0] || "XS"
-  );
-
-  const availableSizes = product.productdetails?.sizes || [];
+  const [qty, setQty] = useState(item.qty || 1);
+  const [selectedSize, setSelectedSize] = useState(item.size);
+  console.log("qty:", qty);
+  console.log("selected size:", selectedSize);
+  const availableSizes = item.product.productdetails?.sizes || [];
 
   // Get stock for the selected size
 
-  const stockBySize = product.productdetails?.stockBySize || [];
+  console.log("CART ITEM RECEIVED 👉", item);
+
+
+  const stockBySize = item.product.productdetails?.stockBySize || [];
 
   const sizeStock =
     stockBySize.find((s) => s.size === selectedSize)?.stock || 0;
@@ -99,22 +101,25 @@ const Productoncart = ({ product }) => {
 
   // Update cart when qty or size changes
   const updateCart = (newQty, size) => {
-    setQty(newQty);
-    setSelectedSize(size);
-    dispatch(addToCart(product.product, newQty, size));
-  };
+  const stock = stockBySize.find((s) => s.size === size)?.stock || 0;
+  const adjustedQty = Math.min(newQty, stock); // ✅ Clamp qty to stock
+  setQty(adjustedQty);
+  setSelectedSize(size);
+  dispatch(addToCart(item.product._id, adjustedQty, size));
+};
+
 
   return (
     <div className="productcart">
       <div className="imagecart">
-        <Image objectFit="cover" src={product.images[0]} />
+        <Image objectFit="cover" src={item.product.images[0]} />
       </div>
 
       <div>
-        <Link to={`/product/${product.product}`}>
-          <h2 className="productname">{product.name}</h2>
+        <Link to={`/product/${item.product._id}`}>
+          <h2 className="productname">{item.product.name}</h2>
         </Link>
-        <h2 className="priceproduct">Rs. {product.price}</h2>
+        <h2 className="priceproduct">Rs. {item.product.price}</h2>
         <h2 className="sandh">Sold and shipped by FedEx</h2>
       </div>
 
@@ -152,14 +157,14 @@ const Productoncart = ({ product }) => {
         </Select>
 
         {/* Total Price */}
-        <h2>{(qty * product.price).toFixed(2)} Rs</h2>
+        <h2>{(qty * item.product.price).toFixed(2)} Rs</h2>
       </div>
 
       {/* Remove Button */}
       <VscChromeClose
         className="deletecart"
         size="26"
-        onClick={() => removeFromCartHandler(product.product)}
+        onClick={() => removeFromCartHandler(item._id)}
       />
     </div>
   );

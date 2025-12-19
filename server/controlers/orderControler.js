@@ -5,7 +5,6 @@ import BillingInvoice from "../models/billingInvoiceModel.js";
 import sendEmail from "../utils/sendEmail.js";
 import Razorpay from "razorpay";
 
-
 // @desc Create new order
 // @route POST /api/orders
 // @access Private
@@ -57,6 +56,32 @@ const addorderitems = asyncHandler(async (req, res) => {
   try {
     createdOrder = await order.save();
     console.log("✅ Order saved successfully:", createdOrder._id);
+
+    // Reduce stock for each product
+    // Reduce stock for each product by size
+    for (const item of orderItems) {
+      const product = await Product.findById(item.product);
+      if (product && product.productdetails?.stockBySize) {
+        const sizeEntry = product.productdetails.stockBySize.find(
+          (s) => s.size === item.size
+        );
+        if (sizeEntry) {
+          sizeEntry.stock -= item.qty;
+          if (sizeEntry.stock < 0) sizeEntry.stock = 0; // prevent negative stock
+        }
+
+        // Optional: update overall countInStock
+        const totalStock = product.productdetails.stockBySize.reduce(
+          (acc, s) => acc + s.stock,
+          0
+        );
+        product.countInStock = totalStock;
+
+        await product.save();
+      }
+    }
+
+    console.log("📦 Product stock updated for order items");
   } catch (err) {
     console.error("❌ Mongoose Save Error:", err.message);
     return res
@@ -426,7 +451,6 @@ const getTransactions = asyncHandler(async (req, res) => {
   res.json(transactions);
 });
 
-
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
@@ -435,33 +459,32 @@ const razorpay = new Razorpay({
 // CREATE ORDER
 const createRazorpayOrder = async (req, res) => {
   try {
-    const amount = req.body.amount;
-
     const order = await razorpay.orders.create({
-      amount: amount * 100,
+      amount: Number(req.body.amount) * 100,
       currency: "INR",
       receipt: "order_" + Date.now(),
     });
-
+    console.log("✅ Order created:", order);
     res.json({
       id: order.id,
       amount: order.amount,
       currency: order.currency,
       keyId: process.env.RAZORPAY_KEY_ID,
     });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  } catch (err) {
+    console.error("❌ Razorpay Error:", err);
+    res.status(500).json({ message: err.message, stack: err.stack });
   }
 };
 
 // VERIFY PAYMENT
+// VERIFY PAYMENT
 const verifyRazorpayPayment = async (req, res) => {
   try {
-    const {
-      razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature,
-    } = req.body;
+    console.log("🔍 Verify Payment Body:", req.body);
+
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
+      req.body;
 
     const sign = razorpay_order_id + "|" + razorpay_payment_id;
 
@@ -483,6 +506,7 @@ const verifyRazorpayPayment = async (req, res) => {
       });
     }
   } catch (error) {
+    console.error("❌ Verify Error:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -639,6 +663,7 @@ const getBillingInvoiceByNumber = asyncHandler(async (req, res) => {
 
   res.json(invoice);
 });
+
 export {
   addorderitems,
   getOrderById,

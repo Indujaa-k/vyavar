@@ -27,13 +27,20 @@ export const cartReducer = (
         ...state,
         cartItems: action.payload,
       };
+    // case CART_REMOVE_ITEM:
+    //   return {
+    //     ...state,
+    //     cartItems: state.cartItems.filter(
+    //       (item) => item._id !== action.payload
+    //     ),
+    //   };
+
     case CART_REMOVE_ITEM:
       return {
         ...state,
-        cartItems: state.cartItems.filter(
-          (item) => item._id !== action.payload
-        ),
+        cartItems: action.payload, // ← use backend's updated cart array
       };
+
     case CART_SAVE_SHIPPING_ADRESSE:
       return {
         ...state,
