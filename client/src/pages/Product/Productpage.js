@@ -101,27 +101,26 @@ const Productpage = () => {
 
   // Update the useEffect that checks for purchased products
   useEffect(() => {
-    if (orders && orders.length > 0) {
-      console.log("Full order items structure:", orders[0].orderItems);
-      console.log("First order item product:", orders[0].orderItems[0].product);
-      console.log("Type of product:", typeof orders[0].orderItems[0].product);
+    if (!orders || orders.length === 0) return;
 
-      const purchased = orders.some((order) => {
-        return (
-          order.isDelivered &&
-          order.orderItems.some((item) => {
-            const productId = item.product._id
-              ? item.product._id.toString()
-              : item.product.toString();
-            console.log("Comparing:", productId, "with", id);
-            return productId === id;
-          })
-        );
+    const purchased = orders.some((order) => {
+      if (!order?.isDelivered || !order?.orderItems) return false;
+
+      return order.orderItems.some((item) => {
+        if (!item || !item.product) return false;
+
+        const productId =
+          typeof item.product === "object"
+            ? item.product._id?.toString()
+            : item.product?.toString();
+
+        return productId === id;
       });
+    });
 
-      setIsPurchased(purchased);
-    }
+    setIsPurchased(purchased);
   }, [orders, id]);
+
   useEffect(() => {
     if (successProductReview) {
       alert("Review Submitted!");
@@ -198,6 +197,7 @@ const Productpage = () => {
     }
 
     dispatch(addToCart(product._id, qty, selectedSize));
+
     navigate("/cart");
 
     toast({

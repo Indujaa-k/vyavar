@@ -95,7 +95,7 @@ export const removeFromCart = (cartItemId) => async (dispatch, getState) => {
     );
     dispatch({
       type: CART_REMOVE_ITEM,
-      payload: cartItemId,
+      payload: data,
     });
     console.log("Cart updated after removal:", data);
   } catch (error) {
