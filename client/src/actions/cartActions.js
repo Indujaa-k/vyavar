@@ -32,27 +32,36 @@ const API_URL = process.env.REACT_APP_API_URL;
 // };
 
 export const addToCart = (id, qty, size) => async (dispatch, getState) => {
-  const {
-    userLogin: { userInfo },
-  } = getState();
+  try {
+    const {
+      userLogin: { userInfo },
+    } = getState();
 
-  if (!size) {
-    console.error("Size is required!");
-    return;
+    if (!size) {
+      console.error("❌ Size is required!");
+      return;
+    }
+
+    const config = {
+      headers: { Authorization: `Bearer ${userInfo.token}` },
+    };
+
+    const { data } = await axios.post(
+      `${API_URL}/api/products/${id}/addtocart`,
+      { qty, size }, // ✅ only qty & size
+      config
+    );
+
+    dispatch({
+      type: CART_ADD_ITEM,
+      payload: data.cartItems,
+    });
+  } catch (error) {
+    console.error(
+      "❌ Add to cart failed:",
+      error.response?.data?.message || error.message
+    );
   }
-
-  const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-
-  const { data } = await axios.post(
-    `${API_URL}/api/products/${id}/addtocart`,
-    { qty, size },
-    config
-  );
-
-  dispatch({
-    type: CART_ADD_ITEM,
-    payload: data.cartItems,
-  });
 };
 
 export const fetchCart = () => async (dispatch, getState) => {
@@ -82,22 +91,25 @@ export const removeFromCart = (cartItemId) => async (dispatch, getState) => {
     const {
       userLogin: { userInfo },
     } = getState();
+
     const config = {
       headers: { Authorization: `Bearer ${userInfo.token}` },
     };
-    console.log("Deleting cart item ID:", cartItemId); // Debugging log
+
     const { data } = await axios.delete(
       `${API_URL}/api/products/${cartItemId}/deletecart`,
       config
     );
+
     dispatch({
       type: CART_REMOVE_ITEM,
-      payload: data.cartItems || [],
+      payload: data.cartItems,
     });
-
-    console.log("Cart updated after removal:", data);
   } catch (error) {
-    console.error("Error removing item from cart:", error);
+    console.error(
+      "❌ Remove cart failed:",
+      error.response?.data?.message || error.message
+    );
   }
 };
 

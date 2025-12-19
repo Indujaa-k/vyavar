@@ -43,6 +43,10 @@ const Placeorder = () => {
   const totalPrice = itemsPrice + shippingCost + taxPrice;
 
   const PlaceorderHandler = async () => {
+    if (!cart.shippingAddress || !cart.shippingAddress.street) {
+      alert("Shipping address missing");
+      return;
+    }
     try {
       // Prepare shipment details
       const shipmentDetails = {
@@ -63,7 +67,6 @@ const Placeorder = () => {
       const shipmentData = shipmentResponse.data;
 
       const orderData = {
-        user: userInfo._id,
         orderItems: cart.cartItems.map((item) => ({
           product: item.product._id,
           name: item.product.brandname,
@@ -76,7 +79,7 @@ const Placeorder = () => {
         paymentMethod: cart.paymentMethod,
         itemsPrice,
         shippingPrice: shippingCost,
-        taxPrice: taxPercentage,
+        taxPrice,
         totalPrice,
         shipmentDetails: [shipmentData],
       };
