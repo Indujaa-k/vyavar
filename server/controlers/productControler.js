@@ -135,60 +135,38 @@ const getProductById = asyncHandler(async (req, res) => {
 // @access Private
 const addToCart = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  const qty = Number(req.body.qty);
-  const size = req.body.size;
-  if (!size) {
-    return res.status(400).json({ message: "Size is required" });
-  }
+  const { qty = 1, size } = req.body; // default qty=1
 
-  if (qty < 0) {
-    return res.status(400).json({ message: "Invalid quantity" });
-  }
+  if (!size) return res.status(400).json({ message: "Size is required" });
+  if (qty < 0) return res.status(400).json({ message: "Invalid quantity" });
 
   const product = await Product.findById(req.params.id);
-  const user = await User.findById(userId);
+  if (!product) return res.status(404).json({ message: "Product not found" });
 
-  if (!product) {
-    return res.status(404).json({ message: "Product not found" });
-  }
+  const user = await User.findById(userId);
+  if (!user) return res.status(404).json({ message: "User not found" });
 
   user.cartItems = user.cartItems || [];
 
-  // 🔍 Find size stock
-  const sizeStock = product.productdetails.stockBySize.find(
+  const sizeStock = product.productdetails?.stockBySize?.find(
     (s) => s.size === size
   );
 
-  if (!sizeStock) {
+  if (!sizeStock)
     return res.status(400).json({ message: "Size not available" });
-  }
+  if (sizeStock.stock < qty)
+    return res.status(400).json({ message: "Not enough stock available" });
 
-  // ✅ ONLY CHECK STOCK (DO NOT MODIFY)
-
-  // 🔍 Find existing cart item
   const existingCartItem = user.cartItems.find(
     (item) =>
       item.product.toString() === product._id.toString() && item.size === size
   );
 
-  // 🗑 If qty = 0 → remove item
   if (existingCartItem && qty === 0) {
     user.cartItems = user.cartItems.filter(
       (item) => item._id.toString() !== existingCartItem._id.toString()
     );
-
-    await user.save();
-
-    const updatedUser = await User.findById(userId).populate(
-      "cartItems.product"
-    );
-    return res.status(200).json(updatedUser.cartItems);
-  }
-  if (sizeStock.stock < qty) {
-    return res.status(400).json({ message: "Not enough stock" });
-  }
-  // ➕ Update or Add cart item
-  if (existingCartItem) {
+  } else if (existingCartItem) {
     existingCartItem.qty = qty;
     existingCartItem.price = qty * product.price;
   } else {
@@ -201,22 +179,29 @@ const addToCart = asyncHandler(async (req, res) => {
   }
 
   await user.save();
-
   const updatedUser = await User.findById(userId).populate("cartItems.product");
-  res.status(200).json(updatedUser.cartItems);
+
+  res.status(200).json({ cartItems: updatedUser.cartItems });
 });
 
 // @desc get cart product
 // @route get /api/products/getcart
 // @access Private
 const getCart = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
-  const user = await User.findById(userId);
+  const user = await User.findById(req.user._id).populate({
+    path: "cartItems.product",
+    select:
+      "name images brandname description price oldPrice discount productdetails",
+  });
+
   if (!user) {
     res.status(404);
     throw new Error("User not found");
   }
-  res.status(200).json(user.cartItems);
+
+  res.status(200).json({
+    cartItems: user.cartItems,
+  });
 });
 
 // @desc detlete cart product
@@ -285,7 +270,6 @@ const deleteCartItem = asyncHandler(async (req, res) => {
   if (sizeStock) {
     sizeStock.stock += cartItem.qty;
     sizeStock.stock = Math.max(0, sizeStock.stock);
-
   }
 
   // 🗑 Remove cart item
@@ -845,6 +829,46 @@ const getPendingReviews = asyncHandler(async (req, res) => {
   }
 });
 
+// Alternative: Delete review by review ID only (searches across all products)
+const deleteReviewById = async (req, res) => {
+  console.log("Backend received reviewId:", req.params.reviewId);
+  try {
+    const { reviewId } = req.params;
+    console.log("🚀 deleteReviewById called with reviewId:", reviewId);
+
+    // Find the product that contains this review
+    const product = await Product.findOne({ "reviews._id": reviewId });
+    console.log("🔍 Product found for review:", product ? product._id : null);
+
+    if (!product) {
+      return res
+        .status(404)
+        .json({ message: "Review not found in any product" });
+    }
+
+    // Remove the review
+    product.reviews = product.reviews.filter(
+      (r) => r._id.toString() !== reviewId
+    );
+
+    // Recalculate rating
+    product.numReviews = product.reviews.length;
+    product.rating =
+      product.reviews.length > 0
+        ? product.reviews.reduce((acc, r) => acc + r.rating, 0) /
+          product.reviews.length
+        : 0;
+
+    await product.save();
+
+    console.log("✅ Review deleted successfully");
+    res.json({ success: true, message: "Review deleted" });
+  } catch (error) {
+    console.error("❌ deleteReviewById error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export {
   getProducts,
   deleteProduct,
@@ -858,4 +882,5 @@ export {
   getProductById,
   approveReview,
   getPendingReviews,
+  deleteReviewById,
 };

@@ -4,6 +4,7 @@ import Order from "../models/orderModel.js";
 import BillingInvoice from "../models/billingInvoiceModel.js";
 import sendEmail from "../utils/sendEmail.js";
 import Razorpay from "razorpay";
+import crypto from "crypto";
 
 // @desc Create new order
 // @route POST /api/orders
@@ -472,8 +473,15 @@ const createRazorpayOrder = async (req, res) => {
       keyId: process.env.RAZORPAY_KEY_ID,
     });
   } catch (err) {
-    console.error("❌ Razorpay Error:", err);
-    res.status(500).json({ message: err.message, stack: err.stack });
+    console.error("❌ Razorpay Full Error:", {
+      message: err.message,
+      error: err.error,
+      stack: err.stack,
+    });
+
+    res.status(500).json({
+      message: err.message || "Razorpay order creation failed",
+    });
   }
 };
 
@@ -508,7 +516,6 @@ const verifyRazorpayPayment = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 
 // @desc    Stripe payments
 // @route   post /api/orders/stripe
@@ -686,4 +693,6 @@ export {
   getOrderStatusCounts,
   createBillingInvoice,
   getBillingInvoiceByNumber,
+  createRazorpayOrder,
+  verifyRazorpayPayment,
 };

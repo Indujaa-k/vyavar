@@ -41,17 +41,14 @@ export const addToCart = (id, qty, size) => async (dispatch, getState) => {
     return;
   }
 
-  const config = {
-    headers: { Authorization: `Bearer ${userInfo.token}` },
-  };
+  const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
 
   const { data } = await axios.post(
     `${API_URL}/api/products/${id}/addtocart`,
-    { id, qty, size }, // Pass size to backend
+    { qty, size },
     config
   );
 
-  console.log("Cart Items data", data);
   dispatch({
     type: CART_ADD_ITEM,
     payload: data.cartItems,
@@ -71,7 +68,7 @@ export const fetchCart = () => async (dispatch, getState) => {
 
     dispatch({
       type: CART_FETCH_ITEMS,
-      payload: data,
+      payload: data.cartItems || [],
     });
   } catch (error) {
     console.error(
@@ -95,8 +92,9 @@ export const removeFromCart = (cartItemId) => async (dispatch, getState) => {
     );
     dispatch({
       type: CART_REMOVE_ITEM,
-      payload: data,
+      payload: data.cartItems || [],
     });
+
     console.log("Cart updated after removal:", data);
   } catch (error) {
     console.error("Error removing item from cart:", error);

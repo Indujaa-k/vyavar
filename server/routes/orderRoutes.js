@@ -64,6 +64,6 @@ router.route("/admin/order/:id/invoice").get(protect, generateInvoice);
 router.route("/admin/incomebycity").get(protect, adminOrSeller,incomebycity);
 router.route("/billinginvoice").post(protect, adminOrSeller, createBillingInvoice);
 router.route("/:invoiceNumber").get(protect, adminOrSeller, getBillingInvoiceByNumber);
-router.post("/razorpay", createRazorpayOrder);
-router.post("/razorpay/verify", verifyRazorpayPayment);
+router.route("/razorpay").post(protect,createRazorpayOrder);
+router.route("/razorpay/verify").post(protect,verifyRazorpayPayment);
 export default router;
