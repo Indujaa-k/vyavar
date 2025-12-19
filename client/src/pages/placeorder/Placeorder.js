@@ -5,6 +5,7 @@ import { CreateOrder } from "../../actions/orderActions";
 import { fetchCart } from "../../actions/cartActions";
 import { createShipment } from "../../actions/deliveryActions";
 import { getUserDetails } from "../../actions/userActions";
+import { ORDER_CREATE_RESET } from "../../constants/orderConstants";
 
 const Placeorder = () => {
   const navigate = useNavigate();
@@ -102,10 +103,11 @@ const Placeorder = () => {
 
   useEffect(() => {
     if (success) {
-      console.log(order._id);
       navigate(`/order/${order._id}`);
+      dispatch({ type: ORDER_CREATE_RESET });
     }
-  }, [navigate, success, order]);
+  }, [success, order, dispatch, navigate]);
+
   return (
     <button className="placeorder-btn" onClick={PlaceorderHandler}>
       🛍️ Place Order

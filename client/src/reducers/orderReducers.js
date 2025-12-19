@@ -34,6 +34,7 @@ import {
   ORDER_STATUS_REQUEST,
   ORDER_STATUS_SUCCESS,
   ORDER_STATUS_FAIL,
+  ORDER_CREATE_RESET,
 } from "../constants/orderConstants";
 import {
   ORDER_UNDELIVERED_LIST_REQUEST,
@@ -68,21 +69,28 @@ export const CreateOrderReducers = (state = {}, action) => {
       return {
         loading: true,
       };
+
     case ORDER_CREATE_SUCCESS:
       return {
         loading: false,
         success: true,
         order: action.payload,
       };
+
     case ORDER_CREATE_FAIL:
       return {
         loading: false,
         error: action.payload,
       };
+
+    case ORDER_CREATE_RESET: // 👈 VERY IMPORTANT
+      return {};
+
     default:
       return state;
   }
 };
+
 export const OrderDetailsreducer = (
   state = { loading: true, orderItems: [], shippingAddress: {} },
   action
