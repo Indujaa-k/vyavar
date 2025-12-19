@@ -260,6 +260,13 @@ const Order = () => {
                 </Text>
               </HStack>
               <OrderTracking order={order} />
+              <Button
+                mt={6} // margin top
+                colorScheme="pink"
+                onClick={() => navigate("/?gender=Men")}
+              >
+                Continue Shopping
+              </Button>
             </VStack>
             {userInfo?.isAdmin && order.isPaid && !order.isDelivered && (
               <Button

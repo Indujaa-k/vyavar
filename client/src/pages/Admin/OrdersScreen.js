@@ -101,6 +101,7 @@ const OrdersScreen = () => {
         <VStack spacing={4} align="stretch">
           {filteredOrders.length > 0 ? (
             filteredOrders.map((order) => {
+              console.log("ORDER ITEMS:", order.orderItems); 
               const statusObj = getOrderStatus(order);
               const shipment = order.shipmentDetails?.[0] || {};
               const currentStatus = statusUpdates[order._id] || statusObj.label;
@@ -127,7 +128,7 @@ const OrdersScreen = () => {
                         <Th textAlign="center">Status</Th>
                         <Th textAlign="center">Tracking No</Th>
                         <Th textAlign="center">Product Image</Th>
-                         <Th textAlign="center">size</Th>
+                        <Th textAlign="center">size</Th>
                         <Th textAlign="center">Actions</Th>
                         
                       </Tr>
@@ -177,21 +178,40 @@ const OrdersScreen = () => {
                         </Td>
                         <Td textAlign="center">
                           <HStack spacing={2} justify="center">
-                            {order.orderItems.map((item) => (
-                              <Box key={item._id} textAlign="center">
-                                {item.product?.images?.[0] && (
-                                  <Image
-                                    src={item.product.images[0]}
-                                    alt={item.product.brandname}
-                                    boxSize="50px"
-                                    objectFit="cover"
-                                    borderRadius="5px"
-                                  />
-                                )}
-                              </Box>
-                            ))}
+                            {order.orderItems?.map((item, index) => (
+  <Box key={index} textAlign="center">
+    {item?.product?.images?.length > 0 ? (
+      <Image
+        src={item.product.images[0]}
+        alt={item.product.brandname || "Product"}
+        boxSize="50px"
+        objectFit="cover"
+        borderRadius="5px"
+      />
+    ) : (
+      <Text fontSize="xs" color="gray.500">
+        No Image
+      </Text>
+    )}
+  </Box>
+))}
+
                           </HStack>
                         </Td>
+                        <Td textAlign="center">
+                          <VStack spacing={1}>
+                            {order.orderItems.map((item) => (
+                              <Text
+                                key={item._id}
+                                fontSize="sm"
+                                fontWeight="bold"
+                              >
+                                {item.size || "N/A"}
+                              </Text>
+                            ))}
+                          </VStack>
+                        </Td>
+                        
                         <Td textAlign="center">
                           <Stack spacing={2}>
                             <Button
@@ -202,7 +222,7 @@ const OrdersScreen = () => {
                               Update
                             </Button>
                             <Button size="xs" colorScheme="blue">
-                              <Link to={`/order/${order._id}`}>
+                               <Link to={`/order/${order._id}`}>
                                 <AiOutlineEdit size={14} /> Details
                               </Link>
                             </Button>

@@ -56,6 +56,7 @@ const orderSchema = mongoose.Schema(
         qty: { type: Number, required: true },
         image: { type: String },
         price: { type: Number, required: true },
+        size: { type: String },
         product: {
           type: mongoose.Schema.Types.ObjectId,
           required: true,
@@ -78,6 +79,7 @@ const orderSchema = mongoose.Schema(
       type: String,
       required: true,
     },
+    size: { type: String, required: false },
     paymentResult: {
       id: { type: String },
       status: { type: String },
