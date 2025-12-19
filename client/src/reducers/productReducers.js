@@ -30,7 +30,10 @@ import {
   REVIEW_APPROVE_REQUEST,
   REVIEW_APPROVE_SUCCESS,
   REVIEW_APPROVE_FAIL,
- 
+  REVIEW_DELETE_REQUEST,
+  REVIEW_DELETE_SUCCESS,
+  REVIEW_DELETE_FAIL,
+  REVIEW_DELETE_RESET,
 } from "../constants/productConstants";
 export const productListReducer = (state = { products: [] }, action) => {
   switch (action.type) {
@@ -136,10 +139,20 @@ export const reviewListReducer = (state = { reviews: [] }, action) => {
   switch (action.type) {
     case REVIEW_LIST_REQUEST:
       return { loading: true, reviews: [] };
+
     case REVIEW_LIST_SUCCESS:
-      return { loading: false, reviews: action.payload };
+      return {
+        loading: false,
+        reviews: Array.isArray(action.payload) ? action.payload : [], // ✅ safety
+      };
+
     case REVIEW_LIST_FAIL:
-      return { loading: false, error: action.payload };
+      return {
+        loading: false,
+        error: action.payload,
+        reviews: [],
+      };
+
     default:
       return state;
   }
@@ -154,6 +167,25 @@ export const reviewApproveReducer = (state = {}, action) => {
       return { loading: false, success: true };
     case REVIEW_APPROVE_FAIL:
       return { loading: false, error: action.payload };
+    default:
+      return state;
+  }
+};
+
+export const reviewDeleteReducer = (state = {}, action) => {
+  switch (action.type) {
+    case REVIEW_DELETE_REQUEST:
+      return { loading: true };
+
+    case REVIEW_DELETE_SUCCESS:
+      return { loading: false, success: true };
+
+    case REVIEW_DELETE_FAIL:
+      return { loading: false, error: action.payload };
+
+    case REVIEW_DELETE_RESET:
+      return {};
+
     default:
       return state;
   }

@@ -510,6 +510,8 @@ const verifyRazorpayPayment = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
 // @desc    Stripe payments
 // @route   post /api/orders/stripe
 // @access  public/users
@@ -681,8 +683,6 @@ export {
   generateInvoice,
   incomebycity,
   getTransactions,
-  createRazorpayOrder,
-  verifyRazorpayPayment,
   StripePayment,
   updateOrderStatus,
   getOrderStatusCounts,
