@@ -27,10 +27,10 @@ const userSchema = mongoose.Schema(
       required: true,
       default: false,
     },
-    isSeller:{
+    isSeller: {
       type: Boolean,
       required: true,
-      default:false,
+      default: false,
     },
     profilePicture: { type: String, default: "" },
     lastName: { type: String, default: "" },
@@ -56,12 +56,19 @@ const userSchema = mongoose.Schema(
           required: true,
           ref: "Product",
         },
+        size: {
+          type: String,
+          required: true,
+        },
         qty: {
           type: Number,
           required: true,
           default: 1,
         },
-        price: { type: Number, required: true },
+        price: {
+          type: Number,
+          required: true,
+        },
       },
     ],
     orderHistory: [

@@ -34,8 +34,8 @@ const PaymentModal = ({ isOpen, onClose, handleOrder, totalPrice }) => {
 
   const handleCheckout = async () => {
     if (selectedPayment === "Cash on Delivery") {
-      dispatch(savepaymentmethod("Cash on Delivery"));
-      await handleOrder({ paymentMethod: "Cash on Delivery" });
+      dispatch(savepaymentmethod("COD"));
+      await handleOrder({ paymentMethod: "COD" });
       onClose();
       navigate("/placeorder");
     } else {
@@ -44,7 +44,7 @@ const PaymentModal = ({ isOpen, onClose, handleOrder, totalPrice }) => {
       try {
         const { data } = await axios.post(
           `${API_URL}/api/orders/razorpay`,
-          { amount: Number(totalPrice) }, // ✅ FIX
+          { amount: Number(totalPrice) },
           {
             headers: {
               Authorization: `Bearer ${userInfo.token}`,
@@ -65,20 +65,19 @@ const PaymentModal = ({ isOpen, onClose, handleOrder, totalPrice }) => {
           description: "Order Payment",
           order_id: data.id,
 
-          method: {
-            upi: true,
-            card: true,
-            netbanking: false,
-            wallet: false,
-          },
-
-          upi: {
-            flow: "collect",
-          },
-
           handler: async function (response) {
-            console.log("Razorpay Success:", response);
+            // ✅ VERIFY
+            await axios.post(
+              `${API_URL}/api/orders/razorpay/verify`,
+              response,
+              {
+                headers: {
+                  Authorization: `Bearer ${userInfo.token}`,
+                },
+              }
+            );
 
+            // ✅ CREATE ORDER
             await handleOrder({
               paymentMethod: "Razorpay",
               paymentResult: response,
@@ -89,17 +88,20 @@ const PaymentModal = ({ isOpen, onClose, handleOrder, totalPrice }) => {
           },
 
           prefill: {
-            name: userInfo.name || "Test User",
-            email: userInfo.email || "test@example.com",
+            name: userInfo.name,
+            email: userInfo.email,
             contact: "9999999999",
           },
 
-          theme: {
-            color: "#000",
-          },
+          theme: { color: "#000" },
         };
 
         const rzp = new window.Razorpay(options);
+
+        rzp.on("payment.failed", function (response) {
+          alert(response.error.description);
+        });
+
         rzp.open();
       } catch (error) {
         console.error("Razorpay Error:", error.response?.data || error.message);

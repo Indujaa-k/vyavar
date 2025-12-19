@@ -18,27 +18,11 @@ export const cartReducer = (
 ) => {
   switch (action.type) {
     case CART_ADD_ITEM:
-      return {
-        ...state,
-        cartItems: action.payload,
-      };
     case CART_FETCH_ITEMS:
-      return {
-        ...state,
-        cartItems: action.payload,
-      };
-    // case CART_REMOVE_ITEM:
-    //   return {
-    //     ...state,
-    //     cartItems: state.cartItems.filter(
-    //       (item) => item._id !== action.payload
-    //     ),
-    //   };
-
     case CART_REMOVE_ITEM:
       return {
         ...state,
-        cartItems: action.payload, // ← use backend's updated cart array
+        cartItems: action.payload || [],
       };
 
     case CART_SAVE_SHIPPING_ADRESSE:
@@ -46,21 +30,25 @@ export const cartReducer = (
         ...state,
         shippingAddress: action.payload,
       };
+
     case CART_SAVE_PAYMENT:
       return {
         ...state,
         paymentMethod: action.payload,
       };
+
     case SAVE_SHIPPING_COST:
       return {
         ...state,
         shippingCost: action.payload,
       };
+
     case SAVE_SHIPPING_RATES:
       return {
         ...state,
         shippingRates: action.payload,
       };
+
     default:
       return state;
   }
