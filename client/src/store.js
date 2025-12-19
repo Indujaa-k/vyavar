@@ -11,6 +11,7 @@ import {
   productreviewCreateReducer,
   reviewApproveReducer,
   reviewListReducer,
+  reviewDeleteReducer
 } from "./reducers/productReducers";
 
 import { cartReducer } from "./reducers/cartReducers";
@@ -136,6 +137,7 @@ const reducer = combineReducers({
   stripepayment: StripepaymentReducer,
   reviewList: reviewListReducer,
   reviewApprove: reviewApproveReducer,
+  reviewDelete: reviewDeleteReducer,
   favorites: favoritesReducer,
   orderStatusUpdate: orderStatusUpdateReducer,
   orderStatuses: orderStatusReducer,

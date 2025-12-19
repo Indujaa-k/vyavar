@@ -29,7 +29,9 @@ import {
   REVIEW_APPROVE_REQUEST,
   REVIEW_APPROVE_SUCCESS,
   REVIEW_APPROVE_FAIL,
-  
+  REVIEW_DELETE_REQUEST,
+  REVIEW_DELETE_SUCCESS,
+  REVIEW_DELETE_FAIL,
 } from "../constants/productConstants";
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -39,7 +41,9 @@ export const listProducts =
   async (dispatch) => {
     try {
       dispatch({ type: PRODUCT_LIST_REQUEST });
-      const { data } = await axios.get(`${API_URL}/api/products?keyword=${keyword}`);
+      const { data } = await axios.get(
+        `${API_URL}/api/products?keyword=${keyword}`
+      );
 
       dispatch({ type: PRODUCT_LIST_SUCCESS, payload: data });
     } catch (error) {
@@ -141,7 +145,11 @@ export const CreateProduct = (formData) => async (dispatch, getState) => {
       },
     };
 
-    const { data } = await axios.post(`${API_URL}/api/products/create`, formData, config);
+    const { data } = await axios.post(
+      `${API_URL}/api/products/create`,
+      formData,
+      config
+    );
     dispatch({
       type: PRODUCT_CREATE_SUCCESS,
       payload: data,
@@ -175,7 +183,11 @@ export const uploadBulkProducts = (file) => async (dispatch, getState) => {
     const formData = new FormData();
     formData.append("file", file);
 
-    const { data } = await axios.post(`${API_URL}/api/products/upload`, formData, config);
+    const { data } = await axios.post(
+      `${API_URL}/api/products/upload`,
+      formData,
+      config
+    );
 
     dispatch({
       type: PRODUCT_BULK_UPLOAD_SUCCESS,
@@ -268,6 +280,7 @@ export const createproductReview =
     }
   };
 // Fetch pending reviews
+// Fetch pending reviews
 export const listPendingReviews = () => async (dispatch, getState) => {
   try {
     dispatch({ type: REVIEW_LIST_REQUEST });
@@ -282,16 +295,19 @@ export const listPendingReviews = () => async (dispatch, getState) => {
       },
     };
 
-    const { data } = await axios.get(`${API_URL}/api/products/reviews/pending`, config);
+    const { data } = await axios.get(
+      `${API_URL}/api/products/reviews/pending`,
+      config
+    );
 
-    dispatch({ type: REVIEW_LIST_SUCCESS, payload: data });
+    dispatch({
+      type: REVIEW_LIST_SUCCESS,
+      payload: data.data, // ✅ ONLY ARRAY
+    });
   } catch (error) {
     dispatch({
       type: REVIEW_LIST_FAIL,
-      payload:
-        error.response && error.response.data.message
-          ? error.response.data.message
-          : error.message,
+      payload: error.response?.data?.message || error.message,
     });
   }
 };
@@ -312,21 +328,55 @@ export const approveReview =
         },
       };
 
-      await axios.put(
+      const { data } = await axios.put(
         `${API_URL}/api/products/${productId}/reviews/${reviewId}/approve`,
         {},
         config
       );
 
-      dispatch({ type: REVIEW_APPROVE_SUCCESS });
+      dispatch({
+        type: REVIEW_APPROVE_SUCCESS,
+        payload: data, // future use
+      });
     } catch (error) {
       dispatch({
         type: REVIEW_APPROVE_FAIL,
-        payload:
-          error.response && error.response.data.message
-            ? error.response.data.message
-            : error.message,
+        payload: error.response?.data?.message || error.message,
       });
     }
   };
-  
+
+export const deleteReview = (reviewId) => async (dispatch, getState) => {
+  try {
+    console.log("Deleting reviewId from frontend:", reviewId);
+    dispatch({ type: REVIEW_DELETE_REQUEST });
+
+    const {
+      userLogin: { userInfo },
+    } = getState();
+
+    const config = {
+      headers: {
+        Authorization: `Bearer ${userInfo.token}`,
+      },
+    };
+
+    // Call the correct backend endpoint
+    const { data } = await axios.delete(
+      `${API_URL}/api/products/reviews/${reviewId}`,
+      config
+    );
+
+    dispatch({ type: REVIEW_DELETE_SUCCESS, payload: data });
+  } catch (error) {
+    console.error(
+      "❌ deleteReview frontend error:",
+      error.response?.data || error.message
+    );
+    dispatch({
+      type: REVIEW_DELETE_FAIL,
+      payload: error.response?.data?.message || error.message,
+    });
+  }
+};
+

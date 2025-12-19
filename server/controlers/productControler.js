@@ -3,6 +3,7 @@ import multer from "multer";
 import XLSX from "xlsx";
 import Product from "../models/productModel.js";
 import User from "../models/userModel.js";
+import reviewnotificatioEmail from "../utils/reviewnotificationEmail.js";
 
 // @desc Fetch all products
 // @route GET /api/products
@@ -270,7 +271,24 @@ const deleteCartItem = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: "Cart item not found" });
   }
 
-  // 🗑 Remove cart item ONLY (NO STOCK LOGIC)
+  const product = await Product.findById(cartItem.product._id);
+
+  if (!product) {
+    return res.status(404).json({ message: "Product not found" });
+  }
+
+  // 🔁 Restore stock for that size
+  const sizeStock = product.productdetails.stockBySize.find(
+    (s) => s.size === cartItem.size
+  );
+
+  if (sizeStock) {
+    sizeStock.stock += cartItem.qty;
+    sizeStock.stock = Math.max(0, sizeStock.stock);
+
+  }
+
+  // 🗑 Remove cart item
   user.cartItems = user.cartItems.filter(
     (item) => item._id.toString() !== cartItemId
   );
@@ -796,224 +814,36 @@ const approveReview = asyncHandler(async (req, res) => {
 // @desc Pending Review
 // @route get /api/products/pending review
 // @access Private
-const getPendingReviews = async (req, res) => {
+const getPendingReviews = asyncHandler(async (req, res) => {
   try {
-    // Find all products that have reviews with approved: false
-    const productsWithPendingReviews = await Product.find({
-      "reviews.approved": false,
-    })
-      .populate("user", "name email") // Populate product owner info
-      .populate("reviews.user", "name email") // Populate reviewer info
-      .select("brandname SKU images reviews");
+    const products = await Product.find({ "reviews.approved": false }).select(
+      "reviews brandname"
+    );
 
-    // Extract only the pending reviews from each product
-    const pendingReviews = [];
-
-    productsWithPendingReviews.forEach((product) => {
-      const pending = product.reviews.filter((review) => !review.approved);
-
-      pending.forEach((review) => {
-        pendingReviews.push({
-          reviewId: review._id,
-          productId: product._id,
-          productName: product.brandname,
-          productSKU: product.SKU,
-          productImage:
-            product.images && product.images.length > 0
-              ? product.images[0]
-              : "", // Single image
-          reviewerName: review.name,
-          reviewerUser: review.user,
-          rating: review.rating,
-          comment: review.comment,
-          createdAt: review.createdAt,
-        });
+    let pendingReviews = [];
+    products.forEach((product) => {
+      product.reviews.forEach((review) => {
+        if (!review.approved) {
+          console.log("✅ Adding Review:", review);
+          pendingReviews.push({
+            _id: review._id ? review._id.toString() : null, // ✅ Ensure review._id is extracted
+            productId: product._id ? product._id.toString() : null, // ✅ Ensure productId is included
+            brandname: product.brandname,
+            name: review.name,
+            rating: review.rating,
+            comment: review.comment,
+            createdAt: review.createdAt,
+          });
+        }
       });
     });
 
-    // Sort by creation date (newest first)
-    pendingReviews.sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-    );
-
-    res.status(200).json({
-      success: true,
-      count: pendingReviews.length,
-      data: pendingReviews,
-    });
+    res.json(pendingReviews);
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error fetching pending reviews",
-      error: error.message,
-    });
+    console.error("❌ Error fetching pending reviews:", error);
+    res.status(500).json({ message: "Failed to fetch pending reviews" });
   }
-};
-
-// Get pending reviews with pagination
-const getPendingReviewsPaginated = async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-
-    const productsWithPendingReviews = await Product.find({
-      "reviews.approved": false,
-    })
-      .populate("user", "name email")
-      .populate("reviews.user", "name email")
-      .select("brandname SKU images reviews");
-
-    const pendingReviews = [];
-
-    productsWithPendingReviews.forEach((product) => {
-      const pending = product.reviews.filter((review) => !review.approved);
-
-      pending.forEach((review) => {
-        pendingReviews.push({
-          reviewId: review._id,
-          productId: product._id,
-          productName: product.brandname,
-          productSKU: product.SKU,
-          productImage:
-            product.images && product.images.length > 0
-              ? product.images[0]
-              : "", // Single image
-          reviewerName: review.name,
-          reviewerUser: review.user,
-          rating: review.rating,
-          comment: review.comment,
-          createdAt: review.createdAt,
-        });
-      });
-    });
-
-    // Sort by creation date (newest first)
-    pendingReviews.sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-    );
-
-    // Apply pagination
-    const paginatedReviews = pendingReviews.slice(skip, skip + limit);
-    const totalPages = Math.ceil(pendingReviews.length / limit);
-
-    res.status(200).json({
-      success: true,
-      count: paginatedReviews.length,
-      total: pendingReviews.length,
-      page,
-      totalPages,
-      data: paginatedReviews,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error fetching pending reviews",
-      error: error.message,
-    });
-  }
-};
-
-// Delete a review
-const deleteReview = async (req, res) => {
-  try {
-    const { productId, reviewId } = req.params;
-
-    // Find the product
-    const product = await Product.findById(productId);
-
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: "Product not found",
-      });
-    }
-
-    // Find the review index
-    const reviewIndex = product.reviews.findIndex(
-      (review) => review._id.toString() === reviewId
-    );
-
-    if (reviewIndex === -1) {
-      return res.status(404).json({
-        success: false,
-        message: "Review not found",
-      });
-    }
-
-    // Remove the review
-    product.reviews.splice(reviewIndex, 1);
-
-    // Recalculate rating and numReviews
-    if (product.reviews.length > 0) {
-      product.numReviews = product.reviews.length;
-      product.rating =
-        product.reviews.reduce((acc, review) => acc + review.rating, 0) /
-        product.reviews.length;
-    } else {
-      product.numReviews = 0;
-      product.rating = 0;
-    }
-
-    await product.save();
-
-    res.status(200).json({
-      success: true,
-      message: "Review deleted successfully",
-      data: {
-        productId: product._id,
-        numReviews: product.numReviews,
-        rating: product.rating,
-      },
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error deleting review",
-      error: error.message,
-    });
-  }
-};
-
-// Alternative: Delete review by review ID only (searches across all products)
-const deleteReviewById = async (req, res) => {
-  console.log("Backend received reviewId:", req.params.reviewId);
-  try {
-    const { reviewId } = req.params;
-    console.log("🚀 deleteReviewById called with reviewId:", reviewId);
-
-    // Find the product that contains this review
-    const product = await Product.findOne({ "reviews._id": reviewId });
-    console.log("🔍 Product found for review:", product ? product._id : null);
-
-    if (!product) {
-      return res
-        .status(404)
-        .json({ message: "Review not found in any product" });
-    }
-
-    // Remove the review
-    product.reviews = product.reviews.filter(
-      (r) => r._id.toString() !== reviewId
-    );
-
-    // Recalculate rating
-    product.numReviews = product.reviews.length;
-    product.rating =
-      product.reviews.length > 0
-        ? product.reviews.reduce((acc, r) => acc + r.rating, 0) /
-          product.reviews.length
-        : 0;
-
-    await product.save();
-
-    console.log("✅ Review deleted successfully");
-    res.json({ success: true, message: "Review deleted" });
-  } catch (error) {
-    console.error("❌ deleteReviewById error:", error);
-    res.status(500).json({ message: error.message });
-  }
-};
+});
 
 export {
   getProducts,
@@ -1028,6 +858,4 @@ export {
   getProductById,
   approveReview,
   getPendingReviews,
-  getPendingReviewsPaginated,
-  deleteReviewById,
 };

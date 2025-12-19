@@ -44,7 +44,7 @@ const PaymentModal = ({ isOpen, onClose, handleOrder, totalPrice }) => {
       try {
         const { data } = await axios.post(
           `${API_URL}/api/orders/razorpay`,
-          { amount: totalPrice },
+          { amount: Number(totalPrice) }, // ✅ FIX
           {
             headers: {
               Authorization: `Bearer ${userInfo.token}`,
@@ -52,33 +52,61 @@ const PaymentModal = ({ isOpen, onClose, handleOrder, totalPrice }) => {
           }
         );
 
+        if (!window.Razorpay) {
+          alert("Razorpay SDK not loaded");
+          return;
+        }
+
         const options = {
           key: data.keyId,
           amount: data.amount,
-          currency: data.currency,
+          currency: "INR",
           name: "Your Store",
           description: "Order Payment",
           order_id: data.id,
+
+          method: {
+            upi: true,
+            card: true,
+            netbanking: false,
+            wallet: false,
+          },
+
+          upi: {
+            flow: "collect",
+          },
+
           handler: async function (response) {
+            console.log("Razorpay Success:", response);
+
             await handleOrder({
               paymentMethod: "Razorpay",
               paymentResult: response,
             });
+
             onClose();
             navigate("/placeorder");
           },
-          theme: { color: "#000" },
+
+          prefill: {
+            name: userInfo.name || "Test User",
+            email: userInfo.email || "test@example.com",
+            contact: "9999999999",
+          },
+
+          theme: {
+            color: "#000",
+          },
         };
 
         const rzp = new window.Razorpay(options);
         rzp.open();
       } catch (error) {
-        console.error("Razorpay Error:", error);
+        console.error("Razorpay Error:", error.response?.data || error.message);
       }
     }
   };
 
-  // ✅ RETURN JSX (YOU MISSED THIS)
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
       <ModalOverlay />
@@ -116,7 +144,7 @@ const PaymentModal = ({ isOpen, onClose, handleOrder, totalPrice }) => {
           <Button w="100%" bg="black" color="white" onClick={handleCheckout}>
             {selectedPayment === "Cash on Delivery"
               ? "Place Order"
-              : "Continue"}
+              : "Continue Online Payment"}
           </Button>
         </ModalFooter>
       </ModalContent>
