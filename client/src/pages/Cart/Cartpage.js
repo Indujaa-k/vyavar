@@ -329,7 +329,7 @@ const CartPage = () => {
                           w="80px"
                           size="sm"
                         >
-                          {item.product?.productdetails?.sizes?.map((size) => {
+                          {item.product.productdetails?.sizes?.map((size) => {
                             const sizeStock =
                               item.product.productdetails.stockBySize?.find(
                                 (s) => s.size === size
@@ -375,7 +375,6 @@ const CartPage = () => {
                           ))}
                         </Select>
                       </Flex>
-
                       {/* PRICE */}
                       <Flex gap={2} mt={2}>
                         <Text fontWeight="bold">₹{item.product.price}</Text>

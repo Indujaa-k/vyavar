@@ -5,6 +5,7 @@ import Product from "../models/productModel.js";
 import User from "../models/userModel.js";
 import reviewnotificatioEmail from "../utils/reviewnotificationEmail.js";
 
+
 // @desc Fetch all products
 // @route GET /api/products
 // @access Public
@@ -241,38 +242,36 @@ const deleteCartItem = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const { cartItemId } = req.params;
 
-  const user = await User.findById(userId);
+  const user = await User.findById(userId).populate("cartItems.product");
 
   if (!user) {
     return res.status(404).json({ message: "User not found" });
   }
 
-  // 🔍 Check cart item exists
-  const cartItemExists = user.cartItems.some(
+  // 🔍 FIND THE CART ITEM (IMPORTANT)
+  const cartItem = user.cartItems.find(
     (item) => item._id.toString() === cartItemId
   );
 
-  if (!cartItemExists) {
+  if (!cartItem) {
     return res.status(404).json({ message: "Cart item not found" });
   }
 
+  // 🔁 RESTORE STOCK
   const product = await Product.findById(cartItem.product._id);
 
-  if (!product) {
-    return res.status(404).json({ message: "Product not found" });
+  if (product) {
+    const sizeStock = product.productdetails.stockBySize.find(
+      (s) => s.size === cartItem.size
+    );
+
+    if (sizeStock) {
+      sizeStock.stock += cartItem.qty;
+      await product.save();
+    }
   }
 
-  // 🔁 Restore stock for that size
-  const sizeStock = product.productdetails.stockBySize.find(
-    (s) => s.size === cartItem.size
-  );
-
-  if (sizeStock) {
-    sizeStock.stock += cartItem.qty;
-    sizeStock.stock = Math.max(0, sizeStock.stock);
-  }
-
-  // 🗑 Remove cart item
+  // 🗑 REMOVE ITEM
   user.cartItems = user.cartItems.filter(
     (item) => item._id.toString() !== cartItemId
   );
@@ -280,7 +279,10 @@ const deleteCartItem = asyncHandler(async (req, res) => {
   await user.save();
 
   const updatedUser = await User.findById(userId).populate("cartItems.product");
-  res.status(200).json(updatedUser.cartItems);
+
+  res.status(200).json({
+    cartItems: updatedUser.cartItems,
+  });
 });
 
 // @desc Delete a product

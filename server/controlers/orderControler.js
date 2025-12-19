@@ -1,10 +1,12 @@
 import asyncHandler from "express-async-handler";
 import User from "../models/userModel.js";
+import Product from "../models/productModel.js";
 import Order from "../models/orderModel.js";
 import BillingInvoice from "../models/billingInvoiceModel.js";
 import sendEmail from "../utils/sendEmail.js";
 import Razorpay from "razorpay";
 import crypto from "crypto";
+
 
 // @desc Create new order
 // @route POST /api/orders
