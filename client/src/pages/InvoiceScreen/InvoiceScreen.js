@@ -29,54 +29,104 @@ const InvoiceScreen = ({ match }) => {
   }, [dispatch, id]);
 
   const handleDownloadPDF = () => {
+    if (!invoice) return;
+
     const doc = new jsPDF();
+    let y = 20;
 
-    doc.text(`Invoice - Order ID: ${invoice.orderId}`, 20, 20);
-    doc.text(`Name: ${invoice.user?.name || "N/A"}`, 20, 30);
-    doc.text(`Email: ${invoice.user?.email || "N/A"}`, 20, 40);
-    doc.text("Items:", 20, 50);
+    // ===== TITLE =====
+    doc.setFontSize(16);
+    doc.text("INVOICE", 20, y);
+    y += 10;
 
-    invoice.orderItems.forEach((item, index) => {
-      doc.text(
-        `${item.qty} x ${item.name} = $${item.price * item.qty}`,
-        20,
-        60 + index * 10
-      );
+    // ===== BASIC INFO =====
+    doc.setFontSize(10);
+    doc.text(`Order ID: ${invoice.orderId}`, 20, y);
+    y += 6;
+    doc.text(`Name: ${invoice.user?.name || "N/A"}`, 20, y);
+    y += 6;
+    doc.text(`Email: ${invoice.user?.email || "N/A"}`, 20, y);
+    y += 10;
+
+    // ===== SHIPPING ADDRESS =====
+    doc.setFontSize(12);
+    doc.text("Shipping Address:", 20, y);
+    y += 6;
+
+    doc.setFontSize(10);
+    const addr = invoice.shippingAddress || {};
+
+    const addressLines = [
+      addr.doorNo,
+      addr.street,
+      addr.nearestLandmark,
+      `${addr.city || ""}, ${addr.state || ""}`,
+      addr.pin,
+      addr.country,
+      `Phone: ${addr.phoneNumber || ""}`,
+    ].filter(Boolean);
+
+    addressLines.forEach((line) => {
+      doc.text(String(line), 20, y);
+      y += 5;
     });
 
-    doc.text("Shipping Address:", 20, 60 + invoice.orderItems.length * 10);
+    y += 6;
+
+    // ===== ITEMS HEADER =====
+    doc.setFontSize(12);
+    doc.text("Items", 20, y);
+    y += 8;
+
+    doc.setFontSize(10);
+    doc.text("Qty", 20, y);
+    doc.text("Product", 40, y);
+    doc.text("Size", 120, y);
+    doc.text("Amount", 160, y);
+    y += 4;
+
+    doc.line(20, y, 190, y);
+    y += 6;
+
+    // ===== ITEMS ROWS =====
+    invoice.orderItems.forEach((item) => {
+      if (y > 270) {
+        doc.addPage();
+        y = 20;
+      }
+
+      doc.text(String(item.qty), 20, y);
+      doc.text(item.name, 40, y);
+      doc.text(item.size || "-", 120, y);
+      doc.text(`Rs. ${item.qty * item.price}`, 160, y);
+      y += 8;
+    });
+
+    y += 6;
+    doc.line(20, y, 190, y);
+    y += 8;
+
+    // ===== SUMMARY =====
+    doc.text(`Tax: Rs. ${invoice.taxPrice}`, 20, y);
+    y += 6;
+    doc.text(`Shipping: Rs. ${invoice.shippingPrice}`, 20, y);
+    y += 6;
+
+    doc.setFontSize(12);
+    doc.text(`Total: Rs. ${invoice.totalPrice}`, 20, y);
+    y += 8;
+
+    doc.setFontSize(10);
     doc.text(
-      `${invoice.shippingAddress?.address || "N/A"}, ${
-        invoice.shippingAddress?.city || "N/A"
-      }, ${invoice.shippingAddress?.postalCode || "N/A"}, ${
-        invoice.shippingAddress?.country || "N/A"
-      }`,
+      invoice.isPaid
+        ? `Paid at: ${new Date(invoice.paidAt).toLocaleString()}`
+        : "Payment Status: Not Paid",
       20,
-      70 + invoice.orderItems.length * 10
+      y
     );
 
-    doc.text(
-      `Tax: $${invoice.taxPrice || 0}`,
-      20,
-      80 + invoice.orderItems.length * 10
-    );
-    doc.text(
-      `Shipping: $${invoice.shippingPrice || 0}`,
-      20,
-      90 + invoice.orderItems.length * 10
-    );
-    doc.text(
-      `Total: $${invoice.totalPrice || 0}`,
-      20,
-      100 + invoice.orderItems.length * 10
-    );
-    doc.text(
-      `${invoice.isPaid ? `Paid at ${invoice.paidAt}` : "Not Paid"}`,
-      20,
-      110 + invoice.orderItems.length * 10
-    );
-
-    doc.save("invoice.pdf");
+    // ===== SAVE =====
+    doc.save(`invoice_${invoice.orderId}.pdf`);
   };
 
   return (
@@ -124,6 +174,7 @@ const InvoiceScreen = ({ match }) => {
                 <Tr>
                   <Th>Qty</Th>
                   <Th>Name</Th>
+                  <Th>Size</Th>
                   <Th>Price</Th>
                 </Tr>
               </Thead>
@@ -133,7 +184,8 @@ const InvoiceScreen = ({ match }) => {
                     <Tr key={index}>
                       <Td>{item.qty}</Td>
                       <Td>{item.name}</Td>
-                      <Td>${item.price * item.qty}</Td>
+                      <Td>{item.size}</Td>
+                      <Td>₹{item.price * item.qty}</Td>
                     </Tr>
                   ))
                 ) : (
@@ -149,9 +201,9 @@ const InvoiceScreen = ({ match }) => {
             <Text fontSize="xl" fontWeight="bold" mb={3}>
               Summary
             </Text>
-            <Text>Tax: ${invoice.taxPrice || 0}</Text>
-            <Text>Shipping: ${invoice.shippingPrice || 0}</Text>
-            <Text>Total: ${invoice.totalPrice || 0}</Text>
+            <Text>Tax: ₹{invoice.taxPrice || 0}</Text>
+            <Text>Shipping: ₹{invoice.shippingPrice || 0}</Text>
+            <Text>Total: ₹{invoice.totalPrice || 0}</Text>
             <Text>
               {invoice.isPaid ? `Paid at ${invoice.paidAt}` : "Not Paid"}
             </Text>

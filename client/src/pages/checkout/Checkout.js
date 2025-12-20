@@ -128,6 +128,7 @@ const Checkout = () => {
   }, [rates]);
 
   const handlePayClick = () => {
+    // 1️⃣ Address validation
     if (
       !user?.address?.doorNo ||
       !user?.address?.street ||
@@ -142,10 +143,25 @@ const Checkout = () => {
         duration: 4000,
         isClosable: true,
       });
-       navigate("/profile")
+      navigate("/profile");
       return;
     }
-    
+
+    // 2️⃣ SIZE VALIDATION (🔥 THIS IS THE FIX)
+    const hasMissingSize = cart.cartItems.some((item) => !item.size);
+
+    if (hasMissingSize) {
+      toast({
+        title: "Size Required",
+        description: "Please select size for all products.",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    // 3️⃣ Open payment modal ONLY if everything is valid
     onOpen();
   };
 
@@ -172,12 +188,19 @@ const Checkout = () => {
     try {
       const orderData = {
         user: userInfo._id,
-        orderItems: cart.cartItems.map((item) => ({
-          product: item.product._id,
-          name: item.product.brandname,
-          price: item.product.price,
-          qty: item.qty,
-        })),
+        orderItems: cart.cartItems.map((item) => {
+          if (!item.size) {
+            throw new Error(`Size not selected for ${item.product.brandname}`);
+          }
+
+          return {
+            product: item.product._id,
+            name: item.product.brandname,
+            price: item.product.price,
+            qty: item.qty,
+            size: item.size, // ✅ CRITICAL
+          };
+        }),
         shippingAddress: recipientAddress,
         shippingRates,
         paymentMethod,

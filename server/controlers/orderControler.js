@@ -7,7 +7,6 @@ import sendEmail from "../utils/sendEmail.js";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 
-
 // @desc Create new order
 // @route POST /api/orders
 // @access Private
@@ -62,26 +61,39 @@ const addorderitems = asyncHandler(async (req, res) => {
 
     // Reduce stock for each product
     // Reduce stock for each product by size
+    // 🔒 Reduce stock safely
+    // 🔽 Reduce stock per size (controller-level)
     for (const item of orderItems) {
-      const product = await Product.findById(item.product);
-      if (product && product.productdetails?.stockBySize) {
-        const sizeEntry = product.productdetails.stockBySize.find(
-          (s) => s.size === item.size
-        );
-        if (sizeEntry) {
-          sizeEntry.stock -= item.qty;
-          if (sizeEntry.stock < 0) sizeEntry.stock = 0; // prevent negative stock
-        }
-
-        // Optional: update overall countInStock
-        const totalStock = product.productdetails.stockBySize.reduce(
-          (acc, s) => acc + s.stock,
-          0
-        );
-        product.countInStock = totalStock;
-
-        await product.save();
+      if (!item.size) {
+        throw new Error(`Size missing for product ${item.product}`);
       }
+      const product = await Product.findById(item.product);
+
+      if (!product) {
+        throw new Error("Product not found");
+      }
+
+      const stockBySize = product.productdetails.stockBySize;
+
+      const sizeIndex = stockBySize.findIndex((s) => s.size === item.size);
+
+      if (sizeIndex === -1) {
+        throw new Error(`Size ${item.size} not found`);
+      }
+
+      if (stockBySize[sizeIndex].stock < item.qty) {
+        throw new Error(
+          `Insufficient stock for ${product.brandname} - ${item.size}`
+        );
+      }
+
+      // ✅ Reduce size stock
+      stockBySize[sizeIndex].stock -= item.qty;
+
+      // 🔔 CRITICAL LINE (this is what you were missing)
+      product.markModified("productdetails.stockBySize");
+
+      await product.save();
     }
 
     console.log("📦 Product stock updated for order items");
