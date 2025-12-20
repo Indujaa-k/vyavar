@@ -802,19 +802,21 @@ const approveReview = asyncHandler(async (req, res) => {
 // @access Private
 const getPendingReviews = asyncHandler(async (req, res) => {
   try {
+    // Get all products with unapproved reviews
     const products = await Product.find({ "reviews.approved": false }).select(
-      "reviews brandname"
-    );
+      "reviews brandname images"
+    ); // include images
 
-    let pendingReviews = [];
+    const pendingReviews = [];
+
     products.forEach((product) => {
       product.reviews.forEach((review) => {
         if (!review.approved) {
-          console.log("✅ Adding Review:", review);
           pendingReviews.push({
-            _id: review._id ? review._id.toString() : null, // ✅ Ensure review._id is extracted
-            productId: product._id ? product._id.toString() : null, // ✅ Ensure productId is included
+            _id: review._id.toString(),
+            productId: product._id.toString(),
             brandname: product.brandname,
+            image: product.images && product.images.length > 0 ? product.images[0] : null, // ✅ include first image
             name: review.name,
             rating: review.rating,
             comment: review.comment,
@@ -826,10 +828,11 @@ const getPendingReviews = asyncHandler(async (req, res) => {
 
     res.json(pendingReviews);
   } catch (error) {
-    console.error("❌ Error fetching pending reviews:", error);
+    console.error("Error fetching pending reviews:", error);
     res.status(500).json({ message: "Failed to fetch pending reviews" });
   }
 });
+
 
 // Alternative: Delete review by review ID only (searches across all products)
 const deleteReviewById = async (req, res) => {
