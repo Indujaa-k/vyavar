@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const reviewSchema = mongoose.Schema(
   {
+    productId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product", // Reference the Product model
+      required: false,
+    },
     name: { type: String, required: true },
     rating: { type: Number, required: true },
     comment: { type: String, required: true },
@@ -11,6 +16,7 @@ const reviewSchema = mongoose.Schema(
       ref: "User", //relation betwen the review and the user
     },
     approved: { type: Boolean, default: false },
+   
   },
   {
     timestamps: true,

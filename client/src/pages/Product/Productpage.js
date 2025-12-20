@@ -81,6 +81,13 @@ const Productpage = () => {
   const [sizeStock, setSizeStock] = useState({});
   const [showPDF, setShowPDF] = useState(false);
   const [showAllReviews, setShowAllReviews] = useState(false);
+  // Check if logged-in user already reviewed this product
+  const hasUserReviewed =
+    userInfo &&
+    product?.reviews?.some(
+      (review) => review.user?.toString() === userInfo._id
+    );
+
   const togglePDF = () => setShowPDF((prev) => !prev);
   imgBtns.forEach((imgItem) => {
     imgItem.addEventListener("click", (event) => {
@@ -123,19 +130,31 @@ const Productpage = () => {
 
   useEffect(() => {
     if (successProductReview) {
-      alert("Review Submitted!");
+      toast({
+        title: "Review Submitted",
+        description: "Your review is successfully noted!",
+        status: "success",
+        duration: 4000,
+        position: "top-right",
+        isClosable: true,
+      });
+
       setrating(0);
       setcomment("");
       dispatch({ type: PRODUCT_CREATE_REVIEW_RESET });
     }
+
     dispatch(listProductDetails(id));
+
     if (userInfo) {
       dispatch(listMyOrders());
     }
+
     if (product.category) {
       dispatch(Listproductbyfiters({ category: product.category }));
     }
   }, [dispatch, id, successProductReview, userInfo, product.category]);
+
   useEffect(() => {
     if (product?.productdetails?.stockBySize) {
       const stockMap = {};
@@ -547,22 +566,69 @@ const Productpage = () => {
           </div>
 
           {/* === CREATE REVIEW SECTION === */}
+          {/* <div className="createreview">
+            <h1>Create New Review :</h1>
+
+            {errorProductReview && <h2>{errorProductReview}</h2>} */}
+
+          {/* If user not logged in */}
+          {/* {!userInfo && (
+              <p>
+                Please <Link to="/login">Sign In</Link> to write a review.
+              </p>
+            )} */}
+
+          {/* If user logged in but has NOT purchased */}
+
+          {/* If user logged in AND has purchased */}
+          {/* {userInfo && (
+              <FormControl>
+                <FormLabel>Rating :</FormLabel>
+                <Select onChange={(e) => setrating(e.target.value)}>
+                  <option value="5">5 EXCELLENT</option>
+                  <option value="4">4 VERY GOOD</option>
+                  <option value="3">3 GOOD</option>
+                  <option value="2">2 FAIR</option>
+                  <option value="1">1 POOR</option>
+                </Select>
+
+                <FormLabel>Comment :</FormLabel>
+                <Textarea
+                  onChange={(e) => setcomment(e.target.value)}
+                  placeholder="Leave Comment here :"
+                />
+
+                <Button
+                  className="submitbutton"
+                  colorScheme="blue"
+                  onClick={submithanlder}
+                >
+                  Submit
+                </Button>
+              </FormControl>
+            )}
+          </div> */}
           <div className="createreview">
             <h1>Create New Review :</h1>
 
             {errorProductReview && <h2>{errorProductReview}</h2>}
 
-            {/* If user not logged in */}
+            {/* Not logged in */}
             {!userInfo && (
               <p>
                 Please <Link to="/login">Sign In</Link> to write a review.
               </p>
             )}
 
-            {/* If user logged in but has NOT purchased */}
+            {/* Already reviewed */}
+            {userInfo && hasUserReviewed && (
+              <Text color="green.600" fontWeight="bold">
+                ✅ You have already reviewed this product
+              </Text>
+            )}
 
-            {/* If user logged in AND has purchased */}
-            {userInfo && (
+            {/* Logged in & NOT reviewed yet */}
+            {userInfo && !hasUserReviewed && (
               <FormControl>
                 <FormLabel>Rating :</FormLabel>
                 <Select onChange={(e) => setrating(e.target.value)}>

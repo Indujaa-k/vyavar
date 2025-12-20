@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
+import axios from "axios";
+import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   listPendingReviews,
@@ -17,13 +18,14 @@ import {
   Thead,
   Tr,
   Text,
-  Flex
+  Flex,
 } from "@chakra-ui/react";
 
 const AdminReviewPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { reviews = [], loading } = useSelector((state) => state.reviewList);
+  const [productImages, setProductImages] = useState({});
 
   const { success: approveSuccess, loading: approveLoading } = useSelector(
     (state) => state.reviewApprove
@@ -40,18 +42,18 @@ const AdminReviewPage = () => {
     dispatch(listPendingReviews());
   }, [dispatch, approveSuccess, deleteSuccess]);
 
-  const handleDelete = (reviewId) => {
+  const handleDelete = (_id) => {
     if (window.confirm("Are you sure you want to delete this review?")) {
-      dispatch(deleteReview(reviewId));
+      dispatch(deleteReview(_id));
     }
   };
 
-  const handleApprove = (productId, reviewId) => {
-    if (!reviewId) {
+  const handleApprove = (productId, _id) => {
+    if (!_id) {
       console.error("❌ Review ID missing");
       return;
     }
-    dispatch(approveReview(productId, reviewId));
+    dispatch(approveReview(productId, _id));
   };
 
   return (
@@ -61,80 +63,121 @@ const AdminReviewPage = () => {
       {loading ? (
         <p>Loading...</p>
       ) : (
-        <Table variant="striped" bg="pink" color="black" size="md">
-          <Thead>
-            <Tr>
-              <Th>Product</Th>
-              <Th>Reviewer</Th>
-              <Th>Rating</Th>
-              <Th>Comment</Th>
-              <Th>Actions</Th>
-            </Tr>
-          </Thead>
+       <Table
+  variant="simple"
+  size="md"
+  bg="white"
+  color="black"
+  borderRadius="lg"
+>
+  <Thead bg="gray.100">
+    <Tr>
+      <Th textAlign="center">Product</Th>
+      <Th textAlign="center">Reviewer</Th>
+      <Th textAlign="center">Rating</Th>
+      <Th>Comment</Th>
+      <Th textAlign="center">Actions</Th>
+    </Tr>
+  </Thead>
 
-          <Tbody>
-            {Array.isArray(reviews) && reviews.length > 0 ? (
-              reviews.map((review) => (
-                <Tr key={review.reviewId}>
-                  <Td>
-                    <Box>
-                      <Text fontWeight="bold">{review.productName}</Text>
-                      {review.productImage && (
-                        <img
-                          src={review.productImage}
-                          alt={review.productName}
-                          style={{ width: "60px", borderRadius: "6px" }}
-                        />
-                      )}
-                      <Button
-                        size="xs"
-                        mt={2}
-                        colorScheme="blue"
-                        variant="outline"
-                        onClick={() => navigate(`/product/${review.productId}`)}
-                      >
-                        View Product
-                      </Button>
-                    </Box>
-                  </Td>
+  <Tbody>
+    {Array.isArray(reviews) && reviews.length > 0 ? (
+      reviews.map((review) => (
+        <Tr key={review._id}>
+          {/* PRODUCT */}
+          <Td textAlign="center">
+            <Box
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              gap={2}
+            >
+              {review.image ? (
+                <Box
+                  width="90px"
+                  height="70px"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  <img
+                    src={review.image}
+                    alt={review.brandname}
+                    style={{
+                      maxWidth: "100%",
+                      maxHeight: "100%",
+                      objectFit: "contain",
+                      borderRadius: "6px",
+                    }}
+                  />
+                </Box>
+              ) : (
+                <Text fontSize="sm" color="gray.500">
+                  No Image
+                </Text>
+              )}
 
-                  <Td>{review.reviewerName}</Td>
-                  <Td>{review.rating}</Td>
-                  <Td>{review.comment}</Td>
+              <Text fontWeight="bold" fontSize="sm" textAlign="center">
+                {review.brandname}
+              </Text>
+            </Box>
+          </Td>
 
-                  <Td>
-                    <Flex gap={3}>
-                      <Button
-                        colorScheme="green"
-                        isLoading={approveLoading}
-                        onClick={() =>
-                          handleApprove(review.productId, review.reviewId)
-                        }
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        colorScheme="red"
-                        size="sm"
-                        variant="outline"
-                        isLoading={deleteLoading}
-                        onClick={() => handleDelete(review.reviewId)}
-                      >
-                        Delete
-                      </Button>
-                    </Flex>
-                  </Td>
-                </Tr>
-              ))
-            ) : (
-              <Tr>
-                <Td colSpan={5} textAlign="center">
-                  No pending reviews
-                </Td>
-              </Tr>
-            )}
-          </Tbody>
-        </Table>
+          {/* REVIEWER */}
+          <Td textAlign="center">{review.name}</Td>
+
+          {/* RATING */}
+          <Td textAlign="center">
+            <Text fontWeight="semibold">{review.rating} ⭐</Text>
+          </Td>
+
+          {/* COMMENT */}
+          <Td maxW="300px">
+            <Text noOfLines={2}>{review.comment}</Text>
+          </Td>
+
+          {/* ACTIONS */}
+          <Td textAlign="center">
+            <Flex justify="center" gap={3}>
+             <Button
+  colorScheme="green"
+  size="sm"
+  isLoading={approveLoading}
+  onClick={() => {
+    console.log("APPROVE:", review.productId, review._id);
+    handleApprove(review.productId, review._id);
+  }}
+>
+  Approve
+</Button>
+
+<Button
+  colorScheme="red"
+  size="sm"
+  variant="outline"
+  isLoading={deleteLoading}
+  onClick={() => {
+    console.log("DELETE:", review._id);
+    handleDelete(review._id);
+  }}
+>
+  Delete
+</Button>
+
+            </Flex>
+          </Td>
+        </Tr>
+      ))
+    ) : (
+      <Tr>
+        <Td colSpan={5} textAlign="center">
+          No pending reviews
+        </Td>
+      </Tr>
+    )}
+  </Tbody>
+</Table>
+
       )}
     </Box>
   );

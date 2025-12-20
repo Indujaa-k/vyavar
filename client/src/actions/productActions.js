@@ -299,10 +299,11 @@ export const listPendingReviews = () => async (dispatch, getState) => {
       `${API_URL}/api/products/reviews/pending`,
       config
     );
+    console.log("Pending reviews from backend:", data);
 
     dispatch({
       type: REVIEW_LIST_SUCCESS,
-      payload: data.data, // ✅ ONLY ARRAY
+      payload: data // ✅ ONLY ARRAY
     });
   } catch (error) {
     dispatch({
