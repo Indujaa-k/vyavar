@@ -68,13 +68,19 @@ const Placeorder = () => {
       const shipmentData = shipmentResponse.data;
 
       const orderData = {
-        orderItems: cart.cartItems.map((item) => ({
-          product: item.product._id,
-          name: item.product.brandname,
-          price: item.product.price,
-          qty: item.qty,
-          size: item.size,
-        })),
+        orderItems: cart.cartItems.map((item) => {
+          if (!item.size) {
+            throw new Error(`Size not selected for ${item.product.brandname}`);
+          }
+
+          return {
+            product: item.product._id,
+            name: item.product.brandname,
+            price: item.product.price,
+            qty: item.qty,
+            size: item.size, // ✅ guaranteed
+          };
+        }),
         shippingAddress: recipientAddress,
         shippingRates,
         paymentMethod: cart.paymentMethod,

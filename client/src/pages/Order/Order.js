@@ -135,7 +135,7 @@ const Order = () => {
               </Text>
               <Divider />
               <Text>
-                <strong>Name:</strong> {order.user.name}
+                <strong>Name:</strong> {order.user?.name || "Customer"}
               </Text>
               <Text>
                 <strong>Address:</strong> {order.shippingAddress.doorNo},{" "}
@@ -186,14 +186,17 @@ const Order = () => {
                     {/* <Link to={`/product/${item.product._id}`}> */}
                     <Link to={`/product/${item.product?._id || item.product}`}>
                       <img
-                        src={item.product.images?.[0] || "/placeholder.jpg"}
+                        src={
+                          typeof item.product === "object"
+                            ? item.product.images?.[0]
+                            : "/placeholder.jpg"
+                        }
                         alt={item.name}
                         style={{
                           width: "80px",
                           height: "100px",
                           objectFit: "cover",
                           borderRadius: "5px",
-                          cursor: "pointer",
                         }}
                       />
                     </Link>
@@ -211,6 +214,9 @@ const Order = () => {
                       </Link>
                     </Text>
                   </HStack>
+                  <Text fontSize="sm">
+                    Size: <strong>{item.size}</strong>
+                  </Text>
                   <Text>
                     {item.qty} x Rs. {item.price} = Rs. {item.qty * item.price}
                   </Text>

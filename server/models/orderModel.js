@@ -56,7 +56,10 @@ const orderSchema = mongoose.Schema(
         qty: { type: Number, required: true },
         image: { type: String },
         price: { type: Number, required: true },
-        size: { type: String },
+        size: {
+          type: String,
+          required: true,
+        },
         product: {
           type: mongoose.Schema.Types.ObjectId,
           required: true,
@@ -64,6 +67,7 @@ const orderSchema = mongoose.Schema(
         },
       },
     ],
+
     shippingAddress: {
       doorNo: { type: String, default: "" },
       street: { type: String, default: "" },
