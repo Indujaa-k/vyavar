@@ -1,10 +1,11 @@
+import mongoose from "mongoose";
 import asyncHandler from "express-async-handler";
 import multer from "multer";
 import XLSX from "xlsx";
 import Product from "../models/productModel.js";
+import ProductGroup from "../models/productgroupModel.js";
 import User from "../models/userModel.js";
 import reviewnotificatioEmail from "../utils/reviewnotificationEmail.js";
-
 
 // @desc Fetch all products
 // @route GET /api/products
@@ -121,7 +122,10 @@ const getProducts = asyncHandler(async (req, res) => {
 // @route GET /api/products/:id
 // @access Public
 const getProductById = asyncHandler(async (req, res) => {
-  const product = await Product.findById(req.params.id);
+  const product = await Product.findById(req.params.id).populate({
+    path: "reviews.user",
+    select: "name profilePicture",
+  });
   if (product) {
     res.json(product);
   } else {
@@ -129,6 +133,50 @@ const getProductById = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error("Product not found");
   }
+});
+
+// Alternative: If you want a separate endpoint for variants
+const getProductVariants = async (req, res) => {
+  try {
+    const { sku } = req.params;
+
+    // Extract prefix from the given SKU
+    const skuPrefix = sku.split("-")[0];
+
+    // Find all products with this prefix
+    const variants = await Product.find({
+      SKU: { $regex: `^${skuPrefix}-` },
+    }).select("SKU productdetails.color images brandname price");
+
+    res.json(variants);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+const getProductBySku = asyncHandler(async (req, res) => {
+  const { sku } = req.params;
+
+  // 1️⃣ Find current product
+  const product = await Product.findOne({ SKU: sku });
+
+  if (!product) {
+    res.status(404);
+    throw new Error("Product not found");
+  }
+
+  // 2️⃣ Extract unified/base SKU (before first "-")
+  const baseSKU = sku.split("-")[0];
+
+  // 3️⃣ Find all color variants
+  const variants = await Product.find({
+    SKU: { $regex: `^${baseSKU}-` },
+  }).select("SKU productdetails.color images price productdetails.stockBySize");
+
+  // 4️⃣ Response
+  res.json({
+    product,
+    variants,
+  });
 });
 
 // @desc Add product to cart
@@ -304,210 +352,138 @@ const deleteProduct = asyncHandler(async (req, res) => {
 // @route Post /api/products
 // @access Private/Admin
 const createProduct = asyncHandler(async (req, res) => {
-  const {
-    brandname,
-    price,
-    description,
-    productdetails,
-    discount,
-    oldPrice,
-    SKU,
-    shippingDetails,
-    isFeatured,
-  } = req.body;
-  if (!req.files || (!req.files["images"] && !req.files["sizeChart"])) {
-    res.status(400).json({ message: "No files uploaded" });
-    return;
+  console.log("BODY:", req.body);
+  console.log("FILES:", req.files);
+
+  try {
+    const {
+      brandname,
+      price,
+      description,
+      discount,
+      oldPrice,
+      SKU,
+      shippingDetails,
+      isFeatured,
+      products,
+    } = req.body;
+
+    if (!products) {
+      return res.status(400).json({ message: "No product variants provided" });
+    }
+
+    const parsedProducts =
+      typeof products === "string" ? JSON.parse(products) : products;
+
+    const parsedShippingDetails =
+      typeof shippingDetails === "string"
+        ? JSON.parse(shippingDetails)
+        : shippingDetails;
+
+    // 🔥 CREATE ONE GROUP ID FOR ALL VARIANTS
+    const productGroupId = new mongoose.Types.ObjectId().toString();
+
+    const sizeChart = req.files?.sizeChart?.[0]?.path || "";
+    const allImages = req.files?.images || [];
+
+    if (allImages.length !== parsedProducts.length * 3) {
+      return res.status(400).json({
+        message: "Each color variant must have exactly 3 images",
+      });
+    }
+
+    let imageIndex = 0;
+    const createdProducts = [];
+
+    for (let i = 0; i < parsedProducts.length; i++) {
+      const variant = parsedProducts[i];
+
+      const images = allImages
+        .slice(imageIndex, imageIndex + 3)
+        .map((file) => file.path);
+
+      imageIndex += 3;
+
+      const product = new Product({
+        user: req.user._id,
+        brandname,
+        description,
+        price: Number(price),
+        oldPrice: Number(oldPrice),
+        discount: Number(discount),
+        images,
+        sizeChart,
+
+        // ✅ SAME GROUP ID
+        productGroupId,
+
+        // ✅ UNIQUE SKU PER VARIANT
+        SKU: `${SKU}-${variant.color.toUpperCase()}-${Date.now()}`,
+
+        productdetails: variant.productdetails,
+        shippingDetails: parsedShippingDetails,
+        isFeatured: isFeatured === "true",
+
+        rating: 0,
+        numReviews: 0,
+      });
+
+      const savedProduct = await product.save();
+      createdProducts.push(savedProduct);
+    }
+
+    res.status(201).json({
+      message: "Product variants created successfully",
+      productGroupId,
+      products: createdProducts,
+    });
+  } catch (error) {
+    console.error("CREATE PRODUCT ERROR:", error);
+    res.status(500).json({ message: error.message });
   }
-  const images = req.files["images"]?.map((file) => file.path) || [];
-  const sizeChart = req.files["sizeChart"]?.[0]?.path || "";
-
-  //  console.log("📄 Uploaded sizeChart:", sizeChart);
-
-  const parsedProductDetails =
-    typeof productdetails === "string"
-      ? JSON.parse(productdetails)
-      : productdetails;
-  const {
-    gender,
-    category,
-    subcategory,
-    type,
-    ageRange,
-    color,
-    fabric,
-    sizes,
-    stockBySize,
-  } = parsedProductDetails;
-  // Ensure sizes is an array (in case it's sent as a string)
-  const formattedSizes = Array.isArray(sizes) ? sizes : sizes.split(",");
-
-  const parsedShippingDetails =
-    typeof shippingDetails === "string"
-      ? JSON.parse(shippingDetails)
-      : shippingDetails;
-  const completeShippingDetails = {
-    weight: parsedShippingDetails.weight,
-    dimensions: {
-      length: parsedShippingDetails.dimensions.length,
-      width: parsedShippingDetails.dimensions.width,
-      height: parsedShippingDetails.dimensions.height,
-    },
-    originAddress: {
-      street1: parsedShippingDetails.originAddress.street1,
-      street2: parsedShippingDetails.originAddress.street2,
-      city: parsedShippingDetails.originAddress.city,
-      state: parsedShippingDetails.originAddress.state,
-      zip: parsedShippingDetails.originAddress.zip,
-      country: parsedShippingDetails.originAddress.country,
-    },
-  };
-
-  // Extract fields from productdetails
-  const product = new Product({
-    brandname,
-    price,
-    oldPrice,
-    discount,
-    description,
-    user: req.user._id,
-    images,
-    sizeChart,
-    SKU,
-    productdetails: {
-      gender,
-      category,
-      subcategory,
-      type,
-      ageRange,
-      color,
-      fabric,
-      sizes: formattedSizes,
-      stockBySize,
-    },
-    shippingDetails: completeShippingDetails,
-    numReviews: 0,
-    isFeatured,
-  });
-  console.log("product details", product);
-  const createProduct = await product.save();
-  res.status(201).json(createProduct);
 });
 
 // @desc Update a product
 // @route PUT /api/products/:id
 // @access Private/Admin
 const updateProduct = asyncHandler(async (req, res) => {
-  try {
-    const {
-      brandname,
-      price,
-      productdetails,
-      description,
-      oldPrice,
-      discount,
-      SKU,
-      shippingDetails,
-      isFeatured,
-    } = req.body;
+  const product = await Product.findById(req.params.id);
 
-    console.log("Received request body:", req.body);
-
-    let parsedProductDetails = {};
-    if (productdetails) {
-      try {
-        parsedProductDetails =
-          typeof productdetails === "string"
-            ? JSON.parse(productdetails)
-            : productdetails;
-      } catch (error) {
-        console.error("Error parsing product details:", error);
-        return res
-          .status(400)
-          .json({ message: "Invalid product details format" });
-      }
-    }
-    const parsedShippingDetails =
-      typeof shippingDetails === "string"
-        ? JSON.parse(shippingDetails)
-        : shippingDetails;
-    const completeShippingDetails = {
-      weight: parsedShippingDetails.weight,
-      dimensions: {
-        length: parsedShippingDetails.dimensions.length,
-        width: parsedShippingDetails.dimensions.width,
-        height: parsedShippingDetails.dimensions.height,
-      },
-      originAddress: {
-        street1: parsedShippingDetails.originAddress.street1,
-        street2: parsedShippingDetails.originAddress.street2,
-        city: parsedShippingDetails.originAddress.city,
-        state: parsedShippingDetails.originAddress.state,
-        zip: parsedShippingDetails.originAddress.zip,
-        country: parsedShippingDetails.originAddress.country,
-      },
-    };
-    const {
-      gender = "",
-      category = "",
-      subcategory = "",
-      type = "",
-      ageRange = "",
-      color = "",
-      fabric = "",
-      sizes = [],
-      stockBySize = [],
-    } = parsedProductDetails;
-    // Ensure sizes is an array (fixes the `.split is not a function` error)
-    const formattedSizes =
-      typeof sizes === "string" ? sizes.split(",").map((s) => s.trim()) : sizes;
-
-    const product = await Product.findById(req.params.id);
-
-    if (product) {
-      product.brandname = brandname;
-      product.price = price;
-      product.description = description;
-      product.productdetails = {
-        gender,
-        category,
-        subcategory,
-        type,
-        ageRange,
-        color,
-        fabric,
-        sizes: formattedSizes,
-        stockBySize,
-      };
-      product.shippingDetails = completeShippingDetails;
-      product.SKU = SKU;
-      product.isFeatured = isFeatured;
-      product.oldPrice = oldPrice;
-      product.discount = discount;
-
-      // Handle file updates
-      if (req.files) {
-        // Update images if new ones are uploaded
-        if (req.files["images"]) {
-          product.images = req.files["images"].map((file) => file.path);
-        }
-
-        // Update size chart if new PDF is uploaded
-        if (req.files["sizeChart"]) {
-          product.sizeChart = req.files["sizeChart"][0].path;
-        }
-      }
-
-      const updatedProduct = await product.save();
-      console.log("Updated product:", updatedProduct);
-      res.json(updatedProduct);
-    } else {
-      res.status(404).json({ message: "Product not found" });
-    }
-  } catch (error) {
-    console.error("Error updating product:", error);
-    res.status(500).json({ message: "Server error. Could not update product" });
+  if (!product) {
+    res.status(404);
+    throw new Error("Product not found");
   }
+
+  // Basic fields
+  product.brandname = req.body.brandname || product.brandname;
+  product.description = req.body.description || product.description;
+  product.oldPrice = req.body.oldPrice || product.oldPrice;
+  product.discount = req.body.discount || product.discount;
+  product.price = req.body.price || product.price;
+  product.SKU = req.body.SKU || product.SKU;
+  product.isFeatured = req.body.isFeatured ?? product.isFeatured;
+
+  // JSON fields
+  if (req.body.productdetails) {
+    product.productdetails = JSON.parse(req.body.productdetails);
+  }
+
+  if (req.body.shippingDetails) {
+    product.shippingDetails = JSON.parse(req.body.shippingDetails);
+  }
+
+  // Images (optional replace)
+  if (req.files?.images?.length > 0) {
+    product.images = req.files.images.map((file) => file.path);
+  }
+
+  // Size chart (optional)
+  if (req.files?.sizeChart?.length > 0) {
+    product.sizeChart = req.files.sizeChart[0].path;
+  }
+
+  const updatedProduct = await product.save();
+  res.json(updatedProduct);
 });
 
 // @desc Create a bulk product
@@ -611,7 +587,21 @@ const uploadProducts = asyncHandler(async (req, res) => {
 const createproductreview = asyncHandler(async (req, res) => {
   console.log("Incoming Review Request:", req.body);
   const { rating, comment } = req.body;
-  const product = await Product.findById(req.params.id);
+  const product = new Product({
+    brandname,
+    price: Number(price),
+    oldPrice: Number(oldPrice),
+    discount: Number(discount),
+    description,
+    user: req.user._id,
+    images,
+    sizeChart,
+    SKU: `${SKU}-${variant.color.replace(/\s+/g, "-").toUpperCase()}`,
+    productdetails: variant.productdetails,
+    shippingDetails: parsedShippingDetails,
+    numReviews: 0,
+    isFeatured: isFeaturedBool,
+  });
 
   if (!product) {
     return res.status(404).json({ message: "Product not found" });
@@ -631,6 +621,7 @@ const createproductreview = asyncHandler(async (req, res) => {
     comment,
     user: req.user._id,
     approved: false,
+    profilePicture: req.user.profilePicture,
   };
 
   product.reviews.push(review);
@@ -816,7 +807,10 @@ const getPendingReviews = asyncHandler(async (req, res) => {
             _id: review._id.toString(),
             productId: product._id.toString(),
             brandname: product.brandname,
-            image: product.images && product.images.length > 0 ? product.images[0] : null, // ✅ include first image
+            image:
+              product.images && product.images.length > 0
+                ? product.images[0]
+                : null, // ✅ include first image
             name: review.name,
             rating: review.rating,
             comment: review.comment,
@@ -832,7 +826,6 @@ const getPendingReviews = asyncHandler(async (req, res) => {
     res.status(500).json({ message: "Failed to fetch pending reviews" });
   }
 });
-
 
 // Alternative: Delete review by review ID only (searches across all products)
 const deleteReviewById = async (req, res) => {
@@ -874,6 +867,178 @@ const deleteReviewById = async (req, res) => {
   }
 };
 
+// controllers/productController.js
+
+const getProductFullById = asyncHandler(async (req, res) => {
+  const product = await Product.findById(req.params.id).lean();
+  if (!product) return res.status(404).json({ message: "Product not found" });
+
+  const variants = await Product.find({
+    productGroupId: product.productGroupId,
+  }).lean();
+
+  const group = await ProductGroup.findById(product.productGroupId).lean();
+
+  res.json({
+    product,
+    variants,
+    group,
+  });
+});
+
+const updateGroupCommonFields = asyncHandler(async (req, res) => {
+  const { groupId } = req.params;
+  const updateFields = {
+    brandname: req.body.brandname,
+    price: req.body.price,
+    oldPrice: req.body.oldPrice,
+    discount: req.body.discount,
+    description: req.body.description,
+    shippingDetails: req.body.shippingDetails,
+    isFeatured: req.body.isFeatured,
+  };
+
+  Object.keys(updateFields).forEach(
+    (key) => updateFields[key] === undefined && delete updateFields[key]
+  );
+
+  const result = await Product.updateMany(
+    { productGroupId: groupId },
+    { $set: updateFields }
+  );
+
+  res.json({
+    message: "Group fields updated",
+    modifiedCount: result.modifiedCount,
+  });
+});
+
+const addVariantToGroup = asyncHandler(async (req, res) => {
+  const { groupId } = req.params;
+
+  const {
+    color,
+    sizes,
+    stockBySize,
+    images,
+    price, // optional override
+  } = req.body;
+
+  if (!color || !sizes || !stockBySize || !images) {
+    res.status(400);
+    throw new Error("Variant fields are missing");
+  }
+
+  // 🔹 1. Fetch any one product from the group (to copy common fields)
+  const baseProduct = await Product.findOne({
+    productGroupId: groupId,
+  });
+
+  if (!baseProduct) {
+    res.status(404);
+    throw new Error("Product group not found");
+  }
+
+  // 🔹 2. Prevent duplicate color variant
+  const existingVariant = await Product.findOne({
+    productGroupId: groupId,
+    color: color,
+  });
+
+  if (existingVariant) {
+    res.status(400);
+    throw new Error("Variant with this color already exists");
+  }
+
+  // 🔹 3. Auto-generate SKU
+  const generateSKU = (groupId, color, sizes) => {
+    return `${groupId}-${color.toUpperCase()}-${sizes.join("")}`;
+  };
+
+  const SKU = generateSKU(groupId, color, sizes);
+
+  // 🔹 4. Create new variant (copy common fields)
+  const newVariant = new Product({
+    productGroupId: groupId,
+
+    // ✅ copied fields
+    brandname: baseProduct.brandname,
+    description: baseProduct.description,
+    discount: baseProduct.discount,
+    shippingDetails: baseProduct.shippingDetails,
+    isFeatured: baseProduct.isFeatured,
+
+    productdetails: {
+      category: baseProduct.productdetails.category,
+      subcategory: baseProduct.productdetails.subcategory,
+      gender: baseProduct.productdetails.gender,
+      sizes: sizes,
+      stockBySize: stockBySize,
+    },
+
+    // ✅ variant-specific
+    color,
+    images,
+    SKU,
+    price: price || baseProduct.price,
+  });
+
+  const createdVariant = await newVariant.save();
+
+  res.status(201).json({
+    message: "Variant added successfully",
+    variant: createdVariant,
+  });
+});
+
+const updateProductGroup = asyncHandler(async (req, res) => {
+  const { groupId } = req.params;
+  const { brandname, description, price, oldPrice, discount, isFeatured } =
+    req.body;
+
+  // Only fields that should propagate
+  const updateFields = {
+    ...(brandname && { brandname }),
+    ...(description && { description }),
+    ...(price !== undefined && { price }),
+    ...(oldPrice !== undefined && { oldPrice }),
+    ...(discount !== undefined && { discount }),
+    ...(isFeatured !== undefined && { isFeatured }),
+  };
+
+  const updatedProducts = await Product.updateMany(
+    { productGroupId: groupId },
+    { $set: updateFields },
+    { new: true }
+  );
+
+  if (!updatedProducts) {
+    res.status(404);
+    throw new Error("Product group not found");
+  }
+
+  res.json({
+    message: "Product group updated successfully",
+    updatedCount: updatedProducts.nModified,
+  });
+});
+const getProductsByGroupId = asyncHandler(async (req, res) => {
+  const { groupId } = req.params;
+
+  if (!groupId) {
+    res.status(400);
+    throw new Error("Group ID is required");
+  }
+
+  const products = await Product.find({ productGroupId: groupId });
+
+  if (!products) {
+    res.status(404);
+    throw new Error("No products found for this group");
+  }
+
+  res.json(products); // ✅ Must return JSON
+});
 export {
   getProducts,
   deleteProduct,
@@ -888,4 +1053,11 @@ export {
   approveReview,
   getPendingReviews,
   deleteReviewById,
+  getProductBySku,
+  getProductVariants,
+  updateGroupCommonFields,
+  addVariantToGroup,
+  updateProductGroup,
+  getProductFullById,
+  getProductsByGroupId,
 };

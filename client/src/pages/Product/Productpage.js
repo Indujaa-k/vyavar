@@ -5,9 +5,10 @@ import { Helmet } from "react-helmet";
 import {
   listProductDetails,
   createproductReview,
+  listProductsByGroupId,
 } from "../../actions/productActions";
 import { IoLogoFacebook } from "react-icons/io";
-import { AiFillTwitterCircle, AiFillInstagram } from "react-icons/ai";
+import { AiFillStar, AiOutlineStar } from "react-icons/ai";
 import { addToCart } from "../../actions/cartActions";
 import { AiFillShop } from "react-icons/ai";
 import ShareButton from "./ShareButton";
@@ -26,6 +27,8 @@ import {
   HStack,
   Text,
   Divider,
+  Box,
+  Tooltip,
 } from "@chakra-ui/react";
 import HashLoader from "react-spinners/HashLoader";
 import { useParams } from "react-router-dom";
@@ -81,6 +84,9 @@ const Productpage = () => {
   const [sizeStock, setSizeStock] = useState({});
   const [showPDF, setShowPDF] = useState(false);
   const [showAllReviews, setShowAllReviews] = useState(false);
+
+  
+  const isDisabled = !selectedSize || sizeStock[selectedSize] === 0;
   // Check if logged-in user already reviewed this product
   const hasUserReviewed =
     userInfo &&
@@ -154,7 +160,21 @@ const Productpage = () => {
       dispatch(Listproductbyfiters({ category: product.category }));
     }
   }, [dispatch, id, successProductReview, userInfo, product.category]);
+  useEffect(() => {
+    if (product?._id && product.category) {
+      dispatch(Listproductbyfiters({ category: product.category }));
+    }
+  }, [dispatch, product]);
 
+  useEffect(() => {
+    if (product?.variants) {
+      console.log("Product:", product.SKU);
+      console.log(
+        "Variants:",
+        product.variants.map((v) => v.SKU)
+      );
+    }
+  }, [product]);
   useEffect(() => {
     if (product?.productdetails?.stockBySize) {
       const stockMap = {};
@@ -166,6 +186,19 @@ const Productpage = () => {
       setSizeStock(stockMap);
     }
   }, [product]);
+
+  const productListByGroup = useSelector((state) => state.productListByGroup);
+  const {
+    loading: loadingVariants,
+    products: variants,
+    error: errorVariants,
+  } = productListByGroup;
+
+  useEffect(() => {
+    if (product?.productGroupId && userInfo?.token) {
+      dispatch(listProductsByGroupId(product.productGroupId));
+    }
+  }, [dispatch, product?.productGroupId, userInfo]);
 
   // product.reviews
   const submithanlder = () => {
@@ -263,7 +296,7 @@ const Productpage = () => {
             <div className="card">
               <div className="product-imgs">
                 <div className="img-select">
-                  {product.images.map((image, index) => (
+                  {product?.images?.map((image, index) => (
                     <div className="img-item" key={index}>
                       <a href="#" data-id={index + 1}>
                         <Image
@@ -309,7 +342,11 @@ const Productpage = () => {
               </div>
 
               <div className="product-content">
-                <Flex justifyContent="space-between" alignItems="center">
+                <Flex
+                  justifyContent="space-between"
+                  alignItems="center"
+                  color="#0000346"
+                >
                   <h2 className="product-title">{product.brandname}</h2>
                   <Flex gap={1} mt="2">
                     <FavoriteButton productId={product._id} />
@@ -320,21 +357,21 @@ const Productpage = () => {
                   {product.description}
                 </p>
                 <Text fontSize="20px" fontWeight="bold" mb={1} mt={3}>
-                  ₹{product.price}{" "}
+                  ₹{product.price}
                   <Text
                     as="span"
                     fontSize="20px"
                     fontWeight="normal"
-                    color="black"
+                    color="#039cc3ff"
+                    marginLeft={2}
                     textDecoration="line-through"
                   >
                     MRP: ₹{product.oldPrice}
                   </Text>
-                  <Text fontSize="13px" color="gray.500" mb={3}>
+                  <Text fontSize="13px" color="#ffb700" mb={3}>
                     (Inclusive of all taxes)
                   </Text>
                 </Text>
-                <Divider my={3} />
                 <p
                   style={{
                     fontWeight: "bold",
@@ -344,6 +381,70 @@ const Productpage = () => {
                 >
                   Color: {product.productdetails?.color || "Not Available"}
                 </p>
+                <>
+                  {(variants || []).length > 1 && (
+                    <>
+                      <Text fontSize="14px" fontWeight="medium" mb={2}>
+                        Available Variants:
+                      </Text>
+                      <Flex gap={2} wrap="wrap" mb={4}>
+                        {variants.map((variant) => {
+                          const isCurrent = variant._id === product._id;
+                          const thumbnail = variant.images[0] || ""; // Use first image as thumbnail
+
+                          return (
+                            <Box
+                              key={variant._id}
+                              onClick={() => {
+                                if (!isCurrent)
+                                  navigate(`/product/${variant._id}`);
+                              }}
+                              cursor={isCurrent ? "default" : "pointer"}
+                              border="2px solid"
+                              borderColor={isCurrent ? "black" : "gray.300"}
+                              borderRadius="md"
+                              width="60px"
+                              height="60px"
+                              overflow="hidden"
+                              position="relative"
+                              _hover={{
+                                borderColor: !isCurrent ? "black" : undefined,
+                                transform: !isCurrent
+                                  ? "translateY(-2px)"
+                                  : undefined,
+                                boxShadow: !isCurrent ? "md" : undefined,
+                              }}
+                              transition="all 0.2s ease"
+                            >
+                              <Image
+                                src={thumbnail}
+                                alt={`Variant-${variant._id}`}
+                                objectFit="cover"
+                                width="100%"
+                                height="100%"
+                              />
+                              {isCurrent && (
+                                <Box
+                                  position="absolute"
+                                  bottom="-6px"
+                                  left="50%"
+                                  transform="translateX(-50%)"
+                                  w="0"
+                                  h="0"
+                                  borderLeft="6px solid transparent"
+                                  borderRight="6px solid transparent"
+                                  borderTop="6px solid black"
+                                />
+                              )}
+                            </Box>
+                          );
+                        })}
+                      </Flex>
+                    </>
+                  )}
+
+                  <Divider my={3} />
+                </>
                 <div className="product-detail">
                   <div>
                     <Text fontSize="lg" fontWeight="bold">
@@ -355,11 +456,12 @@ const Productpage = () => {
                           key={size}
                           onClick={() => setSelectedSize(size)}
                           border="2px solid"
-                          borderColor="black"
-                          bg={selectedSize === size ? "black" : "white"}
-                          color={selectedSize === size ? "white" : "black"}
+                          borderColor="#039cc3ff"
+                          bg={selectedSize === size ? "#039cc3ff" : "white"}
+                          color={selectedSize === size ? "white" : "#039cc3ff"}
                           _hover={{
-                            bg: selectedSize === size ? "black" : "gray.100",
+                            bg:
+                              selectedSize === size ? "#039cc3ff" : "gray.100",
                           }}
                           px={6}
                           py={4}
@@ -373,85 +475,59 @@ const Productpage = () => {
                       ))}
                     </HStack>
                     <Divider my={3} />
-                    {product.sizeChart ? (
-                      <>
-                        <Button
-                          background="black"
-                          color={"white"}
-                          size="sm"
-                          onClick={togglePDF}
-                          mb={2}
-                        >
-                          {showPDF ? "Close" : "Size Chart"}
-                        </Button>
-
-                        {showPDF && (
-                          <iframe
-                            src={`https://docs.google.com/gview?url=${encodeURIComponent(
-                              product.sizeChart
-                            )}&embedded=true`}
-                            title="Size Chart PDF"
-                            width="100%"
-                            height="500px"
-                            style={{
-                              border: "1px solid #ccc",
-                              borderRadius: "8px",
-                              marginTop: "10px",
-                            }}
-                          />
-                        )}
-                      </>
-                    ) : (
-                      <p
-                        style={{
-                          fontWeight: "bold",
-                          fontSize: "16px",
-                          marginBottom: "5px",
-                        }}
-                      >
-                        Sizechart: Not Available
-                      </p>
-                    )}
 
                     <HStack spacing={4} mt="5" mb="5">
-                      <Button
-                        onClick={addToCartHandler}
-                        type="button"
-                        disabled={
-                          !selectedSize || sizeStock[selectedSize] === 0
-                        }
-                        border="2px solid"
-                        borderColor="black"
-                        bg="white"
-                        color="black"
-                        fontWeight="bold"
-                        px={8} // Increase padding for width
-                        py={5} // Increase padding for height
-                        minW="150px" // Ensures buttons are wider
-                        minH="60px"
-                        borderRadius="md"
-                        _hover={{ bg: "gray.100" }}
+                      <Tooltip
+                        label="Please select size to buy product"
+                        isDisabled={!isDisabled}
+                        placement="top"
+                        hasArrow
                       >
-                        Buy Now
-                      </Button>
-
-                      <Button
-                        onClick={addToCartHandler}
-                        type="button"
-                        disabled={
-                          !selectedSize || sizeStock[selectedSize] === 0
-                        }
-                        bg="black"
-                        color="white"
-                        px={8} // Increase padding for width
-                        py={5} // Increase padding for height
-                        minW="150px" // Ensures buttons are wider
-                        minH="60px"
-                        borderRadius="md"
-                        _hover={{ bg: "gray.800" }}
+                        <Button
+                          onClick={addToCartHandler}
+                          type="button"
+                          disabled={
+                            !selectedSize || sizeStock[selectedSize] === 0
+                          }
+                          border="2px solid"
+                          borderColor="black"
+                          bg="white"
+                          color="black"
+                          fontWeight="bold"
+                          px={8} // Increase padding for width
+                          py={5} // Increase padding for height
+                          minW="150px" // Ensures buttons are wider
+                          minH="60px"
+                          borderRadius="md"
+                          _hover={{ bg: "gray.100" }}
+                        >
+                          Buy Now
+                        </Button>
+                      </Tooltip>
+                      <Tooltip
+                        label="Please select size to add product"
+                        isDisabled={!isDisabled}
+                        placement="top"
+                        hasArrow
                       >
-                        Add to Bag
-                      </Button>
+                        <Button
+                          onClick={addToCartHandler}
+                          type="button"
+                          disabled={
+                            !selectedSize || sizeStock[selectedSize] === 0
+                          }
+                          bg="black"
+                          color="white"
+                          px={8} // Increase padding for width
+                          py={5} // Increase padding for height
+                          minW="150px" // Ensures buttons are wider
+                          minH="60px"
+                          borderRadius="md"
+                          _hover={{ bg: "gray.800" }}
+                        >
+                          Add to Bag
+                        </Button>
+                      </Tooltip>
                     </HStack>
 
                     {isAllSizesOutOfStock && (
@@ -478,73 +554,16 @@ const Productpage = () => {
             </div>
           </div>
         )}
-        {/* {isPurchased && (
-          <div className="REVIEWS">
-            <h1>Reviews :</h1>
-            {product.reviews.length === 0 && <h2>NO REVIEWS</h2>}
-            <div>
-              {product.reviews &&
-                product.reviews
-                  .filter((review) => review.approved)
-                  .map((review) => (
-                    <div key={review._id} className="review">
-                      <h4>{review.name}</h4>
-                      <div className="Ratingreview">
-                        <Rating value={review.rating} />
-                      </div>
-                      <p className="commentreview">{review.comment}</p>
-                      <p className="datereview">
-                        {review.createdAt.substring(0, 10)}
-                      </p>
-                    </div>
-                  ))}
-
-              <div className="createreview">
-                <h1>Create New Review :</h1>
-                {errorProductReview && <h2>{errorProductReview}</h2>}
-                {userInfo ? (
-                  <FormControl>
-                    <FormLabel>Rating :</FormLabel>
-                    <Select onChange={(e) => setrating(e.target.value)}>
-                      <option value="5">5 EXCELLENT</option>
-                      <option value="4">4 VERY GOOD</option>
-                      <option value="3">3 GOOD</option>
-                      <option value="2">2 FAIR</option>
-                      <option value="1">1 POOR</option>
-                    </Select>
-                    <FormLabel>Comment :</FormLabel>
-                    <Textarea
-                      onChange={(e) => setcomment(e.target.value)}
-                      placeholder="Leave Comment here :"
-                    />
-                    <Button
-                      className="
-                    submitbutton"
-                      colorScheme="blue"
-                      onClick={submithanlder}
-                    >
-                      Submit
-                    </Button>
-                  </FormControl>
-                ) : (
-                  <>
-                    Please <Link to="/login">Sign In</Link> To write a review.
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        )} */}
 
         {/* === REVIEW SECTION === */}
         <div className="REVIEWS">
           <h1>Reviews :</h1>
 
           {/* No Reviews */}
-          {product.reviews.length === 0 && <h2>NO REVIEWS</h2>}
+          {product?.reviews?.length === 0 && <h2>NO REVIEWS</h2>}
 
           {/* Show Approved Reviews */}
-          <div>
+          {/* <div>
             {product.reviews &&
               product.reviews
                 .filter((review) => review.approved)
@@ -563,51 +582,49 @@ const Productpage = () => {
                     </p>
                   </div>
                 ))}
-          </div>
-
-          {/* === CREATE REVIEW SECTION === */}
-          {/* <div className="createreview">
-            <h1>Create New Review :</h1>
-
-            {errorProductReview && <h2>{errorProductReview}</h2>} */}
-
-          {/* If user not logged in */}
-          {/* {!userInfo && (
-              <p>
-                Please <Link to="/login">Sign In</Link> to write a review.
-              </p>
-            )} */}
-
-          {/* If user logged in but has NOT purchased */}
-
-          {/* If user logged in AND has purchased */}
-          {/* {userInfo && (
-              <FormControl>
-                <FormLabel>Rating :</FormLabel>
-                <Select onChange={(e) => setrating(e.target.value)}>
-                  <option value="5">5 EXCELLENT</option>
-                  <option value="4">4 VERY GOOD</option>
-                  <option value="3">3 GOOD</option>
-                  <option value="2">2 FAIR</option>
-                  <option value="1">1 POOR</option>
-                </Select>
-
-                <FormLabel>Comment :</FormLabel>
-                <Textarea
-                  onChange={(e) => setcomment(e.target.value)}
-                  placeholder="Leave Comment here :"
-                />
-
-                <Button
-                  className="submitbutton"
-                  colorScheme="blue"
-                  onClick={submithanlder}
-                >
-                  Submit
-                </Button>
-              </FormControl>
-            )}
           </div> */}
+          <div>
+            {product.reviews &&
+              product.reviews
+                .filter((review) => review.approved)
+                .map((review) => (
+                  <div key={review._id} className="review-card">
+                    <div class="profile-section">
+                      {review.user?.profilePicture ? (
+                        <img
+                          src={review.user.profilePicture}
+                          alt={review.user.name}
+                          className="review-avatar"
+                        />
+                      ) : (
+                        <div className="review-avatar-fallback">
+                          {review.user?.name?.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div class="profile-info">
+                        <div class="user-name">
+                          {review.user?.name || review.name}
+                        </div>
+                        <div class="verified-status">
+                          <span class="check-mark">✓</span> Verified
+                        </div>
+                      </div>
+                    </div>
+                    <div class="content-section">
+                      <div class="content-header">
+                        <div class="stars">
+                          <Rating value={review.rating} />
+                        </div>
+                        <div class="date">
+                          {review.createdAt.substring(0, 10)}
+                        </div>
+                      </div>
+                      <h3 class="review-title">{review.comment}</h3>
+                      {/* <p class="review-body"></p> */}
+                    </div>
+                  </div>
+                ))}
+          </div>
           <div className="createreview">
             <h1>Create New Review :</h1>
 
@@ -631,13 +648,21 @@ const Productpage = () => {
             {userInfo && !hasUserReviewed && (
               <FormControl>
                 <FormLabel>Rating :</FormLabel>
-                <Select onChange={(e) => setrating(e.target.value)}>
-                  <option value="5">5 EXCELLENT</option>
-                  <option value="4">4 VERY GOOD</option>
-                  <option value="3">3 GOOD</option>
-                  <option value="2">2 FAIR</option>
-                  <option value="1">1 POOR</option>
-                </Select>
+                <HStack spacing={1} mb={3}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Box
+                      key={star}
+                      cursor="pointer"
+                      onClick={() => setrating(star)}
+                    >
+                      {rating >= star ? (
+                        <AiFillStar size={28} color="#FFD700" />
+                      ) : (
+                        <AiOutlineStar size={28} color="#CBD5E0" />
+                      )}
+                    </Box>
+                  ))}
+                </HStack>
 
                 <FormLabel>Comment :</FormLabel>
                 <Textarea
@@ -649,6 +674,8 @@ const Productpage = () => {
                   className="submitbutton"
                   colorScheme="blue"
                   onClick={submithanlder}
+                  mt={3}
+                  isDisabled={rating === 0}
                 >
                   Submit
                 </Button>

@@ -16,11 +16,12 @@ import {
   Heading,
   Flex,
   Divider,
+  useToast,
 } from "@chakra-ui/react";
+import { FaEdit, FaTrash } from "react-icons/fa";
 import { Helmet } from "react-helmet";
 import "./CreateProduct.css";
 import { useNavigate } from "react-router-dom";
-import { FaEdit } from "react-icons/fa";
 
 const CreateProductPage = () => {
   const navigate = useNavigate();
@@ -42,11 +43,89 @@ const CreateProductPage = () => {
     fabric: "",
     sizes: [],
   });
+  const disableNumberScroll = (e) => {
+    e.target.blur();
+  };
 
   const [newImages, setNewImages] = useState([]);
   const [message, setMessage] = useState(null);
   const [sizeChartFile, setSizeChartFile] = useState("");
+  const toast = useToast();
+  const showError = (msg) => {
+    toast({
+      title: "Validation Error",
+      description: msg,
+      status: "error",
+      duration: 3000,
+      isClosable: true,
+      position: "top-right",
+    });
+  };
   const dispatch = useDispatch();
+  const options = {
+    gender: ["Men", "Women", "Unisex"],
+    category: [
+      "Clothing",
+      "Topwear",
+      "Bottomwear",
+      "Shirts",
+      "Hoodies",
+      "Innerwear",
+      "Footwear",
+      "Accessories",
+    ],
+    subcategory: ["Shirts", "Jeans", "Pants", "Shorts", "SweatPants", "Sets"],
+    type: ["Casual", "Formal", "Sports"],
+    ageRange: ["Kids", "Teen", "Adult"],
+    color: ["Red", "Blue", "Black", "White"],
+    fabric: ["Cotton", "Polyester", "Leather"],
+    sizes: ["S", "M", "L", "XL", "XXL"],
+  };
+  const validateImages = (variants) => {
+    const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+    const maxSize = 2 * 1024 * 1024; // 2MB
+
+    for (let i = 0; i < variants.length; i++) {
+      const images = variants[i].images;
+
+      // 1️⃣ Exactly 3 images
+      if (!images || images.length !== 3) {
+        return `Upload exactly 3 images for Color ${i + 1}`;
+      }
+
+      // 2️⃣ Validate each image
+      for (let j = 0; j < images.length; j++) {
+        const file = images[j];
+
+        if (!allowedTypes.includes(file.type)) {
+          return `Invalid file type for Color ${i + 1}, Image ${j + 1}`;
+        }
+
+        if (file.size > maxSize) {
+          return `Image ${j + 1} of Color ${i + 1} exceeds 2MB`;
+        }
+      }
+    }
+
+    return null; // ✅ all good
+  };
+
+  const addColorVariant = () => {
+    setColorVariants((prev) => [
+      ...prev,
+      {
+        color: "",
+        sizes: [],
+        stockBySize: options.sizes.map((s) => ({ size: s, stock: 0 })),
+        images: [],
+      },
+    ]);
+  };
+  const removeColorVariant = (removeIndex) => {
+    setColorVariants((prev) =>
+      prev.filter((_, index) => index !== removeIndex)
+    );
+  };
 
   const productCreate = useSelector((state) => state.productCreate);
   const { loading, error, success } = productCreate;
@@ -69,94 +148,125 @@ const CreateProductPage = () => {
   });
   useEffect(() => {
     if (success) {
+      toast({
+        title: "Product Created",
+        description: "Product added successfully",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+        position: "top-right",
+      });
+
       dispatch(listProducts());
       dispatch({ type: PRODUCT_CREATE_RESET });
       navigate("/admin/productlist");
     }
-  }, [dispatch, success, navigate]);
+  }, [dispatch, success, navigate, toast]);
 
-  const options = {
-    gender: ["Men", "Women", "Unisex"],
-    category: [
-      "Clothing",
-      "Topwear",
-      "Bottomwear",
-      "Shirts",
-      "Hoodies",
-      "Innerwear",
-      "Footwear",
-      "Accessories",
-    ],
-    subcategory: ["Shirts", "Jeans", "Pants", "Shorts", "SweatPants", "Sets"],
-    type: ["Casual", "Formal", "Sports"],
-    ageRange: ["Kids", "Teen", "Adult"],
-    color: ["Red", "Blue", "Black", "White"],
-    fabric: ["Cotton", "Polyester", "Leather"],
-    sizes: ["S", "M", "L", "XL", "XXL"],
-  };
+  const [colorVariants, setColorVariants] = useState([
+    {
+      color: "",
+      sizes: [],
+      stockBySize: options.sizes.map((s) => ({ size: s, stock: 0 })),
+      images: [],
+    },
+  ]);
+
   const [stockBySize, setStockBySize] = useState(
     options.sizes.map((size) => ({ size, stock: 0 }))
   );
   const calculatedPrice = () => {
-    const oldPriceNum = Number(oldPrice);
-    const discountNum = Number(discount);
-    const discountedPrice = oldPriceNum - (oldPriceNum * discountNum) / 100;
-    return discountedPrice.toFixed(2);
+    const op = Number(oldPrice);
+    const dis = Number(discount);
+    if (!op) return 0;
+    return Number((op - (op * dis) / 100).toFixed(2));
   };
+
   const handleSizeChartUpload = (e) => {
     const file = e.target.files[0];
     if (file && file.type === "application/pdf") {
       setSizeChartFile(file);
       console.log("PDF file selected:", file);
     } else {
-      setMessage("Please upload a PDF file");
+      showError("Please upload a PDF file");
     }
   };
 
   const submitHandler = (e) => {
     e.preventDefault();
-    const formData = new FormData();
-    formData.append("brandname", brandname);
-    formData.append("price", calculatedPrice());
-    formData.append("oldPrice", oldPrice);
-    formData.append("discount", discount);
-    formData.append("description", description);
-    const selectedStock = stockBySize.filter((s) =>
-      productdetails.sizes.includes(s.size)
-    );
 
-    const invalidStock = selectedStock.some((s) => s.stock <= 0);
-
-    if (invalidStock) {
-      setMessage("Please enter stock greater than 0 for all selected sizes");
+    // 🔴 VALIDATION
+    if (colorVariants.length === 0) {
+      showError("Please add at least one color variant");
       return;
     }
 
+    for (let i = 0; i < colorVariants.length; i++) {
+      const v = colorVariants[i];
+      if (!v.color) {
+        showError(`Color name missing for variant ${i + 1}`);
+        return;
+      }
+      const imageError = validateImages(colorVariants);
+      if (imageError) {
+        showError(imageError);
+        return;
+      }
+    }
+
+    const formData = new FormData();
+
+    // 🔹 BASIC
+    formData.append("brandname", brandname);
+    formData.append("price", Number(calculatedPrice()));
+    formData.append("oldPrice", oldPrice);
+    formData.append("discount", discount);
+    formData.append("description", description);
+    formData.append("SKU", SKU);
+    formData.append("isFeatured", isFeatured ? "true" : "false");
+
+    // 🔹 SHIPPING
+    formData.append("shippingDetails", JSON.stringify(shippingDetails));
+
+    // 🔥 MAIN CHANGE → SEND VARIANTS
     formData.append(
-      "productdetails",
-      JSON.stringify({
-        ...productdetails,
-        sizes: selectedStock.map((s) => s.size),
-        stockBySize: selectedStock,
-      })
+      "products",
+      JSON.stringify(
+        colorVariants.map((variant) => ({
+          color: variant.color,
+          productdetails: {
+            gender: productdetails.gender,
+            category: productdetails.category,
+            subcategory: productdetails.subcategory,
+            type: productdetails.type,
+            ageRange: productdetails.ageRange,
+            fabric: productdetails.fabric,
+            color: variant.color,
+            sizes: variant.sizes,
+            stockBySize: variant.stockBySize.filter((s) =>
+              variant.sizes.includes(s.size)
+            ),
+          },
+        }))
+      )
     );
 
-    // formData.append("productdetails", JSON.stringify(productdetails));
-    formData.append("isFeatured", isFeatured);
-    formData.append("shippingDetails", JSON.stringify(shippingDetails));
-    formData.append("SKU", SKU);
+    // 🔥 IMAGES PER COLOR
+    colorVariants.forEach((variant) => {
+      variant.images.forEach((file) => {
+        formData.append("images", file);
+      });
+    });
 
+    // 🔹 SIZE CHART
     if (sizeChartFile) {
       formData.append("sizeChart", sizeChartFile);
     }
 
-    newImages.forEach((file) => {
-      if (file) {
-        formData.append("images", file);
-      }
-    });
+    // 🚀 DISPATCH
     dispatch(CreateProduct(formData));
   };
+
   const handleReplaceImage = (e, index) => {
     const file = e.target.files[0];
     if (file) {
@@ -178,13 +288,6 @@ const CreateProductPage = () => {
 
       return { ...prevDetails, sizes: newSizes };
     });
-  };
-  const handleStockChange = (size, value) => {
-    const num = value === "" ? 0 : Math.max(0, Number(value));
-
-    setStockBySize((prev) =>
-      prev.map((s) => (s.size === size ? { ...s, stock: num } : s))
-    );
   };
 
   return (
@@ -235,6 +338,7 @@ const CreateProductPage = () => {
             <FormLabel>Old Price</FormLabel>
             <Input
               type="number"
+              onWheel={disableNumberScroll}
               value={oldPrice}
               placeholder="Enter old price"
               onChange={(e) => setOldPrice(e.target.value)}
@@ -244,6 +348,7 @@ const CreateProductPage = () => {
             <FormLabel>Discount (%)</FormLabel>
             <Input
               type="number"
+              onWheel={disableNumberScroll}
               value={discount}
               placeholder="Enter discount percentage"
               onChange={(e) => setDiscount(Number(e.target.value))}
@@ -251,7 +356,12 @@ const CreateProductPage = () => {
           </FormControl>
           <FormControl>
             <FormLabel>New Price</FormLabel>
-            <Input type="number" value={calculatedPrice()} readOnly />
+            <Input
+              type="number"
+              onWheel={disableNumberScroll}
+              value={calculatedPrice()}
+              readOnly
+            />
           </FormControl>
         </Flex>
         {/* <FormControl isRequired>
@@ -366,22 +476,6 @@ const CreateProductPage = () => {
           </select>
         </FormControl>
         <FormControl>
-          <FormLabel>Color</FormLabel>
-          <select
-            value={productdetails.color}
-            onChange={(e) =>
-              setProductdetails({ ...productdetails, color: e.target.value })
-            }
-          >
-            <option value="">Select Color</option>
-            {options.color.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </FormControl>
-        <FormControl>
           <FormLabel>Fabric</FormLabel>
           <select
             value={productdetails.fabric}
@@ -397,42 +491,182 @@ const CreateProductPage = () => {
             ))}
           </select>
         </FormControl>
-        <FormControl>
-          <FormLabel>Sizes</FormLabel>
-          <Stack direction="row" wrap="wrap">
-            {options.sizes.map((size) => (
-              <Checkbox
-                key={size}
-                isChecked={productdetails.sizes.includes(size)}
-                onChange={() => handleSizeChange(size)}
+        {colorVariants.map((variant, index) => (
+          <Box
+            key={index}
+            border="1px solid #CBD5E0"
+            p={4}
+            borderRadius="md"
+            mt={4}
+            position="relative" // parent for absolute button
+          >
+            {/* Heading */}
+            <Flex mb={3} align="center" justify="space-between">
+              <Heading size="sm">Color {index + 1}</Heading>
+
+              <Box
+                onClick={() => {
+                  if (colorVariants.length > 1) {
+                    removeColorVariant(index);
+                  }
+                }}
+                cursor={colorVariants.length <= 1 ? "not-allowed" : "pointer"}
               >
-                {size}
-              </Checkbox>
+                <FaTrash
+                  size={18}
+                  color={colorVariants.length <= 1 ? "gray" : "red"}
+                />
+              </Box>
+            </Flex>
+
+            {/* Color Name */}
+            <FormControl mb={3}>
+              <FormLabel>Color</FormLabel>
+              <Input
+                value={variant.color}
+                placeholder="Enter color name"
+                onChange={(e) => {
+                  const updated = [...colorVariants];
+                  updated[index] = { ...updated[index], color: e.target.value };
+                  setColorVariants(updated);
+                }}
+              />
+            </FormControl>
+
+            {/* Sizes */}
+            <FormLabel>Sizes</FormLabel>
+            <Stack direction="row" mb={3}>
+              {options.sizes.map((size) => (
+                <Checkbox
+                  key={size}
+                  isChecked={variant.sizes.includes(size)}
+                  onChange={() => {
+                    const updated = [...colorVariants];
+                    const sizes = updated[index].sizes;
+                    updated[index].sizes = sizes.includes(size)
+                      ? sizes.filter((s) => s !== size)
+                      : [...sizes, size];
+                    setColorVariants(updated);
+                  }}
+                >
+                  {size}
+                </Checkbox>
+              ))}
+            </Stack>
+
+            {/* Stock per size */}
+            {variant.sizes.map((size) => (
+              <Flex key={size} gap={2} mb={2}>
+                <Text w="40px">{size}</Text>
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder={`Stock for ${size}`}
+                  onWheel={disableNumberScroll}
+                  onChange={(e) => {
+                    const updated = [...colorVariants];
+                    updated[index].stockBySize = updated[index].stockBySize.map(
+                      (stk) =>
+                        stk.size === size
+                          ? { ...stk, stock: Number(e.target.value) }
+                          : stk
+                    );
+                    setColorVariants(updated);
+                  }}
+                />
+              </Flex>
             ))}
-          </Stack>
-        </FormControl>
-        <FormControl mt={4}>
-          <FormLabel>Stock per Size</FormLabel>
-          <Stack direction="column" spacing={2}>
-            {stockBySize.map(
-              (s) =>
-                productdetails.sizes.includes(s.size) && (
-                  <Flex key={s.size} gap={2} align="center">
-                    <Text w="50px">{s.size}</Text>
+
+            {/* Images (3 per color) */}
+            <FormControl mt={4}>
+              <FormLabel>
+                Images for {variant.color || `Color ${index + 1}`}
+              </FormLabel>
+              <Flex gap={4}>
+                {[0, 1, 2].map((imgIndex) => (
+                  <Box
+                    key={imgIndex}
+                    w="100px"
+                    h="100px"
+                    border="2px dashed #CBD5E0"
+                    borderRadius="md"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    cursor="pointer"
+                    position="relative"
+                    onClick={() =>
+                      document
+                        .getElementById(`images-${index}-${imgIndex}`)
+                        .click()
+                    }
+                  >
+                    {variant.images?.[imgIndex] ? (
+                      <img
+                        src={URL.createObjectURL(variant.images[imgIndex])}
+                        alt="preview"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          borderRadius: "6px",
+                        }}
+                      />
+                    ) : (
+                      <Text fontSize="xs" color="gray.500" textAlign="center">
+                        Upload
+                        <br />
+                        Image {imgIndex + 1}
+                      </Text>
+                    )}
                     <Input
-                      type="number"
-                      min={0}
-                      value={s.stock}
-                      placeholder={`Stock for ${s.size}`}
-                      onChange={(e) =>
-                        handleStockChange(s.size, e.target.value)
-                      }
+                      type="file"
+                      accept="image/*"
+                      hidden
+                      id={`images-${index}-${imgIndex}`}
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        const updated = [...colorVariants];
+                        const imgs = updated[index].images || [];
+                        imgs[imgIndex] = file;
+                        updated[index].images = imgs;
+                        setColorVariants(updated);
+                      }}
                     />
-                  </Flex>
-                )
-            )}
-          </Stack>
-        </FormControl>
+                  </Box>
+                ))}
+              </Flex>
+              <Text fontSize="xs" color="gray.500" mt={2}>
+                Upload exactly 3 images for this color
+              </Text>
+              {index === colorVariants.length - 1 && (
+                <Button
+                  mt={4}
+                  size="sm"
+                  colorScheme="teal"
+                  variant="outline"
+                  onClick={() =>
+                    setColorVariants((prev) => [
+                      ...prev,
+                      {
+                        color: "",
+                        sizes: [],
+                        stockBySize: options.sizes.map((s) => ({
+                          size: s,
+                          stock: 0,
+                        })),
+                        images: [],
+                      },
+                    ])
+                  }
+                >
+                  ➕ Add Another Color
+                </Button>
+              )}
+            </FormControl>
+          </Box>
+        ))}
         {/* Size Chart PDF Upload */}
         <FormControl mt={4}>
           <FormLabel>Size Chart PDF</FormLabel>
@@ -473,13 +707,17 @@ const CreateProductPage = () => {
         <Input
           placeholder="Weight (kg)"
           onChange={(e) =>
-            setShippingDetails({ ...shippingDetails, weight: e.target.value })
+            setShippingDetails({
+              ...shippingDetails,
+              weight: Number(e.target.value),
+            })
           }
         />{" "}
         <FormLabel>Length</FormLabel>
         <Input
           placeholder="Length (cm)"
           type="number"
+          onWheel={disableNumberScroll}
           onChange={(e) =>
             setShippingDetails({
               ...shippingDetails,
@@ -494,6 +732,7 @@ const CreateProductPage = () => {
         <Input
           placeholder="Width (cm)"
           type="number"
+          onWheel={disableNumberScroll}
           onChange={(e) =>
             setShippingDetails({
               ...shippingDetails,
@@ -508,6 +747,7 @@ const CreateProductPage = () => {
         <Input
           placeholder="Height (cm)"
           type="number"
+          onWheel={disableNumberScroll}
           onChange={(e) =>
             setShippingDetails({
               ...shippingDetails,
@@ -607,51 +847,6 @@ const CreateProductPage = () => {
             }
           />
         </FormControl>
-        {/* Upload Images */}
-        <FormLabel>Product Images (Upload 3 Images)</FormLabel>
-        <Flex wrap="wrap" gap={4}>
-          {existingImages.map((img, index) => (
-            <Box key={index} position="relative" w="100px" h="100px">
-              <img
-                src={img || "https://via.placeholder.com/100"}
-                alt={`Product ${index}`}
-                width="100px"
-                height="100px"
-                style={{
-                  cursor: "pointer",
-                  borderRadius: "8px",
-                  objectFit: "cover",
-                }}
-                onClick={() =>
-                  document.getElementById(`imageUpload-${index}`).click()
-                }
-              />
-
-              {/* Hidden File Input */}
-              <Input
-                type="file"
-                accept="image/*"
-                id={`imageUpload-${index}`}
-                onChange={(e) => handleReplaceImage(e, index)}
-                hidden
-              />
-
-              {/* Upload/Edit Button */}
-              <Button
-                size="xs"
-                colorScheme="blue"
-                position="absolute"
-                bottom="5px"
-                right="5px"
-                onClick={() =>
-                  document.getElementById(`imageUpload-${index}`).click()
-                }
-              >
-                <FaEdit />
-              </Button>
-            </Box>
-          ))}
-        </Flex>
         {/* Submit Button */}
         <Button
           type="submit"

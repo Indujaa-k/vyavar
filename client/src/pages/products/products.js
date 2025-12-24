@@ -62,6 +62,19 @@ const Products = () => {
     success: bulkSuccess,
     message: bulkMessage,
   } = productBulkUpload;
+  // Group products by productGroupId
+  const groupedProducts = products.reduce((acc, product) => {
+    const groupId = product.productGroupId || product._id;
+    if (!acc[groupId]) acc[groupId] = [];
+    acc[groupId].push(product);
+    return acc;
+  }, {});
+  const groupedProductsArray = Object.entries(groupedProducts).map(
+    ([groupId, products]) => ({
+      groupId,
+      products,
+    })
+  );
 
   const userLogin = useSelector((state) => state.userLogin);
   const { userInfo } = userLogin;
@@ -110,167 +123,129 @@ const Products = () => {
   };
 
   return (
-    <Box className="Users" bg="white" p={4}>
+    <Box bg="white" p={4}>
       <Helmet>
         <title>Products</title>
       </Helmet>
+
       <h1 className="titlepanel">Products</h1>
 
-      {loading || loadingDelete || loadingCreate || bulkLoading ? (
-        <div className="loading">
-          <HashLoader color={"#1e1e2c"} size={40} />
-        </div>
-      ) : error || errorDelete || errorCreate || bulkError ? (
-        <Text color="red.500">
-          {error?.message ||
-            errorDelete?.message ||
-            errorCreate?.message ||
-            bulkError?.message ||
-            "An unknown error occurred"}
-        </Text>
-      ) : (
-        <>
-          <Flex
-            className="button-container"
-            align="center"
-            justify="space-between"
-          >
+      {groupedProductsArray.map((group) => (
+        <Box
+          key={group.groupId}
+          border="1px solid"
+          borderColor="gray.200"
+          borderRadius="md"
+          p={2}
+          mb={6}
+        >
+          {/* Add Variant button – right aligned */}
+          <Flex justify="flex-end" mb={3}>
             <Button
-              leftIcon={<CgAdd size="20" />}
-              className="ADDBUTTON"
+              size="sm"
               colorScheme="teal"
-              onClick={createproducthandler}
+              leftIcon={<CgAdd />}
+              onClick={() =>
+                navigate(`/admin/product/${group.groupId}/add-variant`)
+              }
             >
-              ADD
+              Add Variant
             </Button>
-            <form className="upload-form" onSubmit={bulkUploadHandler}>
-              <Input
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={(e) => setFile(e.target.files[0])}
-                size="sm"
-              />
-              <Button type="submit" colorScheme="teal" size="lg">
-                Bulk Upload
-              </Button>
-            </form>
           </Flex>
 
-          {bulkMessage && <Text color="green.500">{bulkMessage}</Text>}
+          <Table variant="simple" size="sm">
+            <Thead>
+              <Tr>
+                <Th>Group ID</Th>
+                <Th>Name</Th>
+                <Th>Price</Th>
+                <Th>Category</Th>
+                <Th>Stock</Th>
+                <Th>Image</Th>
+                <Th>Actions</Th>
+              </Tr>
+            </Thead>
 
-          <Box overflowX="auto">
-            <Table className="productusers" variant="striped">
-              <Thead>
-                <Tr>
-                  <Th>ID</Th>
-                  <Th>Name</Th>
-                  <Th>Price</Th>
-                  <Th>Category</Th>
-                  <Th>Stock Status</Th>
-                  <Th>ProductDetails</Th>
-                  <Th>Actions</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {products.map((product) => {
-                  const totalStock =
-                    product.productdetails?.stockBySize?.reduce(
-                      (sum, s) => sum + s.stock,
-                      0
-                    ) || 0;
-
-                  return (
-                    <Tr key={product._id}>
-                      <Td>{product._id}</Td>
-                      <Td>{product.brandname}</Td>
-                      <Td isNumeric>{product.price}</Td>
-                      <Td>
-                        {product.productdetails?.gender} |{" "}
-                        {product.productdetails?.category} |{" "}
-                        {product.productdetails?.subcategory} |
-                        {Array.isArray(product.productdetails?.sizes)
-                          ? product.productdetails.sizes.join(" | ")
-                          : product.productdetails?.sizes || "N/A"}
-                      </Td>
-                      <Td>
-                        {product.productdetails?.stockBySize &&
-                        product.productdetails.stockBySize.length > 0 ? (
-                          <Stack spacing={1}>
-                            {product.productdetails.stockBySize.map((s) => (
-                              <Text
-                                key={s.size}
-                                color={
-                                  s.stock > 10
-                                    ? "green"
-                                    : s.stock > 0
-                                    ? "orange"
-                                    : "red"
-                                }
-                              >
-                                {s.size}: {s.stock}
-                              </Text>
-                            ))}
-                          </Stack>
-                        ) : (
-                          <Text color="gray.500">No stock data</Text>
-                        )}
-                      </Td>
-
-                      {/* Display Product Images */}
-                      <Td>
-                        <Stack spacing={2} align="center">
-                          {product.images && product.images.length > 0 ? (
-                            <img
-                              src={product.images[0]} // Access the first image
-                              alt={product.brandname}
-                              style={{
-                                width: "80px",
-                                height: "80px",
-                                objectFit: "cover",
-                                borderRadius: "5px",
-                              }}
-                            />
-                          ) : (
-                            <Text>No Image</Text>
-                          )}
-                          {/* Product Link */}
-                          <Link to={`/product/${product._id}`}>
-                            <Button colorScheme="blue" size="xs">
-                              View Product
-                            </Button>
-                          </Link>
-                        </Stack>
-                      </Td>
-
-                      <Td>
-                        <Stack>
-                          <Link to={`/admin/product/${product._id}/edit`}>
-                            <Button
-                              leftIcon={<AiOutlineEdit size="16" />}
-                              colorScheme="blue"
-                              size="xs"
-                            >
-                              EDIT
-                            </Button>
-                          </Link>
-                          <Button
-                            colorScheme="red"
-                            leftIcon={<AiFillDelete size="16" />}
-                            size="xs"
-                            onClick={() => deletehandler(product._id)}
+            <Tbody>
+              {group.products.map((product, index) => (
+                <Tr key={product._id}>
+                  <Td>{index === 0 ? group.groupId : ""}</Td>
+                  <Td>{product.brandname}</Td>
+                  <Td isNumeric>{product.price}</Td>
+                  <Td>
+                    {product.productdetails?.gender} |{" "}
+                    {product.productdetails?.category} |{" "}
+                    {product.productdetails?.subcategory}
+                  </Td>
+                  <Td>
+                    {product.productdetails?.stockBySize?.length > 0 ? (
+                      <Stack spacing={1}>
+                        {product.productdetails.stockBySize.map((s) => (
+                          <Text
+                            key={s.size}
+                            color={
+                              s.stock > 10
+                                ? "green"
+                                : s.stock > 0
+                                ? "orange"
+                                : "red"
+                            }
                           >
-                            DELETE
-                          </Button>
-                        </Stack>
-                      </Td>
-                    </Tr>
-                  );
-                })}
-              </Tbody>
-            </Table>
-          </Box>
-        </>
-      )}
+                            {s.size}: {s.stock}
+                          </Text>
+                        ))}
+                      </Stack>
+                    ) : (
+                      <Text color="gray.500">No stock</Text>
+                    )}
+                  </Td>
+                  <Td>
+                    {product.images?.length > 0 ? (
+                      <img
+                        src={product.images[0]}
+                        alt={product.brandname}
+                        style={{
+                          width: "70px",
+                          height: "70px",
+                          objectFit: "cover",
+                        }}
+                      />
+                    ) : (
+                      "No Image"
+                    )}
+                    <Link to={`/product/${product._id}`}>
+                      <Button
+                        size="xs"
+                        fontSize="xs"
+                        variant="ghost"
+                        colorScheme="blue"
+                      >
+                        View Product
+                      </Button>
+                    </Link>
+                  </Td>
+                  <Td>
+                    <Stack spacing={2}>
+                      <Link to={`/admin/product/${product._id}/edit`}>
+                        <Button size="xs" colorScheme="blue">
+                          Edit
+                        </Button>
+                      </Link>
+                      <Button
+                        size="xs"
+                        colorScheme="red"
+                        onClick={() => deletehandler(product._id)}
+                      >
+                        Delete
+                      </Button>
+                    </Stack>
+                  </Td>
+                </Tr>
+              ))}
+            </Tbody>
+          </Table>
+        </Box>
+      ))}
     </Box>
   );
 };
