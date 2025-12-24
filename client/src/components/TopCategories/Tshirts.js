@@ -50,7 +50,7 @@ const Tshirts = () => {
       </div>
       {/* 📌 Product List */}
 
-      <SimpleGrid columns={{ base: 2, md: 3, lg: 5 }} spacing={10} p={4}>
+      <SimpleGrid columns={{ base: 2, md: 3, lg: 4 }} spacing={10} p={4}>
         {tshirts.length > 0 ? (
           tshirts.map((product) => {
             return (
@@ -60,7 +60,8 @@ const Tshirts = () => {
                 overflow="hidden"
                 color="black"
                 width="270px"
-                height="490px"
+                height="520px"
+
                 position="relative"
               >
                 {/* Product Image */}

@@ -89,7 +89,6 @@ const Productoncart = ({ item }) => {
 
   console.log("CART ITEM RECEIVED 👉", item);
 
-
   const stockBySize = item.product.productdetails?.stockBySize || [];
 
   const sizeStock =
@@ -101,13 +100,12 @@ const Productoncart = ({ item }) => {
 
   // Update cart when qty or size changes
   const updateCart = (newQty, size) => {
-  const stock = stockBySize.find((s) => s.size === size)?.stock || 0;
-  const adjustedQty = Math.min(newQty, stock); // ✅ Clamp qty to stock
-  setQty(adjustedQty);
-  setSelectedSize(size);
-  dispatch(addToCart(item.product._id, adjustedQty, size));
-};
-
+    const stock = stockBySize.find((s) => s.size === size)?.stock || 0;
+    const adjustedQty = Math.min(newQty, stock); // ✅ Clamp qty to stock
+    setQty(adjustedQty);
+    setSelectedSize(size);
+    dispatch(addToCart(item.product._id, adjustedQty, size));
+  };
 
   return (
     <div className="productcart">

@@ -103,3 +103,29 @@
   border-bottom: 2px solid #000; /* Active tab underline color */
   font-weight: bold; /* Optional: Makes the active tab text bolder */
 }
+/* Desktop only */
+.desktop-only {
+  display: block;
+}
+
+/* Mobile size chart hidden by default */
+.mobile-size-chart {
+  display: none;
+}
+@media (max-width: 768px) {
+ .desktop-only {
+    display: none !important;
+  }
+
+  /* Show size chart below tabs */
+  .mobile-size-chart {
+    display: block;
+    margin-top: 20px;
+    border-top: 1px solid #e5e5e5;
+    padding-top: 15px;
+  }
+
+  .mobile-size-chart iframe {
+    height: 300px;
+  }
+}

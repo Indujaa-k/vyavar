@@ -157,16 +157,31 @@ const ProductsListPage = () => {
               An error occurred while fetching products.
             </Text>
           ) : products.length > 0 ? (
-            <Flex wrap="wrap" gap={3}>
+            // <Flex wrap="wrap" gap={3}>
+            //   {products.map((product) => (
+            //     <Box
+            //       key={product._id}
+            //       width={{ base: "100%", sm: "48%", md: "24%" }} // Ensures 4 cards per row on medium+ screens
+            //     >
+            //       <CardProduct product={product} />
+            //     </Box>
+            //   ))}
+            // </Flex>
+            <Box
+              display="grid"
+              gridTemplateColumns={{
+                base: "1fr",
+                sm: "repeat(2, 1fr)",
+                md: "repeat(3, 1fr)",
+              }}
+              gap="30px"
+            >
               {products.map((product) => (
-                <Box
-                  key={product._id}
-                  width={{ base: "100%", sm: "48%", md: "24%" }} // Ensures 4 cards per row on medium+ screens
-                >
+                <Box key={product._id} display="flex" justifyContent="center">
                   <CardProduct product={product} />
                 </Box>
               ))}
-            </Flex>
+            </Box>
           ) : (
             <Text>No products found.</Text>
           )}

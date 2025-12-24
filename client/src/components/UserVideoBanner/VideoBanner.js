@@ -14,7 +14,7 @@ const UserVideoBanner = () => {
   }, [dispatch]);
 
   return (
-    <Box p={0} w="87vw" mx="auto" mt="40">
+    <Box p={0} w="87vw" mx="auto" mt="20">
       {" "}
       {/* Full width container */}
       {loading ? (

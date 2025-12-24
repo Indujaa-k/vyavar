@@ -1,11 +1,13 @@
 import {
   CART_ADD_ITEM,
-  CART_FETCH_ITEMS,
   CART_REMOVE_ITEM,
   CART_SAVE_SHIPPING_ADRESSE,
   CART_SAVE_PAYMENT,
   SAVE_SHIPPING_COST,
   SAVE_SHIPPING_RATES,
+  CART_FETCH_REQUEST,
+  CART_FETCH_SUCCESS,
+  CART_FETCH_FAIL,
 } from "../constants/cartConstants";
 export const cartReducer = (
   state = {
@@ -13,16 +15,44 @@ export const cartReducer = (
     shippingAddress: {},
     shippingCost: 0,
     images: [],
+    loading: false,
+    error: null,
   },
   action
 ) => {
   switch (action.type) {
+    case CART_FETCH_REQUEST:
+      return {
+        ...state,
+        loading: true,
+      };
+
+    case CART_FETCH_SUCCESS:
+      return {
+        ...state,
+        loading: false,
+        cartItems: action.payload,
+      };
+
+    case CART_FETCH_FAIL:
+      return {
+        ...state,
+        loading: false,
+        error: action.payload,
+        cartItems: [],
+      };
+
     case CART_ADD_ITEM:
-    case CART_FETCH_ITEMS:
+      return {
+        ...state,
+        cartItems: action.payload,
+      };
+
+    // ❌ REMOVE ITEM
     case CART_REMOVE_ITEM:
       return {
         ...state,
-        cartItems: action.payload || [],
+        cartItems: action.payload,
       };
 
     case CART_SAVE_SHIPPING_ADRESSE:
