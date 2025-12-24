@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  listProductDetails,
-  UpdateProduct,
-} from "../../actions/productActions";
+import { listProductDetails, UpdateProduct } from "../../actions/productActions";
 import { PRODUCT_UPDATE_RESET } from "../../constants/productConstants";
 import { useNavigate, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet";
@@ -23,6 +20,13 @@ import {
   Heading,
   Flex,
   Divider,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  useDisclosure,
 } from "@chakra-ui/react";
 import "./CreateProduct.css";
 
@@ -41,6 +45,8 @@ const EditProductPage = () => {
   const [isFeatured, setIsFeatured] = useState(false);
   const [SKU, setSKU] = useState("");
   const [sizeChartFile, setSizeChartFile] = useState("");
+  const [variantImages, setVariantImages] = useState([null, null, null]);
+
   const [productdetails, setProductdetails] = useState({
     gender: "",
     category: "",
@@ -66,6 +72,44 @@ const EditProductPage = () => {
   });
   const [message, setMessage] = useState(null);
 
+  //  variant
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [variantData, setVariantData] = useState({
+    color: "",
+    SKU: "",
+    sizes: [],
+    stockBySize: [],
+  });
+  const generateVariantSKU = (productName, color) => {
+    const safeProductName = (productName || "")
+      .trim()
+      .toUpperCase()
+      .replace(/\s+/g, "-"); // replace spaces with hyphen
+
+    const safeColor = (color || "").trim().toUpperCase();
+
+    const time = new Date()
+      .toISOString()
+      .replace(/[-:.TZ]/g, "")
+      .slice(0, 14);
+
+    return `${safeProductName}-${safeColor}-${time}`;
+  };
+
+  const handleVariantImageChange = (e, index) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const updatedImages = [...variantImages];
+    updatedImages[index] = file;
+    setVariantImages(updatedImages);
+  };
+  const handleRemoveVariantImage = (index) => {
+    const updatedImages = [...variantImages];
+    updatedImages[index] = null; // remove the image
+    setVariantImages(updatedImages);
+  };
+
   // Options
   const options = {
     gender: ["Men", "Women", "Unisex"],
@@ -82,7 +126,6 @@ const EditProductPage = () => {
     subcategory: ["Shirts", "Jeans", "Pants", "Shorts", "SweatPants", "Sets"],
     type: ["Casual", "Formal", "Sports"],
     ageRange: ["Kids", "Teen", "Adult"],
-    color: ["Red", "Blue", "Black", "White"],
     fabric: ["Cotton", "Polyester", "Leather"],
     sizes: ["S", "M", "L", "XL", "XXL"],
   };
@@ -92,11 +135,7 @@ const EditProductPage = () => {
   const { loading, error, product } = productDetails;
 
   const productUpdate = useSelector((state) => state.productUpdate);
-  const {
-    loading: loadingUpdate,
-    error: errorUpdate,
-    success: successUpdate,
-  } = productUpdate;
+  const { loading: loadingUpdate, error: errorUpdate, success: successUpdate } = productUpdate;
 
   // Load product details
   useEffect(() => {
@@ -317,15 +356,7 @@ const EditProductPage = () => {
           </FormControl>
 
           {/* Product details */}
-          {[
-            "gender",
-            "category",
-            "subcategory",
-            "type",
-            "ageRange",
-            "color",
-            "fabric",
-          ].map((field) => (
+          {["gender", "category", "subcategory", "type", "ageRange", "color", "fabric"].map((field) => (
             <FormControl key={field} mt={3}>
               <FormLabel>
                 {field.charAt(0).toUpperCase() + field.slice(1)}
@@ -348,6 +379,20 @@ const EditProductPage = () => {
               </select>
             </FormControl>
           ))}
+          <FormControl mt={3}>
+            <FormLabel>Color</FormLabel>
+            <Input
+              type="text"
+              placeholder="Enter color"
+              value={productdetails.color}
+              onChange={(e) =>
+                setProductdetails({
+                  ...productdetails,
+                  color: e.target.value,
+                })
+              }
+            />
+          </FormControl>
 
           {/* Sizes */}
           <FormControl mt={4}>
@@ -388,9 +433,49 @@ const EditProductPage = () => {
               )}
             </Stack>
           </FormControl>
+          {/* Images */}
+          <FormLabel mt={4}>Product Images (3)</FormLabel>
+          <Flex wrap="wrap" gap={4}>
+            {existingImages.map((img, index) => (
+              <Box key={index} position="relative" w="100px" h="100px">
+                <img
+                  src={img || "https://via.placeholder.com/100"}
+                  alt={`Product ${index}`}
+                  style={{
+                    cursor: "pointer",
+                    borderRadius: "8px",
+                    objectFit: "cover",
+                    objectFit: "cover",
+                  }}
+                  onClick={() =>
+                    document.getElementById(`imageUpload-${index}`).click()
+                  }
+                />
+                <Input
+                  type="file"
+                  accept="image/*"
+                  id={`imageUpload-${index}`}
+                  onChange={(e) => handleReplaceImage(e, index)}
+                  hidden
+                />
+                <Button
+                  size="xs"
+                  colorScheme="blue"
+                  position="absolute"
+                  bottom="5px"
+                  right="5px"
+                  onClick={() =>
+                    document.getElementById(`imageUpload-${index}`).click()
+                  }
+                >
+                  <FaEdit />
+                </Button>
+              </Box>
+            ))}
+          </Flex>
 
           {/* Size Chart */}
-          <FormControl mt={4}>
+          <FormControl mt={10}>
             <FormLabel>Size Chart PDF</FormLabel>
             <Flex align="center" mt={2}>
               <Input
@@ -417,7 +502,9 @@ const EditProductPage = () => {
               )}
             </Flex>
           </FormControl>
-
+          <Button mt={6} colorScheme="purple" w="full" onClick={onOpen}>
+            ➕ Add Variant
+          </Button>
           {/* Shipping details */}
           <Heading size="md" color="teal.600" fontWeight="bold" mt={6} mb={4}>
             🚚 Shipping Details
@@ -458,68 +545,22 @@ const EditProductPage = () => {
           ))}
 
           {/* Origin Address */}
-          <Heading size="md" color="teal.600" fontWeight="bold" mt={6} mb={4}>
-            📍 Origin Address
-          </Heading>
-          {["street1", "street2", "city", "state", "zip", "country"].map(
-            (field) => (
-              <FormControl key={field} mt={2} isRequired>
-                <FormLabel>
-                  {field.charAt(0).toUpperCase() + field.slice(1)}
-                </FormLabel>
-                <Input
-                  type="text"
-                  value={shippingDetails.originAddress[field]}
-                  onChange={(e) =>
-                    setShippingDetails({
-                      ...shippingDetails,
-                      originAddress: {
-                        ...shippingDetails.originAddress,
-                        [field]: e.target.value,
-                      },
-                    })
-                  }
-                />
-              </FormControl>
-            )
-          )}
+          <Heading size="md" color="teal.600" fontWeight="bold" mt={6} mb={4}>📍 Origin Address</Heading>
+          {["street1", "street2", "city", "state", "zip", "country"].map(field => (
+            <FormControl key={field} mt={2} isRequired>
+              <FormLabel>{field.charAt(0).toUpperCase() + field.slice(1)}</FormLabel>
+              <Input type="text" value={shippingDetails.originAddress[field]} onChange={e => setShippingDetails({...shippingDetails, originAddress: {...shippingDetails.originAddress, [field]: e.target.value}})} />
+            </FormControl>
+          ))}
 
           {/* Images */}
           <FormLabel mt={4}>Product Images (3)</FormLabel>
           <Flex wrap="wrap" gap={4}>
             {existingImages.map((img, index) => (
               <Box key={index} position="relative" w="100px" h="100px">
-                <img
-                  src={img || "https://via.placeholder.com/100"}
-                  alt={`Product ${index}`}
-                  style={{
-                    cursor: "pointer",
-                    borderRadius: "8px",
-                    objectFit: "cover",
-                  }}
-                  onClick={() =>
-                    document.getElementById(`imageUpload-${index}`).click()
-                  }
-                />
-                <Input
-                  type="file"
-                  accept="image/*"
-                  id={`imageUpload-${index}`}
-                  onChange={(e) => handleReplaceImage(e, index)}
-                  hidden
-                />
-                <Button
-                  size="xs"
-                  colorScheme="blue"
-                  position="absolute"
-                  bottom="5px"
-                  right="5px"
-                  onClick={() =>
-                    document.getElementById(`imageUpload-${index}`).click()
-                  }
-                >
-                  <FaEdit />
-                </Button>
+                <img src={img || "https://via.placeholder.com/100"} alt={`Product ${index}`} style={{cursor:"pointer",borderRadius:"8px",objectFit:"cover"}} onClick={()=>document.getElementById(`imageUpload-${index}`).click()} />
+                <Input type="file" accept="image/*" id={`imageUpload-${index}`} onChange={(e)=>handleReplaceImage(e,index)} hidden />
+                <Button size="xs" colorScheme="blue" position="absolute" bottom="5px" right="5px" onClick={()=>document.getElementById(`imageUpload-${index}`).click()}><FaEdit /></Button>
               </Box>
             ))}
           </Flex>
@@ -530,11 +571,7 @@ const EditProductPage = () => {
           </Button>
         </form>
       )}
-      {message && (
-        <Text color="red.500" mt={2}>
-          {message}
-        </Text>
-      )}
+      {message && <Text color="red.500" mt={2}>{message}</Text>}
     </Box>
   );
 };

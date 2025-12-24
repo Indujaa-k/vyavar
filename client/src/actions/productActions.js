@@ -32,6 +32,27 @@ import {
   REVIEW_DELETE_REQUEST,
   REVIEW_DELETE_SUCCESS,
   REVIEW_DELETE_FAIL,
+  PRODUCT_VARIANTS_REQUEST,
+  PRODUCT_VARIANTS_SUCCESS,
+  PRODUCT_VARIANTS_FAIL,
+  PRODUCT_GROUP_DETAILS_REQUEST,
+  PRODUCT_GROUP_DETAILS_SUCCESS,
+  PRODUCT_GROUP_DETAILS_FAIL,
+  PRODUCT_GROUP_UPDATE_REQUEST,
+  PRODUCT_GROUP_UPDATE_SUCCESS,
+  PRODUCT_GROUP_UPDATE_FAIL,
+  PRODUCT_VARIANT_UPDATE_REQUEST,
+  PRODUCT_VARIANT_UPDATE_SUCCESS,
+  PRODUCT_VARIANT_UPDATE_FAIL,
+  PRODUCT_VARIANT_ADD_REQUEST,
+  PRODUCT_VARIANT_ADD_SUCCESS,
+  PRODUCT_VARIANT_ADD_FAIL,
+  PRODUCT_EDIT_REQUEST,
+  PRODUCT_EDIT_SUCCESS,
+  PRODUCT_EDIT_FAIL,
+  PRODUCT_LIST_BY_GROUP_REQUEST,
+  PRODUCT_LIST_BY_GROUP_SUCCESS,
+  PRODUCT_LIST_BY_GROUP_FAIL,
 } from "../constants/productConstants";
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -80,6 +101,25 @@ export const Listproductbyfiters = (filters) => async (dispatch) => {
   }
 };
 
+export const listProductVariants = (sku) => async (dispatch) => {
+  try {
+    dispatch({ type: PRODUCT_VARIANTS_REQUEST });
+
+    const skuPrefix = sku.split("-")[0];
+    const { data } = await axios.get(`${API_URL}/api/products/variants/${sku}`);
+
+    dispatch({
+      type: PRODUCT_VARIANTS_SUCCESS,
+      payload: data,
+    });
+  } catch (error) {
+    dispatch({
+      type: PRODUCT_VARIANTS_FAIL,
+      payload: error.response?.data?.message || error.message,
+    });
+  }
+};
+
 export const listProductDetails = (id) => async (dispatch) => {
   try {
     dispatch({ type: PRODUCT_DETAILS_REQUEST });
@@ -97,7 +137,6 @@ export const listProductDetails = (id) => async (dispatch) => {
     });
   }
 };
-
 export const DeleteProduct = (id) => async (dispatch, getState) => {
   try {
     dispatch({
@@ -129,38 +168,42 @@ export const DeleteProduct = (id) => async (dispatch, getState) => {
   }
 };
 
-export const CreateProduct = (formData) => async (dispatch, getState) => {
+export const CreateProduct = (productData) => async (dispatch, getState) => {
   try {
-    dispatch({
-      type: PRODUCT_CREATE_REQUEST,
-    });
+    dispatch({ type: PRODUCT_CREATE_REQUEST });
 
     const {
       userLogin: { userInfo },
     } = getState();
 
     const config = {
-      headers: {
-        Authorization: `Bearer ${userInfo.token}`,
-      },
+      headers: { Authorization: `Bearer ${userInfo.token}` },
     };
 
-    const { data } = await axios.post(
-      `${API_URL}/api/products/create`,
-      formData,
-      config
-    );
+    const { data } = await axios.post(`/api/products/create`, productData, config);
+
+    dispatch({ type: PRODUCT_CREATE_SUCCESS, payload: data });
+  } catch (error) {
     dispatch({
-      type: PRODUCT_CREATE_SUCCESS,
+      type: PRODUCT_CREATE_FAIL,
+      payload: error.response?.data.message || error.message,
+    });
+  }
+};
+export const getProductBySkuDetails = (sku) => async (dispatch) => {
+  try {
+    dispatch({ type: PRODUCT_DETAILS_REQUEST });
+
+    const { data } = await axios.get(`${API_URL}/api/products/sku/${sku}`);
+
+    dispatch({
+      type: PRODUCT_DETAILS_SUCCESS,
       payload: data,
     });
   } catch (error) {
     dispatch({
-      type: PRODUCT_CREATE_FAIL,
-      payload:
-        error.response && error.response.data.message
-          ? error.response.data.message
-          : error.message,
+      type: PRODUCT_DETAILS_FAIL,
+      payload: error.response?.data?.message || error.message,
     });
   }
 };
@@ -243,6 +286,7 @@ export const UpdateProduct =
       });
     }
   };
+
 export const createproductReview =
   (productId, review) => async (dispatch, getState) => {
     try {
@@ -303,7 +347,7 @@ export const listPendingReviews = () => async (dispatch, getState) => {
 
     dispatch({
       type: REVIEW_LIST_SUCCESS,
-      payload: data // ✅ ONLY ARRAY
+      payload: data, // ✅ ONLY ARRAY
     });
   } catch (error) {
     dispatch({
@@ -380,4 +424,185 @@ export const deleteReview = (reviewId) => async (dispatch, getState) => {
     });
   }
 };
+export const getProductsByGroupId = (groupId) => async (dispatch, getState) => {
+  try {
+    dispatch({ type: PRODUCT_GROUP_DETAILS_REQUEST });
 
+    const {
+      userLogin: { userInfo },
+    } = getState();
+    const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+
+    const { data } = await axios.get(`/api/products/group/${groupId}`, config);
+
+    dispatch({ type: PRODUCT_GROUP_DETAILS_SUCCESS, payload: data });
+  } catch (error) {
+    dispatch({
+      type: PRODUCT_GROUP_DETAILS_FAIL,
+      payload: error.response?.data?.message || error.message,
+    });
+  }
+};
+
+// Update common fields
+export const updateGroupCommonFields =
+  (groupId, updateData) => async (dispatch, getState) => {
+    try {
+      dispatch({ type: PRODUCT_GROUP_UPDATE_REQUEST });
+
+      const {
+        userLogin: { userInfo },
+      } = getState();
+      const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+
+      const { data } = await axios.put(
+        `/api/products/group/${groupId}/common`,
+        updateData,
+        config
+      );
+
+      dispatch({ type: PRODUCT_GROUP_UPDATE_SUCCESS, payload: data });
+    } catch (error) {
+      dispatch({
+        type: PRODUCT_GROUP_UPDATE_FAIL,
+        payload: error.response?.data?.message || error.message,
+      });
+    }
+  };
+
+// Update variant
+export const updateProductVariant =
+  (productId, formData) => async (dispatch, getState) => {
+    try {
+      dispatch({ type: PRODUCT_VARIANT_UPDATE_REQUEST });
+
+      const {
+        userLogin: { userInfo },
+      } = getState();
+      const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+
+      const { data } = await axios.put(
+        `/api/products/${productId}`,
+        formData,
+        config
+      );
+
+      dispatch({ type: PRODUCT_VARIANT_UPDATE_SUCCESS, payload: data });
+    } catch (error) {
+      dispatch({
+        type: PRODUCT_VARIANT_UPDATE_FAIL,
+        payload: error.response?.data?.message || error.message,
+      });
+    }
+  };
+
+// Add new variant(s)
+export const addVariantToGroup =
+  (groupId, formData) => async (dispatch, getState) => {
+    try {
+      dispatch({ type: PRODUCT_VARIANT_ADD_REQUEST });
+
+      const {
+        userLogin: { userInfo },
+      } = getState();
+      const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+
+      const { data } = await axios.post(
+        `/api/products/group/${groupId}/variant`,
+        formData,
+        config
+      );
+
+      dispatch({ type: PRODUCT_VARIANT_ADD_SUCCESS, payload: data });
+    } catch (error) {
+      dispatch({
+        type: PRODUCT_VARIANT_ADD_FAIL,
+        payload: error.response?.data?.message || error.message,
+      });
+    }
+  };
+export const getProductFull = (id) => async (dispatch) => {
+  try {
+    dispatch({ type: PRODUCT_EDIT_REQUEST });
+
+    const { data } = await axios.get(`/api/products/${id}/full`);
+
+    dispatch({
+      type: PRODUCT_EDIT_SUCCESS,
+      payload: data,
+    });
+  } catch (error) {
+    dispatch({
+      type: PRODUCT_EDIT_FAIL,
+      payload: error.response?.data?.message || error.message,
+    });
+  }
+};
+
+export const updateProductGroup =
+  (groupId, updatedData) => async (dispatch, getState) => {
+    try {
+      dispatch({ type: PRODUCT_GROUP_UPDATE_REQUEST });
+
+      const {
+        userLogin: { userInfo },
+      } = getState();
+
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
+
+      const { data } = await axios.put(
+        `/api/products/group/${groupId}`,
+        updatedData,
+        config
+      );
+
+      dispatch({ type: PRODUCT_GROUP_UPDATE_SUCCESS, payload: data });
+    } catch (error) {
+      dispatch({
+        type: PRODUCT_GROUP_UPDATE_FAIL,
+        payload:
+          error.response && error.response.data.message
+            ? error.response.data.message
+            : error.message,
+      });
+    }
+  };
+export const listProductsByGroupId =
+  (groupId) => async (dispatch, getState) => {
+    try {
+      dispatch({ type: PRODUCT_LIST_BY_GROUP_REQUEST });
+
+      const {
+        userLogin: { userInfo },
+      } = getState();
+
+      const config = {
+        headers: {
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
+
+      const { data } = await axios.get(
+        `/api/products/group/${groupId}`,
+        config
+      );
+
+      dispatch({
+        type: PRODUCT_LIST_BY_GROUP_SUCCESS,
+        payload: data,
+      });
+    } catch (error) {
+      dispatch({
+        type: PRODUCT_LIST_BY_GROUP_FAIL,
+        payload:
+          error.response && error.response.data.message
+            ? error.response.data.message
+            : error.message,
+      });
+    }
+  };

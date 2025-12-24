@@ -8,6 +8,7 @@ const reviewSchema = mongoose.Schema(
       required: false,
     },
     name: { type: String, required: true },
+    profilePicture: { type: String, default: "" },
     rating: { type: Number, required: true },
     comment: { type: String, required: true },
     user: {
@@ -16,7 +17,6 @@ const reviewSchema = mongoose.Schema(
       ref: "User", //relation betwen the review and the user
     },
     approved: { type: Boolean, default: false },
-   
   },
   {
     timestamps: true,
@@ -74,6 +74,7 @@ const productSchema = mongoose.Schema(
       required: true,
     },
     SKU: { type: String, unique: true, required: true },
+    productGroupId: { type: String, required: true },
     images: [
       {
         type: String,

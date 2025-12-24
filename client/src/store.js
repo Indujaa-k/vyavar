@@ -11,7 +11,14 @@ import {
   productreviewCreateReducer,
   reviewApproveReducer,
   reviewListReducer,
-  reviewDeleteReducer
+  reviewDeleteReducer,
+  productVariantsReducer,
+  productGroupDetailsReducer,
+  productGroupUpdateReducer,
+  productVariantUpdateReducer,
+  productVariantAddReducer,
+  productEditReducer,
+  productListByGroupReducer,
 } from "./reducers/productReducers";
 
 import { cartReducer } from "./reducers/cartReducers";
@@ -148,6 +155,13 @@ const reducer = combineReducers({
   deliveryMyTransactions: deliveryMyTransactionsReducer,
   billingInvoiceCreate: billingInvoiceCreateReducer,
   billingInvoiceDetails: billingInvoiceDetailsReducer,
+  productVariants: productVariantsReducer,
+  productGroupDetails: productGroupDetailsReducer,
+  productGroupUpdate: productGroupUpdateReducer,
+  productVariantUpdate: productVariantUpdateReducer,
+  productVariantAdd: productVariantAddReducer,
+  productEdit: productEditReducer,
+  productListByGroup: productListByGroupReducer,
 });
 
 const userInfoFromStorage = localStorage.getItem("userInfo")

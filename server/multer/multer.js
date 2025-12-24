@@ -67,6 +67,6 @@ export const uploadSingleImage = upload.single("image");
 export const uploadMultipleImages = upload.array("images", 3);
 export const uploadSingleVideo = upload.single("video");
 export const uploadProductFiles = upload.fields([
-  { name: "images", maxCount: 3 },
+  { name: "images", maxCount: 30 },
   { name: "sizeChart", maxCount: 1 },
 ]);
