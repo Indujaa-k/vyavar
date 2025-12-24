@@ -16,6 +16,7 @@ import { ChevronUpIcon, ChevronDownIcon } from "@chakra-ui/icons";
 
 const ProductSpecification = ({ product }) => {
   const [showMore, setShowMore] = useState(false);
+  const [showMobileSizeChart, setShowMobileSizeChart] = useState(false);
 
   const toggleView = () => setShowMore(!showMore);
 
@@ -25,6 +26,7 @@ const ProductSpecification = ({ product }) => {
         <TabList>
           <Tab className="product-info-header">SPECIFICATION</Tab>
           <Tab className="product-info-header">DESCRIPTION</Tab>
+          <Tab className="product-info-header desktop-only">SIZE CHART</Tab>
         </TabList>
 
         <TabPanels>
@@ -108,8 +110,10 @@ const ProductSpecification = ({ product }) => {
           {/* Description Tab */}
           <TabPanel>
             <Box>
-              <Text>Product Description</Text>
+              <Text fontWeight="bold">Product Description</Text>
               <Text>{product.description}</Text>
+              <Text fontWeight="bold">Product Code</Text>
+              <Text>{product?.SKU || "Not available"}</Text>
 
               <Text fontSize="lg" fontWeight="bold" mt={4}>
                 Manufactured By:
@@ -155,12 +159,46 @@ const ProductSpecification = ({ product }) => {
               </Button>
             </Box>
           </TabPanel>
+          {/* Size Chart Tab */}
+          <TabPanel className="desktop-only">
+            <SizeChart product={product} />
+          </TabPanel>
         </TabPanels>
       </Tabs>
-      <div className="product-info-table">
-        <div className="product-info-content">
-          {/* SKU Code */}
 
+      <Button
+        display={{ base: "block", md: "none" }}
+        width="100%"
+        mt={4}
+        colorScheme="gray"
+        onClick={() => setShowMobileSizeChart(true)}
+      >
+        View Size Chart
+      </Button>
+
+      {showMobileSizeChart && (
+        <Box className="mobile-size-chart" position="relative">
+          {/* Close Button */}
+          <Button
+            size="sm"
+            position="absolute"
+            top="8px"
+            right="8px"
+            zIndex="10"
+            onClick={() => setShowMobileSizeChart(false)}
+          >
+            ✕
+          </Button>
+
+          <SizeChart product={product} />
+        </Box>
+      )}
+
+      {/* <div className="product-info-table">
+        <div className="product-info-content">
+    
+          <span>Product Code</span>
+          <strong>{product?.SKU || "Not available"}</strong>
           <div className="info-item">
             <span>Product Code</span>
             <strong>{product?.SKU || "Not available"}</strong>
@@ -171,7 +209,7 @@ const ProductSpecification = ({ product }) => {
           <strong>{product?.shippingDetails?.originAddress?.country}</strong>
         </div>
 
-        {/* Origin Address */}
+       
 
         <div className="info-item">
           <span>Origin Address</span>
@@ -185,9 +223,33 @@ const ProductSpecification = ({ product }) => {
               : "Not available"}
           </strong>
         </div>
-      </div>
+      </div> */}
     </>
   );
 };
 
 export default ProductSpecification;
+
+const SizeChart = ({ product }) => {
+  if (!product?.sizeChart) {
+    return <Text fontWeight="bold">Size Chart: Not Available</Text>;
+  }
+
+  return (
+    <Box mt={4}>
+      <Text fontSize="lg" fontWeight="bold" mb={3}>
+        Size Chart
+      </Text>
+
+      <iframe
+        src={`https://docs.google.com/gview?url=${encodeURIComponent(
+          product.sizeChart
+        )}&embedded=true`}
+        width="100%"
+        height="400px"
+        style={{ border: "1px solid #ccc", borderRadius: "8px" }}
+        title="Size Chart"
+      />
+    </Box>
+  );
+};

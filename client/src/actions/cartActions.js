@@ -4,7 +4,9 @@ import {
   CART_REMOVE_ITEM,
   CART_SAVE_SHIPPING_ADRESSE,
   CART_SAVE_PAYMENT,
-  CART_FETCH_ITEMS,
+  CART_FETCH_REQUEST,
+  CART_FETCH_SUCCESS,
+  CART_FETCH_FAIL,
   SAVE_SHIPPING_COST,
   SAVE_SHIPPING_RATES,
 } from "../constants/cartConstants";
@@ -66,9 +68,12 @@ export const addToCart = (id, qty, size) => async (dispatch, getState) => {
 
 export const fetchCart = () => async (dispatch, getState) => {
   try {
+    dispatch({ type: CART_FETCH_REQUEST }); // ✅ ADD THIS
+
     const {
       userLogin: { userInfo },
     } = getState();
+
     const config = {
       headers: { Authorization: `Bearer ${userInfo.token}` },
     };
@@ -76,16 +81,17 @@ export const fetchCart = () => async (dispatch, getState) => {
     const { data } = await axios.get(`${API_URL}/api/products/getcart`, config);
 
     dispatch({
-      type: CART_FETCH_ITEMS,
+      type: CART_FETCH_SUCCESS,
       payload: data.cartItems || [],
     });
   } catch (error) {
-    console.error(
-      "Error fetching cart items:",
-      error.response?.data?.message || error.message
-    );
+    dispatch({
+      type: CART_FETCH_FAIL,
+      payload: error.response?.data?.message || error.message,
+    });
   }
 };
+
 export const removeFromCart = (cartItemId) => async (dispatch, getState) => {
   try {
     const {

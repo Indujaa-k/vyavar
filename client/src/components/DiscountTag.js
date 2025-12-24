@@ -25,7 +25,7 @@ const DiscountTag = () => {
     }
   };
   return (
-    <Box position="fixed" top="40%" right="0" zIndex="2000">
+    <Box position="fixed" top="40%" right="0" zIndex="2000" dis>
       <Button
         onClick={toggleDiscount}
         bg="#000346"

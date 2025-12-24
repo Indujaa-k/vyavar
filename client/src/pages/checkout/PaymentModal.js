@@ -118,22 +118,30 @@ const PaymentModal = ({ isOpen, onClose, handleOrder, totalPrice }) => {
 
         <ModalBody>
           <VStack spacing={4}>
-            <HStack
+            {/* <HStack
               w="100%"
               p={4}
               border="1px solid"
               cursor="pointer"
+              bg={selectedPayment === "Cash on Delivery" ? "gray.200" : "white"} // ✅ highlight
+              borderColor={
+                selectedPayment === "Cash on Delivery" ? "black" : "gray.300"
+              }
               onClick={() => setSelectedPayment("Cash on Delivery")}
             >
               <Icon as={FaMoneyBillWave} />
               <Text>Cash on Delivery</Text>
-            </HStack>
+            </HStack> */}
 
             <HStack
               w="100%"
               p={4}
               border="1px solid"
               cursor="pointer"
+              // bg={selectedPayment === "Online Payment" ? "gray.200" : "white"} // ✅ highlight
+              // borderColor={
+              //   selectedPayment === "Online Payment" ? "black" : "gray.300"
+              // }
               onClick={() => setSelectedPayment("Online Payment")}
             >
               <Icon as={FaCreditCard} />

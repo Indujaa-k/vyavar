@@ -109,6 +109,23 @@
 .productsoncart {
   width: 100%;
 }
+
+/* Tablet */
+@media screen and (max-width: 1024px) {
+  .cartfull {
+    grid-template-columns: 1fr;
+    margin-top: 100px;
+  }
+
+  .productcart {
+     grid-template-columns: 20% 40% 20% 20%;
+    margin: 20px 5px;
+  }
+
+  .sandh {
+    margin-top: 50px;
+  }
+}
 @media screen and (max-width: 768px) {
   .productcart {
     margin: 10px 0;
