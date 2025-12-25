@@ -40,15 +40,19 @@ const userSchema = mongoose.Schema(
       enum: ["Male", "Female", "Other"],
       default: "Male",
     },
-    address: {
-      doorNo: { type: String, default: "" },
-      street: { type: String, default: "" },
-      nearestLandmark: { type: String, default: "" },
-      city: { type: String, default: "" },
-      state: { type: String, default: "" },
-      pin: { type: Number, default: "" },
-      phoneNumber: { type: Number, default: null },
-    },
+    addresses: [
+  {
+    doorNo: { type: String, default: "" },
+    street: { type: String, default: "" },
+    nearestLandmark: { type: String, default: "" },
+    city: { type: String, default: "" },
+    state: { type: String, default: "" },
+    pin: { type: Number, default: null },
+    phoneNumber: { type: Number, default: null },
+    isDefault: { type: Boolean, default: false },
+  }
+],
+
     cartItems: [
       {
         product: {

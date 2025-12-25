@@ -47,14 +47,14 @@ import { ORDER_LIST_MY_RESET } from "../constants/orderConstants";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-export const sendOtp = (email) => async (dispatch) => {
+export const sendOtp = (email, phone) => async (dispatch) => {
   try {
     dispatch({ type: USER_SEND_OTP_REQUEST });
 
     const config = { headers: { "Content-Type": "application/json" } };
     const { data } = await axios.post(
       `${API_URL}/api/users/sendOtp`,
-      { email },
+      { email, phone },
       config
     );
 
@@ -195,7 +195,7 @@ export const register = (name, email, password, otp) => async (dispatch) => {
 
     const { data } = await axios.post(
       `${API_URL}/api/users`,
-      { name, email, password, otp },
+      { name, email, password },
       config
     );
     dispatch({
@@ -252,58 +252,49 @@ export const getUserDetails = (id) => async (dispatch, getState) => {
     });
   }
 };
-
 export const updateUserProfile = (formData) => async (dispatch, getState) => {
   try {
-    dispatch({
-      type: USER_UPDATE_PROFILE_REQUEST,
-    });
+    dispatch({ type: USER_UPDATE_PROFILE_REQUEST });
 
     const {
       userLogin: { userInfo },
     } = getState();
-    
+
     const config = {
       headers: {
-        // 'Content-Type': 'multipart/form-data' is implicitly handled
         Authorization: `Bearer ${userInfo.token}`,
       },
     };
 
-    // Assuming your backend uses a PUT request for profile update
     const { data } = await axios.put(
-      `${API_URL}/api/users/profile`, // Adjust endpoint if needed
-      formData, // Pass the FormData object directly
+      `${process.env.REACT_APP_API_URL}/api/users/profile`,
+      formData,
       config
     );
 
+    // 🔥 VERY IMPORTANT
     dispatch({
       type: USER_UPDATE_PROFILE_SUCCESS,
       payload: data,
     });
 
-    // Optionally update the user details in the store after a successful update
-    dispatch({
-      type: USER_DETAILS_SUCCESS,
-      payload: data, // Assuming the backend returns the updated user object
-    });
-
-    // Optionally update the user login state if token or name changes
+    // 🔥 UPDATE LOGIN STATE ALSO
     dispatch({
       type: USER_LOGIN_SUCCESS,
-      payload: data, // Assuming the backend returns the updated user object
+      payload: data,
     });
+
     localStorage.setItem("userInfo", JSON.stringify(data));
   } catch (error) {
     dispatch({
       type: USER_UPDATE_PROFILE_FAIL,
       payload:
-        error.response && error.response.data.message
-          ? error.response.data.message
-          : error.message,
+        error.response?.data?.message || error.message,
     });
   }
 };
+
+
 
 export const ListUsers = () => async (dispatch, getState) => {
   try {

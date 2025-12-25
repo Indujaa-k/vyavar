@@ -207,7 +207,7 @@ const App = () => {
                     exact
                   />
                   <Route path="/products/" element={<ProductsListPage />} />
-                
+
                   <Route path="*" element={<NotFoundPage />} />
                 </Routes>
                 <ScrollButtons />
