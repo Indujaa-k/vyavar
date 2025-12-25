@@ -15,6 +15,7 @@ import {
   verifyOtp,
   PasswordResetOtp,
   resetPasswordWithOtp,
+   deleteProfilePicture,
 } from "../controlers/userControler.js";
 import { uploadProfileImage } from "../multer/multer.js";
 import { adminOrSeller,adminOnly, protect } from "../middleware/authMiddleware.js";
@@ -32,7 +33,13 @@ router.route("/getfavorites").get(protect, getFavorites);
 router
   .route("/profile")
   .get(protect, getUserProfile)
-  .put(protect, uploadProfileImage, updateUserProfile);
+  .put(
+    protect,
+    uploadProfileImage, // 👈 ADD THIS
+    updateUserProfile
+  );
+
+router.delete("/profile/picture", protect, deleteProfilePicture);
 
 router
   .route("/:id")

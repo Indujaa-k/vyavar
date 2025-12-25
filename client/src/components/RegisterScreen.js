@@ -10,6 +10,7 @@ import "./Registerscreen.css";
 const RegisterScreen = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [otp, setOtp] = useState("");
@@ -38,16 +39,49 @@ const RegisterScreen = () => {
 
   // ---------- Handle Send OTP ----------
   const handleSendOtp = () => {
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email) {
       toast({
-        title: "Enter your email first!",
+        title: "Email required!",
         status: "error",
         duration: 3000,
         isClosable: true,
       });
       return;
     }
-    dispatch(sendOtp(email));
+    if (!emailRegex.test(email)) {
+      toast({
+        title: "Invalid email format",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    // Phone validation
+    if (!phone) {
+      toast({
+        title: "Phone number required!",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+    if (!/^\d{10}$/.test(phone)) {
+      toast({
+        title: "Invalid phone number",
+        description: "Phone number must be exactly 10 digits.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    dispatch(sendOtp(email, phone));
   };
 
   // ---------- When OTP sent successfully ----------
@@ -77,31 +111,75 @@ const RegisterScreen = () => {
     }
 
     // ✅ Call only once
-    dispatch(verifyOtp(email, otp))
-      .then(() => {
-        setOtpVerified(true);
-        toast({
-          title: "OTP Verified Successfully!",
-          status: "success",
-          duration: 4000,
-          isClosable: true,
-        });
-      })
-      .catch(() => {
-        toast({
-          title: "Invalid OTP",
-          description: otpVerifyError || "Please try again.",
-          status: "error",
-          duration: 4000,
-          isClosable: true,
-        });
-      });
+    dispatch(verifyOtp(email, otp));
   };
+
+  useEffect(() => {
+    if (otpVerifySuccess) {
+      setOtpVerified(true);
+      toast({
+        title: "OTP Verified Successfully!",
+        status: "success",
+        duration: 4000,
+        isClosable: true,
+      });
+    }
+
+    if (otpVerifyError) {
+      toast({
+        title: "OTP Verification Failed",
+        description: otpVerifyError,
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+      });
+    }
+  }, [otpVerifySuccess, otpVerifyError, toast]);
 
   // ---------- Handle Registration ----------
   const handleRegister = (e) => {
     e.preventDefault();
 
+    // Check required fields
+    if (!name || !email || !phone || !password || !confirmPassword) {
+      toast({
+        title: "All fields required",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+        position: "top",
+      });
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast({
+        title: "Invalid email format",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "top",
+      });
+      return;
+    }
+   
+
+    // Phone validation
+    if (!/^\d{10}$/.test(phone)) {
+      toast({
+        title: "Invalid phone number",
+        description: "Phone number must be exactly 10 digits.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "top",
+      });
+      return;
+    }
+
+    // Password match
     if (password !== confirmPassword) {
       toast({
         title: "Password mismatch",
@@ -109,10 +187,12 @@ const RegisterScreen = () => {
         status: "error",
         duration: 4000,
         isClosable: true,
+        position: "top",
       });
       return;
     }
 
+    // OTP check
     if (!otpVerified) {
       toast({
         title: "OTP not verified",
@@ -120,11 +200,13 @@ const RegisterScreen = () => {
         status: "warning",
         duration: 4000,
         isClosable: true,
+        position: "top",
       });
       return;
     }
 
-    dispatch(register(name, email, password));
+    // All good, register
+    dispatch(register(name, email, password, phone));
   };
 
   useEffect(() => {
@@ -174,6 +256,17 @@ const RegisterScreen = () => {
                 />
               </div>
               <div className="form-row">
+                <label>Phone Number:</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  className="inputa"
+                  placeholder="Enter phone number"
+                  onChange={(e) => setPhone(e.target.value)}
+                  disabled={otpSent}
+                />
+              </div>
+              <div className="form-row">
                 <label>Password:</label>
                 <input
                   type={showPassword ? "text" : "password"}
@@ -195,9 +288,9 @@ const RegisterScreen = () => {
                 <span
                   onClick={togglePasswordVisibility}
                   style={{
-                    position: "absolute",
+                    position: " absolute",
                     right: "50px",
-                    top: "45%",
+                    top: "60%",
                     transform: "translateY(-50%)",
                     cursor: "pointer",
                   }}
@@ -243,12 +336,23 @@ const RegisterScreen = () => {
                   </button>
                 </div>
               )}
-              <input
-                type="submit"
-                className="btna2"
-                value="Sign up"
-                disabled={!otpVerified}
-              />
+             <button
+  type="submit"
+  className="btna2"
+  onClick={() => {
+    if (!otpVerified) {
+      toast({
+        title: "Verify OTP first",
+        status: "info",
+        duration: 2000,
+        isClosable: true,
+      });
+    }
+  }}
+>
+  Sign up
+</button>
+
               <br />
               Have an Account?{" "}
               <Link to={redirect ? `/login?redirect=${redirect}` : "/login"}>

@@ -2,7 +2,12 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Helmet } from "react-helmet";
-import { getUserDetails, updateUserProfile } from "../actions/userActions";
+import axios from "axios";
+import {
+  getUserDetails,
+  updateUserProfile,
+  logout,
+} from "../actions/userActions";
 import { listMyOrders } from "../actions/orderActions";
 import {
   Box,
@@ -27,10 +32,24 @@ import {
   FormLabel,
   Spinner,
   useToast,
+  Radio,
+  RadioGroup,
+  IconButton,
 } from "@chakra-ui/react";
-import { FaSignOutAlt } from "react-icons/fa";
-import { FaCamera } from "react-icons/fa";
-
+import {
+  FaUser,
+  FaMapMarkerAlt,
+  FaShoppingBag,
+  FaInfoCircle,
+  FaPhoneAlt,
+  FaFileContract,
+  FaShieldAlt,
+  FaUndo,
+  FaSignOutAlt,
+  FaCamera,
+  FaTrash,
+} from "react-icons/fa";
+import { CloseIcon } from "@chakra-ui/icons";
 import Trust from "../components/Trustdetails/Trust";
 import profileimg from "../assets/profile_profile.svg";
 import addressimg from "../assets/profile_address.svg";
@@ -41,12 +60,26 @@ const ProfileScreen = () => {
   const [activeSection, setActiveSection] = useState("profile");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [address, setAddress] = useState({});
+  const [addresses, setAddresses] = useState([]); // For multiple addresses
+  const [editingAddress, setEditingAddress] = useState(null); // Address being edited
+  const [newAddress, setNewAddress] = useState({
+    doorNo: "",
+    street: "",
+    nearestLandmark: "",
+    city: "",
+    state: "",
+    pin: "",
+    phoneNumber: "",
+    isDefault: false,
+  });
+
   const [profilePicture, setProfilePicture] = useState(null);
   const [lastName, setLastName] = useState("");
   const [gender, setGender] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
-  const [errors, setErrors] = useState({});
+  // const [errors, setErrors] = useState({});
+  const [orderTab, setOrderTab] = useState("all");
+  const [showForm, setShowForm] = useState(false);
 
   const toast = useToast();
   const dispatch = useDispatch();
@@ -69,25 +102,53 @@ const ProfileScreen = () => {
     navigate("/login");
   };
 
- useEffect(() => {
-  if (!userInfo) {
-    navigate("/login");
-  } else {
-    if (!user || !user.name) {
-      dispatch(getUserDetails("profile"));
+  // useEffect(() => {
+  //   if (!userInfo) {
+  //     navigate("/login");
+  //   } else {
+  //     if (!user || !user.name) {
+  //       dispatch(getUserDetails("profile"));
+  //     } else {
+  //       setName(user.name || "");
+  //       setEmail(user.email || "");
+  //       if (user?.addresses) {
+  //         setAddresses(Array.isArray(user?.addresses) ? user.addresses : []);
+  //       }
+  //       setProfilePicture(
+  //         user.profilePicture &&
+  //           user.profilePicture !== "/images/default-profile.png"
+  //           ? user.profilePicture
+  //           : null
+  //       );
+
+  //       setGender(user.gender || "");
+  //       setDateOfBirth(user.dateOfBirth ? user.dateOfBirth.split("T")[0] : "");
+  //       setLastName(user.lastName || "");
+  //     }
+  //   }
+  // }, [dispatch, navigate, userInfo, user]);
+  useEffect(() => {
+    if (!userInfo) {
+      navigate("/login");
     } else {
-      setName(user.name || "");
-      setEmail(user.email || "");
-      setAddress(user.address || {});
-      setProfilePicture(user.profilePicture || null);
-      setGender(user.gender || "");
-      setDateOfBirth(
-        user.dateOfBirth ? user.dateOfBirth.split("T")[0] : ""
-      );
-      setLastName(user.lastName || "");
+      if (!user || !user.name) {
+        dispatch(getUserDetails("profile"));
+      } else {
+        setName(user.name || "");
+        setLastName(user.lastName || "");
+        setEmail(user.email || "");
+        setGender(user.gender || "");
+        setDateOfBirth(user.dateOfBirth ? user.dateOfBirth.split("T")[0] : "");
+        setAddresses(Array.isArray(user.addresses) ? user.addresses : []);
+        setProfilePicture(
+          user.profilePicture &&
+            user.profilePicture !== "/images/default-profile.png"
+            ? user.profilePicture
+            : null
+        );
+      }
     }
-  }
-}, [dispatch, navigate, userInfo, user]);
+  }, [dispatch, navigate, userInfo, user]);
 
   // Fetch orders when user opens the Orders section
   useEffect(() => {
@@ -95,6 +156,89 @@ const ProfileScreen = () => {
       dispatch(listMyOrders());
     }
   }, [activeSection, dispatch]);
+  const [errors, setErrors] = useState({}); // Already exists
+
+  // Save / Update address
+  const handleSaveAddress = async () => {
+    let updatedAddresses = [];
+
+    if (editingAddress !== null) {
+      // Replace by index
+      updatedAddresses = addresses.map((addr, i) =>
+        i === editingAddress ? { ...newAddress } : addr
+      );
+    } else {
+      // Add new address
+      updatedAddresses = [...addresses, newAddress];
+    }
+
+    // Ensure only one default
+    if (newAddress.isDefault) {
+      updatedAddresses = updatedAddresses.map((a, i) => ({
+        ...a,
+        isDefault:
+          editingAddress !== null
+            ? i === editingAddress
+            : i === updatedAddresses.length - 1,
+      }));
+    }
+
+    // Fallback default
+    if (
+      !updatedAddresses.some((a) => a.isDefault) &&
+      updatedAddresses.length > 0
+    ) {
+      updatedAddresses[0].isDefault = true;
+    }
+
+    const formData = new FormData();
+    formData.append("addresses", JSON.stringify(updatedAddresses));
+
+    await dispatch(updateUserProfile(formData));
+    dispatch(getUserDetails("profile"));
+
+    setAddresses(updatedAddresses); // 🔹 Update UI instantly
+    setShowForm(false);
+    setEditingAddress(null);
+    setNewAddress({
+      doorNo: "",
+      street: "",
+      nearestLandmark: "",
+      city: "",
+      state: "",
+      pin: "",
+      phoneNumber: "",
+      isDefault: false,
+    });
+  };
+
+  const handleDeleteAddress = async (index) => {
+    const updated = addresses.filter((_, i) => i !== index);
+
+    // default fallback
+    if (!updated.some((a) => a.isDefault) && updated.length > 0) {
+      updated[0].isDefault = true;
+    }
+
+    const formData = new FormData();
+    formData.append("addresses", JSON.stringify(updated));
+
+    await dispatch(updateUserProfile(formData));
+    dispatch(getUserDetails("profile"));
+  };
+
+  const handleSetDefault = async (index) => {
+    const updated = addresses.map((addr, i) => ({
+      ...addr,
+      isDefault: i === index,
+    }));
+
+    const formData = new FormData();
+    formData.append("addresses", JSON.stringify(updated));
+
+    await dispatch(updateUserProfile(formData));
+    dispatch(getUserDetails("profile"));
+  };
 
   // ✅ Handle Image Upload
   const handleImageChange = (e) => {
@@ -103,125 +247,222 @@ const ProfileScreen = () => {
       setProfilePicture(file);
     }
   };
+  const handleDeleteProfilePicture = async () => {
+    try {
+      await axios.delete(
+        `${process.env.REACT_APP_API_URL}/api/users/profile/picture`,
+        {
+          headers: {
+            Authorization: `Bearer ${userInfo.token}`,
+          },
+        }
+      );
 
-  // ✅ Handle Profile Update
-  const submitHandler = (e) => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append("email", email);
-    formData.append("lastName", lastName);
-    formData.append("gender", gender);
-    formData.append("dateOfBirth", dateOfBirth);
-    formData.append("address", JSON.stringify(address));
-    if (profilePicture) {
-      formData.append("profilePicture", profilePicture);
-    }
+      // 🔄 Clear image instantly
+      setProfilePicture(null);
 
-    dispatch(updateUserProfile(formData));
-    toast({
-      title: "Profile Updated",
-      description: "Your profile has been successfully updated.",
-      status: "success",
-      duration: 3000,
-      isClosable: true,
-      position: "top",
-    });
-  };
+      // 🔄 Refresh user data
+      dispatch(getUserDetails("profile"));
 
-  const validateAddress = () => {
-    let newErrors = {};
-
-    if (!String(address.doorNo || "").trim()) {
-      newErrors.doorNo = "Door number is required";
-    }
-
-    if (!String(address.street || "").trim()) {
-      newErrors.street = "Street is required";
-    }
-
-    if (!String(address.city || "").trim()) {
-      newErrors.city = "City is required";
-    }
-
-    if (!String(address.state || "").trim()) {
-      newErrors.state = "State is required";
-    }
-
-    const pin = String(address.pin || "");
-
-    if (!pin.trim()) {
-      newErrors.pin = "PIN code is required";
-    } else if (!/^\d{6}$/.test(pin)) {
-      newErrors.pin = "PIN must be 6 digits";
-    }
-
-    const phone = String(address.phoneNumber || "");
-
-    if (!phone.trim()) {
-      newErrors.phoneNumber = "Phone number is required";
-    } else if (!/^\d{10}$/.test(phone)) {
-      newErrors.phoneNumber = "Phone must be 10 digits";
-    }
-
-    setErrors(newErrors);
-
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // ✅ Handle Address Update (separate)
-  const handleAddressUpdate = (e) => {
-    e.preventDefault();
-
-    if (!validateAddress()) {
+      // ✅ Snackbar
       toast({
-        title: "Invalid Address",
-        description: "Please fill the highlighted fields.",
+        title: "Profile Photo Deleted",
+        description: "Your profile photo has been removed.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+        position: "top",
+      });
+    } catch (error) {
+      toast({
+        title: "Delete Failed",
+        description: "Unable to delete profile photo.",
         status: "error",
         duration: 3000,
         isClosable: true,
         position: "top",
       });
-      return;
     }
+  };
+
+  // const submitHandler = (e) => {
+  //   e.preventDefault();
+  //   console.log("Addresses being sent:", addresses);
+
+  //   const formData = new FormData();
+  //   formData.append("name", name);
+  //   formData.append("email", email);
+  //   formData.append("lastName", lastName);
+  //   formData.append("gender", gender);
+  //   formData.append("dateOfBirth", dateOfBirth);
+  //   formData.append("addresses", JSON.stringify(addresses));
+
+  //   if (profilePicture) {
+  //     formData.append("profilePicture", profilePicture);
+  //   }
+
+  //   dispatch(updateUserProfile(formData)).then(() => {
+  //     // Keep the new image visible after update
+  //     if (profilePicture) {
+  //       setProfilePicture(profilePicture);
+  //     }
+  //     toast({
+  //       title: "Profile Updated",
+  //       description: "Your profile has been successfully updated.",
+  //       status: "success",
+  //       duration: 3000,
+  //       isClosable: true,
+  //       position: "top",
+  //     });
+
+  //     // Refresh backend details
+  //     dispatch(getUserDetails("profile"));
+  //   });
+  // };
+
+  // const validateAddress = () => {
+  //   let newErrors = {};
+
+  //   if (!String(address.doorNo || "").trim()) {
+  //     newErrors.doorNo = "Door number is required";
+  //   }
+
+  //   if (!String(address.street || "").trim()) {
+  //     newErrors.street = "Street is required";
+  //   }
+
+  //   if (!String(address.city || "").trim()) {
+  //     newErrors.city = "City is required";
+  //   }
+
+  //   if (!String(address.state || "").trim()) {
+  //     newErrors.state = "State is required";
+  //   }
+
+  //   const pin = String(address.pin || "");
+
+  //   if (!pin.trim()) {
+  //     newErrors.pin = "PIN code is required";
+  //   } else if (!/^\d{6}$/.test(pin)) {
+  //     newErrors.pin = "PIN must be 6 digits";
+  //   }
+
+  //   const phone = String(address.phoneNumber || "");
+
+  //   if (!phone.trim()) {
+  //     newErrors.phoneNumber = "Phone number is required";
+  //   } else if (!/^\d{10}$/.test(phone)) {
+  //     newErrors.phoneNumber = "Phone must be 10 digits";
+  //   }
+
+  //   setErrors(newErrors);
+
+  //   return Object.keys(newErrors).length === 0;
+  // };
+
+  // // ✅ Handle Address Update (separate)
+  // const handleAddressUpdate = (e) => {
+  //   e.preventDefault();
+
+  //   if (!validateAddress()) {
+  //     toast({
+  //       title: "Invalid Address",
+  //       description: "Please fill the highlighted fields.",
+  //       status: "error",
+  //       duration: 3000,
+  //       isClosable: true,
+  //       position: "top",
+  //     });
+  //     return;
+  //   }
+  //   const formData = new FormData();
+  //   formData.append("addresses", JSON.stringify(addresses));
+
+  //   dispatch(updateUserProfile(formData));
+  //   toast({
+  //     title: "Address Updated",
+  //     description: "Your address has been successfully updated.",
+  //     status: "success",
+  //     duration: 3000,
+  //     isClosable: true,
+  //     position: "top",
+  //   });
+
+  //   // Optional: refresh details
+  //   dispatch(getUserDetails("profile"));
+  // };
+
+  const submitHandler = async (e) => {
+    e.preventDefault();
+
     const formData = new FormData();
-    formData.append("address", JSON.stringify(address));
+    formData.append("name", name);
+    formData.append("lastName", lastName);
+    formData.append("email", email);
+    formData.append("gender", gender);
+    formData.append("dateOfBirth", dateOfBirth ? dateOfBirth : null);
+    formData.append("addresses", JSON.stringify(addresses));
 
-    dispatch(updateUserProfile(formData));
-    toast({
-      title: "Address Updated",
-      description: "Your address has been successfully updated.",
-      status: "success",
-      duration: 3000,
-      isClosable: true,
-      position: "top",
-    });
+    if (profilePicture instanceof File) {
+      formData.append("profilePicture", profilePicture);
+    }
 
-    // Optional: refresh details
-    dispatch(getUserDetails("profile"));
+    try {
+      await dispatch(updateUserProfile(formData));
+      toast({
+        title: "Profile Updated",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+
+      dispatch(getUserDetails("profile"));
+    } catch (error) {
+      console.error("Update failed:", error);
+    }
   };
 
   const menuOptions = [
-    { id: "profile", label: "Profile", image: profileimg },
-    { id: "addresses", label: "Address", image: addressimg },
-    { id: "orders", label: "My Orders", image: ordersimg },
-    { id: "about", label: "About", path: "/About" },
-    { id: "contactus", label: "Contact Us", path: "/Contactus" },
+    { id: "profile", label: "Profile", image: profileimg, icon: FaUser },
     {
-      id: "Terms and conditions",
-      label: "Terms and Conditions",
-      path: "/_blank ",
+      id: "addresses",
+      label: "Address",
+      image: addressimg,
+      icon: FaMapMarkerAlt,
     },
+    { id: "orders", label: "My Orders", image: ordersimg, icon: FaShoppingBag },
+    { id: "about", label: "About", path: "/About", icon: FaInfoCircle },
     {
-      id: "Privacy policy",
-      label: "Privacy Policy",
-      path: "/_blank",
+      id: "contactus",
+      label: "Contact Us",
+      path: "/Contactus",
+      icon: FaPhoneAlt,
     },
+    // {
+    //   id: "Terms and conditions",
+    //   label: "Terms and Conditions",
+    //   path: "/_blank ",
+    //   icon: FaFileContract,
+    // },
+    // {
+    //   id: "Privacy policy",
+    //   label: "Privacy Policy",
+    //   path: "/_blank",
+    //   icon: FaShieldAlt,
+    // },
     {
       id: "Return policy",
       label: "Return Policy",
       path: "/_blank",
+      icon: FaUndo,
     },
+    {
+      id: "tracking",
+      label: "Order Tracking",
+      icon: FaMapMarkerAlt,
+      path: "/order-tracking",
+    },
+
     {
       id: "logout",
       label: "Logout",
@@ -238,37 +479,91 @@ const ProfileScreen = () => {
       flexDirection="column"
       alignItems="center"
     >
-      <VStack as="form" onSubmit={submitHandler} spacing={4}>
+      <VStack
+        as="form"
+        onSubmit={submitHandler}
+        spacing={4}
+        w="100%"
+        maxW="500px"
+        mx="auto"
+      >
         <FormControl>
-          <Box
-            position="relative"
-            boxSize="100px"
-            borderRadius="full"
-            overflow="hidden"
-            mx="auto"
-          >
-            <img
-              src={
-                user?.profilePicture ||
-                (profilePicture instanceof File
-                  ? URL.createObjectURL(profilePicture)
-                  : "https://via.placeholder.com/150")
-              }
-              alt="Profile"
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            />
+          <Box position="relative" width="110px" height="110px" mx="auto">
+            {/* PROFILE IMAGE */}
+            <Box
+              boxSize="100px"
+              borderRadius="full"
+              overflow="hidden"
+              bg="gray.300"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              fontSize="3xl"
+              fontWeight="bold"
+              color="white"
+            >
+              {profilePicture ? (
+                <img
+                  src={
+                    profilePicture instanceof File
+                      ? URL.createObjectURL(profilePicture)
+                      : user?.profilePicture ||
+                        "https://via.placeholder.com/150"
+                  }
+                  alt="Profile"
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              ) : user?.profilePicture &&
+                user.profilePicture !== "/images/default-profile.png" ? (
+                <Box
+                  w="40px"
+                  h="40px"
+                  borderRadius="full"
+                  bg="rgb(3,156,195)"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  overflow="hidden"
+                >
+                  {user?.profilePicture &&
+                  user.profilePicture !== "/images/default-profile.png" ? (
+                    <img
+                      src={user.profilePicture}
+                      alt="Profile"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : (
+                    <Text color="white" fontWeight="bold">
+                      {user?.name?.charAt(0)?.toUpperCase() || "U"}
+                    </Text>
+                  )}
+                </Box>
+              ) : (
+                <Text fontSize="3xl" fontWeight="bold" color="white">
+                  {user?.name?.charAt(0)?.toUpperCase() || "U"}
+                </Text>
+              )}
+            </Box>
+
+            {/* CAMERA ICON (NEAR IMAGE) */}
             <Box
               position="absolute"
-              bottom={2}
-              right={2}
-              bg="blackAlpha.700"
+              bottom="0"
+              right="0"
+              bg="black"
               p={2}
               borderRadius="full"
               cursor="pointer"
+              boxShadow="md"
               onClick={() => document.getElementById("imageUpload").click()}
             >
-              <Icon as={FaCamera} color="white" boxSize={5} />
+              <Icon as={FaCamera} color="white" boxSize={4} />
             </Box>
+
             <Input
               id="imageUpload"
               type="file"
@@ -280,9 +575,14 @@ const ProfileScreen = () => {
         </FormControl>
 
         <FormControl>
-          <FormLabel>First Name</FormLabel>
+          <FormLabel fontSize={{ base: "sm", md: "md" }} mb={1}>
+            First Name
+          </FormLabel>
+
           <Input
             type="text"
+            fontSize={{ base: "sm", md: "md" }}
+            h={{ base: "40px", md: "44px" }}
             placeholder="Enter your first name"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -293,6 +593,8 @@ const ProfileScreen = () => {
           <FormLabel>Last Name</FormLabel>
           <Input
             type="text"
+            fontSize={{ base: "sm", md: "md" }}
+            h={{ base: "40px", md: "44px" }}
             placeholder="Enter your last name"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
@@ -303,6 +605,8 @@ const ProfileScreen = () => {
           <FormLabel>Email</FormLabel>
           <Input
             type="email"
+            fontSize={{ base: "sm", md: "md" }}
+            h={{ base: "40px", md: "44px" }}
             placeholder="Enter your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -313,6 +617,8 @@ const ProfileScreen = () => {
           <FormLabel>Date of Birth</FormLabel>
           <Input
             type="date"
+            fontSize={{ base: "sm", md: "md" }}
+            h={{ base: "40px", md: "44px" }}
             value={dateOfBirth}
             onChange={(e) => setDateOfBirth(e.target.value)}
           />
@@ -337,9 +643,22 @@ const ProfileScreen = () => {
           </select>
         </FormControl>
 
-        <Button bg="black" color="white" type="submit" w="full">
-          Update
-        </Button>
+        <HStack spacing={3} w="full">
+          <Button bg="black" color="white" type="submit" flex="1">
+            Update
+          </Button>
+          {user?.profilePicture &&
+            user.profilePicture !== "/images/default-profile.png" && (
+              <Button
+                leftIcon={<FaTrash />}
+                colorScheme="red"
+                onClick={handleDeleteProfilePicture}
+                flex="1"
+              >
+                Delete Picture
+              </Button>
+            )}
+        </HStack>
       </VStack>
     </Box>
   );
@@ -354,109 +673,365 @@ const ProfileScreen = () => {
     "phoneNumber",
   ];
 
-  const renderAddresses = () => (
-    <Box mx="auto" p={6}>
-      <VStack spacing={4} align="stretch">
-        {fieldOrder.map((field) => (
-          <FormControl key={field}>
-            <FormLabel>
-              {field.replace(/([A-Z])/g, " $1").toUpperCase()}
-            </FormLabel>
-            <Input
-              value={address[field] || ""}
-              placeholder={`Enter ${field}`}
-              onChange={(e) =>
-                setAddress({ ...address, [field]: e.target.value })
-              }
+  const renderAddresses = () => {
+    return (
+      <Box mx="auto" p={6}>
+        {/* ADDRESS LIST */}
+        {!showForm && (
+          <Flex justify="space-between" mb={4}>
+            <Button
+              colorScheme="blue"
+              px={6}
+              py={2}
+              onClick={() => setShowForm(true)}
+            >
+              Add Address
+            </Button>
+            <Button
+              colorScheme="red"
+              onClick={() => {
+                setEditingAddress(null);
+                setNewAddress({
+                  doorNo: "",
+                  street: "",
+                  nearestLandmark: "",
+                  city: "",
+                  state: "",
+                  pin: "",
+                  phoneNumber: "",
+                  isDefault: false,
+                });
+              }}
+            >
+              Cancel
+            </Button>
+          </Flex>
+        )}
+
+        <RadioGroup
+          value={String(addresses.findIndex((a) => a.isDefault))}
+          onChange={(val) => handleSetDefault(Number(val))}
+        >
+          <VStack spacing={4} align="stretch" mb={6}>
+            {addresses.map((addr, index) => (
+              <Box
+                key={addr._id || index}
+                p={4}
+                border="1px solid"
+                borderRadius="md"
+                borderColor={addr.isDefault ? "green.400" : "gray.300"}
+              >
+                <Flex justify="space-between" align="center">
+                  <Radio value={String(index)} colorScheme="green">
+                    <Box>
+                      <Text fontWeight="600">
+                        {addr.doorNo}, {addr.street}
+                      </Text>
+                      <Text fontSize="sm">
+                        {addr.city}, {addr.state} - {addr.pin}
+                      </Text>
+                      <Text fontSize="sm">Phone: {addr.phoneNumber}</Text>
+                    </Box>
+                  </Radio>
+
+                  <HStack spacing={2}>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setEditingAddress(index);
+                        const { _id, ...rest } = addr;
+                        setNewAddress(rest);
+                        setShowForm(true);
+                      }}
+                    >
+                      Edit
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      colorScheme="red"
+                      onClick={() => handleDeleteAddress(index)}
+                    >
+                      Delete
+                    </Button>
+                  </HStack>
+                </Flex>
+              </Box>
+            ))}
+          </VStack>
+        </RadioGroup>
+
+      
+
+        {/* FORM */}
+        {showForm && (
+          <Box p={4} border="1px solid" borderRadius="md" position="relative">
+            {/* ❌ CLOSE ICON */}
+            <IconButton
+             type="button"   
+              icon={<CloseIcon />}
+              size="sm"
+              position="absolute"
+              top="10px"
+              right="10px"
+              aria-label="Close"
+              onClick={() => {
+                setShowForm(false);
+                setEditingAddress(null);
+                setNewAddress({
+                  doorNo: "",
+                  street: "",
+                  nearestLandmark: "",
+                  city: "",
+                  state: "",
+                  pin: "",
+                  phoneNumber: "",
+                  isDefault: false,
+                });
+                setErrors({});
+              }}
             />
 
-            {errors[field] && (
-              <Text color="red.500" fontSize="sm" mt={1}>
-                {errors[field]}
-              </Text>
-            )}
-          </FormControl>
-        ))}
-        <Button bg="black" color="white" onClick={handleAddressUpdate}>
-          Update
-        </Button>
-      </VStack>
-    </Box>
-  );
+            <VStack spacing={3} align="stretch">
+              {Object.keys(newAddress)
+                .filter((k) => k !== "isDefault")
+                .map((field) => (
+                  <FormControl key={field}>
+                    <FormLabel>
+                      {field.replace(/([A-Z])/g, " $1").toUpperCase()}
+                    </FormLabel>
+                    <Input
+                      value={newAddress[field]}
+                      placeholder={`Enter ${field}`}
+                      onChange={(e) =>
+                        setNewAddress({
+                          ...newAddress,
+                          [field]: e.target.value,
+                        })
+                      }
+                    />
+                    {errors[field] && (
+                      <Text color="red.500">{errors[field]}</Text>
+                    )}
+                  </FormControl>
+                ))}
 
-  const renderOrders = () => (
-    <Box overflowX="auto">
-      {loadingOrders ? (
-        <Flex justify="center" align="center" h="200px">
-          <Spinner size="xl" />
-        </Flex>
-      ) : errorOrders ? (
-        <Alert status="error">
-          <AlertIcon />
-          {errorOrders}
-        </Alert>
-      ) : orders.length === 0 ? (
-        <Text textAlign="center" fontSize="lg" color="gray.500" mt={10}>
-          No Orders Found
-        </Text>
-      ) : (
-        <Table>
-          <Thead>
-            <Tr></Tr>
-          </Thead>
-          <Tbody>
-            {orders.map((order) =>
-              order.orderItems.map((item) => (
-                <Box
-                  key={item._id}
-                  p={4}
-                  border="1px solid"
-                  borderColor="gray.200"
-                  borderRadius="md"
-                  mb={4}
+              {/* LEFT & RIGHT BUTTONS */}
+              <HStack justify="space-between">
+                <Button
+                  type="button"
+                  colorScheme="red"
+                  onClick={() => {
+                    setShowForm(false);
+                    setEditingAddress(null);
+                  }}
                 >
-                  <HStack
-                    justifyContent="space-between"
-                    spacing={4}
-                    alignItems="center"
-                  >
+                  Cancel
+                </Button>
+
+                <Button
+                  colorScheme="blue"
+                  onClick={() => {
+                    handleSaveAddress(); // Save or update
+                    setShowForm(false); // Close form after saving
+                  }}
+                >
+                  {editingAddress ? "Update Address" : "Add Address"}
+                </Button>
+              </HStack>
+            </VStack>
+          </Box>
+        )}
+      </Box>
+    );
+  };
+
+  const renderOrders = () => {
+    const filteredOrders = (orders || []).filter((order) => {
+      if (orderTab === "all") return true;
+      if (orderTab === "active") return !order.isDelivered;
+      if (orderTab === "delivered") return order.isDelivered;
+
+      return true;
+    });
+
+    return (
+      <Box>
+        {/* Tabs */}
+        <Flex direction={{ base: "column", md: "row" }} gap={3} mb={4}>
+          <Button
+            w={{ base: "100%", md: "auto" }}
+            variant={orderTab === "all" ? "solid" : "outline"}
+            colorScheme="blue"
+            onClick={() => setOrderTab("all")}
+          >
+            All Orders
+          </Button>
+
+          <Button
+            w={{ base: "100%", md: "auto" }}
+            variant={orderTab === "active" ? "solid" : "outline"}
+            colorScheme="blue"
+            onClick={() => setOrderTab("active")}
+          >
+            Active Orders
+          </Button>
+
+          <Button
+            w={{ base: "100%", md: "auto" }}
+            variant={orderTab === "delivered" ? "solid" : "outline"}
+            colorScheme="blue"
+            onClick={() => setOrderTab("delivered")}
+          >
+            Delivered Orders
+          </Button>
+        </Flex>
+
+        {/* Orders List */}
+        {loadingOrders ? (
+          <Flex justify="center" align="center" h="200px">
+            <Spinner size="xl" />
+          </Flex>
+        ) : errorOrders ? (
+          <Alert status="error">
+            <AlertIcon />
+            {errorOrders}
+          </Alert>
+        ) : filteredOrders.length === 0 ? (
+          <Flex
+            direction="column"
+            align="center"
+            justify="center"
+            h="200px"
+            color="gray.500"
+          >
+            <Text fontSize="lg" mb={2}>
+              No orders found
+            </Text>
+            <Text fontSize="sm">
+              Looks like you haven’t placed any {orderTab} orders yet.
+            </Text>
+          </Flex>
+        ) : (
+          <VStack spacing={4} align="stretch">
+            {filteredOrders.map((order) => (
+              <Box
+                key={order._id}
+                p={4}
+                border="1px solid"
+                borderColor="gray.200"
+                borderRadius="md"
+                shadow="sm"
+              >
+                <Flex
+                  justify="space-between"
+                  align="center"
+                  mb={2}
+                  display={{ base: "none", md: "flex" }} // 👈 DESKTOP ONLY
+                >
+                  <Box>
                     <Text fontSize="sm" color="gray.600">
-                      {order.orderItems.length} Item
-                      {order.orderItems.length > 1 ? "s" : ""} • ₹
-                      {order.totalPrice.toFixed(2)} •{" "}
+                      Order ID: {order._id}
+                    </Text>
+                    <Text fontWeight="bold">
+                      ₹{order.totalPrice.toFixed(2)} •{" "}
                       {new Date(order.createdAt).toLocaleDateString()}
                     </Text>
+                  </Box>
 
-                    <Link to={`/order/${order._id}`}>
-                      <Box textAlign="center">
-                        <Box
-                          boxSize="60px"
-                          overflow="hidden"
-                          border="1px solid gray"
-                          cursor="pointer"
-                        >
+                  <Link to={`/order/${order._id}`}>
+                    <Button size="sm" colorScheme="blue">
+                      View Details
+                    </Button>
+                  </Link>
+                </Flex>
+
+                <Flex
+                  mt={4}
+                  pt={3}
+                  borderTop="1px solid"
+                  borderColor="gray.200"
+                  justify="space-between"
+                  align="center"
+                  display={{ base: "flex", md: "none" }} // 📱 MOBILE ONLY
+                >
+                  <Text
+                    fontSize="sm"
+                    fontWeight="600"
+                    color={order.isDelivered ? "green.500" : "orange.500"}
+                  >
+                    {order.isDelivered ? "Delivered" : "Active"}
+                  </Text>
+
+                  <Link to={`/order/${order._id}`}>
+                    <Button size="sm" colorScheme="blue">
+                      View Details
+                    </Button>
+                  </Link>
+                </Flex>
+                <Box display={{ base: "block", md: "none" }} mb={2}>
+                  <Text fontSize="sm" color="gray.600">
+                    Order ID: {order._id}
+                  </Text>
+
+                  <Text fontSize="sm" fontWeight="600">
+                    ₹{order.totalPrice.toFixed(2)} •{" "}
+                    {new Date(order.createdAt).toLocaleDateString()}
+                  </Text>
+                </Box>
+
+                {/* Order Items */}
+                <VStack spacing={3} align="stretch">
+                  {order.orderItems.map((item) => {
+                    console.log("Order Items:", order.orderItems);
+                    // moved inside function body
+                    return (
+                      <Flex
+                        key={item._id}
+                        align="center"
+                        gap={3}
+                        direction={{ base: "column", sm: "row" }}
+                      >
+                        <Box w="60px" h="60px" flexShrink={0}>
                           <img
-                            src={item.product.images[0]}
+                            src={item.product?.images?.[0]} // ← get first image from product
                             alt={item.name}
-                            width="60"
-                            height="60"
-                            style={{ objectFit: "cover" }}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                              borderRadius: "6px",
+                            }}
                           />
                         </Box>
-                        <Text fontWeight="bold" fontSize="sm" mt={2}>
-                          {item.product.brandname}
-                        </Text>
-                      </Box>
-                    </Link>
-                  </HStack>
-                </Box>
-              ))
-            )}
-          </Tbody>
-        </Table>
-      )}
-    </Box>
-  );
+                        <Box flex="1">
+                          <Text fontWeight="600">{item.name}</Text>
+                          <Text fontSize="sm" color="gray.600">
+                            Qty: {item.qty} • ₹{item.price.toFixed(2)}
+                          </Text>
+                        </Box>
+                        <Box>
+                          <Text
+                            fontSize="sm"
+                            fontWeight="600"
+                            color={
+                              order.isDelivered ? "green.500" : "orange.500"
+                            }
+                          >
+                            {order.isDelivered ? "Delivered" : "Active"}
+                          </Text>
+                        </Box>
+                      </Flex>
+                    );
+                  })}
+                </VStack>
+              </Box>
+            ))}
+          </VStack>
+        )}
+      </Box>
+    );
+  };
 
   const renderContent = () => {
     switch (activeSection) {
@@ -481,7 +1056,7 @@ const ProfileScreen = () => {
         direction={{ base: "column", md: "row" }}
         gap={8}
         justify="center"
-        align="start"
+        align="stretch"
         mx="auto"
         maxW="1000px"
         w="full"
@@ -494,9 +1069,10 @@ const ProfileScreen = () => {
           border="1px solid"
           borderColor="gray.300"
           borderRadius="md"
-          minW="450px"
-          h="562px"
-          overflowY="auto"
+          w={{ base: "100%", md: "400px" }}
+          minW="unset"
+          flex="1"
+          overflowY="visible"
           css={{
             scrollbarWidth: "none",
             "&::-webkit-scrollbar": { display: "none" },
@@ -508,27 +1084,48 @@ const ProfileScreen = () => {
           <List spacing={3}>
             {menuOptions.map((menu) => (
               <ListItem key={menu.id}>
-                <Link to={menu.path} style={{ textDecoration: "none" }}>
+                {menu.id === "logout" ? (
                   <HStack
                     p={3}
                     borderRadius="md"
                     cursor="pointer"
-                    color={activeSection === menu.id ? "white" : "black"}
-                    bg={activeSection === menu.id ? "black" : "gray.100"}
-                    onClick={() => setActiveSection(menu.id)}
+                    bg="red.500"
+                    color="white"
+                    onClick={menu.onClick}
                   >
-                    {menu.image && (
-                      <img
-                        src={menu.image}
-                        alt={menu.label}
-                        width="24"
-                        height="24"
-                        style={{ borderRadius: "5px" }}
-                      />
+                    {menu.icon && (
+                      <Icon as={menu.icon} boxSize={5} color="white" />
                     )}
                     <Text fontWeight="600">{menu.label}</Text>
                   </HStack>
-                </Link>
+                ) : (
+                  <Link
+                    to={menu.path || "#"}
+                    style={{ textDecoration: "none" }}
+                  >
+                    <HStack
+                      p={3}
+                      borderRadius="md"
+                      cursor="pointer"
+                      color={activeSection === menu.id ? "white" : "black"}
+                      bg={activeSection === menu.id ? "black" : "gray.100"}
+                      onClick={() => setActiveSection(menu.id)}
+                    >
+                      {menu.icon && (
+                        <Icon
+                          as={menu.icon}
+                          boxSize={5}
+                          color={
+                            activeSection === menu.id
+                              ? "rgb(3,156,195)"
+                              : "gray.500"
+                          }
+                        />
+                      )}
+                      <Text fontWeight="600">{menu.label}</Text>
+                    </HStack>
+                  </Link>
+                )}
               </ListItem>
             ))}
           </List>
@@ -536,21 +1133,21 @@ const ProfileScreen = () => {
 
         {/* RIGHT SIDE CONTENT */}
         <Box
-          p={6}
+          p={{ base: 4, md: 6 }}
           bg="white"
           rounded="lg"
           shadow="sm"
           border="1px solid"
           borderColor="gray.300"
           flex="1"
-          minW="600px"
-          h="562px"
-          overflow="hidden"
+          w="100%"
+          minW="unset"
+          minH={{ base: "auto", md: "502px" }}
         >
           <Box
-            h="100%"
-            overflowY="auto"
-            pr={2}
+            h={{ base: "auto", md: "100%" }}
+            overflowY={{ base: "visible", md: "auto" }}
+            pr={{ base: 0, md: 2 }}
             css={{
               scrollbarWidth: "none",
               "&::-webkit-scrollbar": { display: "none" },

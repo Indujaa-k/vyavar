@@ -81,6 +81,7 @@ const sendOtpToEmail = asyncHandler(async (req, res) => {
   }
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  console.log("OTP:", otp);
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
 
   let user = await User.findOne({ email });
@@ -88,6 +89,22 @@ const sendOtpToEmail = asyncHandler(async (req, res) => {
   if (user) {
     user.otp = otp;
     user.expiresAt = expiresAt;
+    // if (user) {
+    //   user.otp = otp;
+    //   user.expiresAt = expiresAt;
+    //   await user.save({ validateBeforeSave: false });
+    // } else {
+    //   user = new User({
+    //     name: "temp",
+    //     email,
+    //     password: "temp1234",
+    //     otp,
+    //     expiresAt,
+    //     addresses: [], // ✅ KEEP EMPTY ARRAY
+    //   });
+    //   await user.save({ validateBeforeSave: false });
+    // }
+
     await user.save({ validateBeforeSave: false });
   } else {
     user = new User({
@@ -95,20 +112,30 @@ const sendOtpToEmail = asyncHandler(async (req, res) => {
       email,
       password: "temp1234",
       otp,
+      addresses: [],
       expiresAt,
+      // address: {
+      //   phoneNumber: phone, // ✅ STORE PHONE
+      // },
     });
     await user.save({ validateBeforeSave: false });
   }
 
+  // try {
   await RegisterEmailOtp({
     email,
     status: "OTP Verification",
     orderId: `OTP-${otp}`,
     html: `<p>Your OTP for verification is <strong>${otp}</strong>. It will expire in 10 minutes.</p>`,
   });
+  // } catch (error) {
+  //   console.error("Email OTP failed:", error.message);
+  //   return res.status(500).json({ message: "Failed to send OTP email" });
+  // }
 
   res.status(200).json({ message: "OTP sent successfully" });
 });
+
 // @route POST /api/users/verify-otp
 // @desc Verify OTP for email
 // @access Public
@@ -210,6 +237,23 @@ const resetPasswordWithOtp = asyncHandler(async (req, res) => {
 
   res.status(200).json({ message: "Password reset successfully" });
 });
+// @desc Delete user's profile picture
+// @route DELETE /api/users/profile-picture
+// @access Private
+const deleteProfilePicture = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+
+  user.profilePicture = "/images/default-profile.png"; // or null
+  await user.save();
+
+  res.status(200).json({ message: "Profile picture deleted" });
+});
+
+export { deleteProfilePicture };
 
 // ROUTER:
 // router.post("/resetPassword", resetPasswordWithOtp); // No change needed here
@@ -230,7 +274,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
       isAdmin: user.isAdmin,
       profilePicture: user.profilePicture,
       isDelivery: user.isDelivery,
-      address: user.address,
+     addresses: user.addresses,
     });
   } else {
     res.status(404);
@@ -265,43 +309,51 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     user.lastName = req.body.lastName || user.lastName;
     user.gender = req.body.gender || user.gender;
     user.dateOfBirth = req.body.dateOfBirth || user.dateOfBirth;
-    // ✅ Parse address if it exists and is a string
-    if (req.body.address) {
-      try {
-        let parsedAddress =
-          typeof req.body.address === "string"
-            ? JSON.parse(req.body.address)
-            : req.body.address;
+    if (req.body.password) user.password = req.body.password;
 
-        // ✅ Convert numeric fields properly
-        if (parsedAddress.pin) parsedAddress.pin = Number(parsedAddress.pin);
-        if (parsedAddress.phoneNumber)
-          parsedAddress.phoneNumber = Number(parsedAddress.phoneNumber);
-
-        user.address = parsedAddress;
-      } catch (err) {
-        console.error("Error parsing address JSON:", err.message);
-        return res.status(400).json({ message: "Invalid address format" });
-      }
+    // Handle profile picture
+    if (req.file) {
+      user.profilePicture = req.file.path;
     }
-    if (req.body.password) {
-      user.password = req.body.password;
+
+    // ✅ Handle multiple addresses
+    if (req.body.addresses) {
+      let addresses =
+        typeof req.body.addresses === "string"
+          ? JSON.parse(req.body.addresses)
+          : req.body.addresses;
+
+      // Convert numeric fields to numbers
+      addresses = addresses.map((addr) => ({
+        ...addr,
+        pin: addr.pin ? Number(addr.pin) : null,
+        phoneNumber: addr.phoneNumber ? Number(addr.phoneNumber) : null,
+      }));
+      
+
+      // Ensure only one default address
+      const defaultExists = addresses.some((addr) => addr.isDefault);
+      if (!defaultExists && addresses.length > 0) {
+        addresses[0].isDefault = true; // fallback first address as default
+      }
+
+      user.addresses = addresses; // replace all addresses
     }
 
     const updatedUser = await user.save();
-    console.log("Updated user details:", updatedUser);
 
     res.json({
       _id: updatedUser._id,
       name: updatedUser.name,
       email: updatedUser.email,
-      profilePicture: updatedUser.profilePicture,
-      isAdmin: updatedUser.isAdmin,
-      isSeller:updatedUser.isSeller,
-      address: updatedUser.address,
       lastName: updatedUser.lastName,
       gender: updatedUser.gender,
       dateOfBirth: updatedUser.dateOfBirth,
+      profilePicture: updatedUser.profilePicture,
+      isAdmin: updatedUser.isAdmin,
+      isSeller: updatedUser.isSeller,
+      isDelivery: updatedUser.isDelivery,
+      addresses: updatedUser.addresses,
       token: generateToken(updatedUser._id),
     });
   } catch (error) {
@@ -441,5 +493,6 @@ export {
   toggleFavorite,
   getFavorites,
   PasswordResetOtp,
+  // deleteProfilePicture,
   resetPasswordWithOtp,
 };

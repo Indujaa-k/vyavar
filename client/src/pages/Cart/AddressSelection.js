@@ -15,6 +15,7 @@ const AddressSelection = () => {
 
   const userProfile = useSelector((state) => state.userDetails);
   const { user, loading } = userProfile;
+  const defaultAddress = user?.addresses?.find((addr) => addr.isDefault);
   const handleAddressClick = () => {
     navigate("/profile"); // Redirect to profile address page
   };
@@ -49,8 +50,9 @@ const AddressSelection = () => {
         />
       </HStack>
       <Text fontSize="sm" color="gray.600">
-        {user?.address?.doorNo}, {user?.address?.street}, {user?.address?.city},{" "}
-        {user?.address?.state}
+        {defaultAddress
+          ? `${defaultAddress.doorNo}, ${defaultAddress.street}, ${defaultAddress.city}, ${defaultAddress.state}`
+          : "No default address selected"}
       </Text>
     </Box>
   );

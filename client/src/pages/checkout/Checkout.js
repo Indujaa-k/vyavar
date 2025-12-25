@@ -71,7 +71,10 @@ const Checkout = () => {
   const { order, success, ordererror } = orderCreate;
   const userProfile = useSelector((state) => state.userDetails);
   const { user, loading: userLoading } = userProfile;
-  const recipientAddress = user?.address;
+  const defaultAddress =
+    user?.addresses?.find((addr) => addr.isDefault) || user?.addresses?.[0];
+
+  const recipientAddress = defaultAddress;
   const { isOpen, onOpen, onClose } = useDisclosure();
   const handleShippingRateChange = (rate) => {
     setSelectedRate(rate);
@@ -130,15 +133,15 @@ const Checkout = () => {
   const handlePayClick = () => {
     // 1️⃣ Address validation
     if (
-      !user?.address?.doorNo ||
-      !user?.address?.street ||
-      !user?.address?.city ||
-      !user?.address?.state ||
-      !user?.address?.pin
+      !defaultAddress?.doorNo ||
+      !defaultAddress?.street ||
+      !defaultAddress?.city ||
+      !defaultAddress?.state ||
+      !defaultAddress?.pin
     ) {
       toast({
         title: "Address Required",
-        description: "Please fill your delivery address to continue.",
+        description: "Please select delivery address.",
         status: "warning",
         duration: 4000,
         isClosable: true,

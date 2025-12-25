@@ -269,9 +269,9 @@ const Order = () => {
               <Button
                 mt={6} // margin top
                 colorScheme="pink"
-                onClick={() => navigate("/?gender=Men")}
+                onClick={() => navigate("/profile")}
               >
-                Continue Shopping
+                Back
               </Button>
             </VStack>
             {userInfo?.isAdmin && order.isPaid && !order.isDelivered && (
