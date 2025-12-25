@@ -21,7 +21,7 @@ import {
   getProductFullById,
   getProductsByGroupId,
 } from "../controlers/productControler.js";
-import { uploadProductFiles } from "../multer/multer.js";
+import { uploadProductFiles, uploadMultipleImages } from "../multer/multer.js";
 import { protect, adminOrSeller } from "../middleware/authMiddleware.js";
 import multer from "multer";
 
@@ -72,8 +72,6 @@ router
   .delete(protect, adminOrSeller, deleteProduct)
   .put(protect, adminOrSeller, uploadProductFiles, updateProduct);
 
-  
-
 router.put(
   "/group/:groupId/common",
   protect,
@@ -83,6 +81,7 @@ router.put(
 
 router.post(
   "/group/:groupId/variant",
+  uploadMultipleImages,
   protect,
   adminOrSeller,
   addVariantToGroup
@@ -94,6 +93,6 @@ router.put(
   adminOrSeller,
   updateProductGroup
 );
-router.get("/group/:groupId",getProductsByGroupId);
+router.get("/group/:groupId", getProductsByGroupId);
 
 export default router;

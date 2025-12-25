@@ -53,6 +53,9 @@ import {
   PRODUCT_LIST_BY_GROUP_REQUEST,
   PRODUCT_LIST_BY_GROUP_SUCCESS,
   PRODUCT_LIST_BY_GROUP_FAIL,
+  VARIANT_ADD_REQUEST,
+  VARIANT_ADD_SUCCESS,
+  VARIANT_ADD_FAIL,
 } from "../constants/productConstants";
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -180,7 +183,11 @@ export const CreateProduct = (productData) => async (dispatch, getState) => {
       headers: { Authorization: `Bearer ${userInfo.token}` },
     };
 
-    const { data } = await axios.post(`/api/products/create`, productData, config);
+    const { data } = await axios.post(
+      `/api/products/create`,
+      productData,
+      config
+    );
 
     dispatch({ type: PRODUCT_CREATE_SUCCESS, payload: data });
   } catch (error) {

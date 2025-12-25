@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
+
 import {
   DeleteProduct,
   listProducts,
@@ -75,34 +77,32 @@ const Products = () => {
       products,
     })
   );
-
+  const location = useLocation();
   const userLogin = useSelector((state) => state.userLogin);
   const { userInfo } = userLogin;
 
   useEffect(() => {
     dispatch({ type: PRODUCT_CREATE_RESET });
 
+    if (!userInfo?.isAdmin) {
+      navigate("/login");
+      return;
+    }
+
     if (bulkSuccess) {
       alert("Products uploaded successfully!");
       dispatch({ type: PRODUCT_BULK_UPLOAD_RESET });
     }
 
-    if (!userInfo.isAdmin) {
-      navigate("/login");
-    }
-
-    if (successCreate) {
-      navigate(`/admin/product/create`);
-    } else {
-      dispatch(listProducts());
-    }
+    // 🔥 ALWAYS refetch products when page is hit
+    dispatch(listProducts());
   }, [
     dispatch,
+    navigate,
     userInfo,
     successDelete,
-    successCreate,
-    createdproduct,
     bulkSuccess,
+    location.key, // 👈 THIS IS THE MAGIC
   ]);
 
   const deletehandler = (id) => {

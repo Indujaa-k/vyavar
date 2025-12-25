@@ -24,6 +24,7 @@ import Order from "./pages/Order/Order";
 import Users from "./pages/Userslist/Users";
 import NotFoundPage from "./components/Notfoundpage";
 import Edituser from "./pages/Useredit/Edituser";
+import AddVariant from "./pages/Editproduct/Addvariant";
 import Products from "./pages/products/products";
 import Editproduct from "./pages/Editproduct/Editproduct";
 import Orders from "./pages/Orders/Orders";
@@ -70,7 +71,7 @@ const App = () => {
                 path="/login"
                 element={
                   userInfo ? (
-                    userInfo.isAdmin || userInfo.isSeller ?  (
+                    userInfo.isAdmin || userInfo.isSeller ? (
                       <Navigate to="/admin" replace />
                     ) : userInfo.isDelivery ? (
                       <Navigate to="/deliveryhomepage" replace />
@@ -141,6 +142,10 @@ const App = () => {
                   <Route
                     path="/admin/product/:id/edit"
                     element={<Editproduct />}
+                  />
+                  <Route
+                    path="/admin/product/:groupId/add-variant"
+                    element={<AddVariant />}
                   />
                   <Route
                     path="/admin/assignorders"
