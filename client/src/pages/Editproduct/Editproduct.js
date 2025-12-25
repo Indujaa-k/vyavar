@@ -553,17 +553,6 @@ const EditProductPage = () => {
             </FormControl>
           ))}
 
-          {/* Images */}
-          <FormLabel mt={4}>Product Images (3)</FormLabel>
-          <Flex wrap="wrap" gap={4}>
-            {existingImages.map((img, index) => (
-              <Box key={index} position="relative" w="100px" h="100px">
-                <img src={img || "https://via.placeholder.com/100"} alt={`Product ${index}`} style={{cursor:"pointer",borderRadius:"8px",objectFit:"cover"}} onClick={()=>document.getElementById(`imageUpload-${index}`).click()} />
-                <Input type="file" accept="image/*" id={`imageUpload-${index}`} onChange={(e)=>handleReplaceImage(e,index)} hidden />
-                <Button size="xs" colorScheme="blue" position="absolute" bottom="5px" right="5px" onClick={()=>document.getElementById(`imageUpload-${index}`).click()}><FaEdit /></Button>
-              </Box>
-            ))}
-          </Flex>
 
           {/* Submit */}
           <Button type="submit" colorScheme="teal" w="full" mt={6}>

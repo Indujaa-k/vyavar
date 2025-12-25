@@ -915,72 +915,64 @@ const updateGroupCommonFields = asyncHandler(async (req, res) => {
 
 const addVariantToGroup = asyncHandler(async (req, res) => {
   const { groupId } = req.params;
+  let { color, sizes, stockBySize } = req.body;
 
-  const {
-    color,
-    sizes,
-    stockBySize,
-    images,
-    price, // optional override
-  } = req.body;
+  // Parse sizes/stock if sent as JSON strings
+  if (typeof sizes === "string") sizes = JSON.parse(sizes);
+  if (typeof stockBySize === "string") stockBySize = JSON.parse(stockBySize);
 
-  if (!color || !sizes || !stockBySize || !images) {
+  // Multer uploaded files
+  const files = req.files; // array of files from frontend
+  if (!color || !sizes || !stockBySize || !files || files.length !== 3) {
     res.status(400);
     throw new Error("Variant fields are missing");
   }
 
-  // 🔹 1. Fetch any one product from the group (to copy common fields)
-  const baseProduct = await Product.findOne({
-    productGroupId: groupId,
-  });
+  // Extract Cloudinary URLs
+  const images = files.map((file) => file.path); // ✅ array of strings
 
-  if (!baseProduct) {
-    res.status(404);
-    throw new Error("Product group not found");
-  }
+  // Fetch base product
+  const baseProduct = await Product.findOne({ productGroupId: groupId });
+  if (!baseProduct) throw new Error("Product group not found");
 
-  // 🔹 2. Prevent duplicate color variant
+  // Prevent duplicate color
   const existingVariant = await Product.findOne({
     productGroupId: groupId,
-    color: color,
+    "productdetails.color": color,
   });
-
-  if (existingVariant) {
-    res.status(400);
+  if (existingVariant)
     throw new Error("Variant with this color already exists");
-  }
 
-  // 🔹 3. Auto-generate SKU
-  const generateSKU = (groupId, color, sizes) => {
-    return `${groupId}-${color.toUpperCase()}-${sizes.join("")}`;
-  };
+  // Generate SKU
+  const SKU = `${
+    baseProduct.SKU.split("-")[0]
+  }-${color.toUpperCase()}-${Date.now()}`;
 
-  const SKU = generateSKU(groupId, color, sizes);
-
-  // 🔹 4. Create new variant (copy common fields)
   const newVariant = new Product({
     productGroupId: groupId,
-
-    // ✅ copied fields
     brandname: baseProduct.brandname,
     description: baseProduct.description,
     discount: baseProduct.discount,
     shippingDetails: baseProduct.shippingDetails,
     isFeatured: baseProduct.isFeatured,
-
+    oldPrice: baseProduct.oldPrice,
+    SKU,
+    price: baseProduct.price,
+    images, // ✅ array of strings
     productdetails: {
+      gender: baseProduct.productdetails.gender,
       category: baseProduct.productdetails.category,
       subcategory: baseProduct.productdetails.subcategory,
-      gender: baseProduct.productdetails.gender,
-      sizes: sizes,
-      stockBySize: stockBySize,
+      type: baseProduct.productdetails.type,
+      fabric: baseProduct.productdetails.fabric,
+      color,
+      sizes,
+      stockBySize,
+      ageRange: baseProduct.productdetails.ageRange,
     },
-
-    // ✅ variant-specific
-    color,
-    images,
-    SKU,
-    price: price || baseProduct.price,
+    user: req.user._id,
+    rating: 0,
+    numReviews: 0,
   });
 
   const createdVariant = await newVariant.save();
