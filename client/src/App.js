@@ -56,6 +56,7 @@ import AdminTransactionsScreen from "./pages/Admin/AdminTransactionScreen";
 import BillingInvoice from "./pages/Admin/BillingInvoice";
 import ForgotPasswordScreen from "./components/ForgotPassword/ForgetPasswordScreen";
 import ResetPasswordScreen from "./components/ForgotPassword/ResetPasswordScreen";
+import EditVariantProduct from "./pages/Editproduct/EditVariantProduct";
 // import ProtectedRoute from "./pages/ProtectedRoutes";
 const App = () => {
   const { userInfo } = useSelector((state) => state.userLogin);
@@ -139,9 +140,13 @@ const App = () => {
                     path="/admin/bulkupload"
                     element={<BulkUploadPage />}
                   />
-                  <Route
+                  {/* <Route
                     path="/admin/product/:id/edit"
                     element={<Editproduct />}
+                  /> */}
+                  <Route
+                    path="/admin/product/:id/edit"
+                    element={<EditVariantProduct/>}
                   />
                   <Route
                     path="/admin/product/:groupId/add-variant"
