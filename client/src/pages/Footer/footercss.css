@@ -10,24 +10,40 @@
   height: 300px; /* Set fixed height */
 }
 
- .footerCmp footer div {
+.footerCmp footer div {
   flex: 1;
   min-width: 200px;
   margin-bottom: 10px; /* Reduced margin for tighter layout */
 }
 
-.footerCmp Footer .logo {
+.footerCmp footer .logo {
   display: block;
-  height: 80px;
+  height: 120px; /* Adjust height if needed */
   width: auto;
-  margin: 0 auto; /* Centering logo */
+  margin: 0 auto 10px auto; /* Center logo */
+}
+
+.footerCmp .logoTagline {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 5px 0; /* Reduced spacing above & below */
+  color: black;
+}
+
+.footerCmp .logoQuote {
+  text-align: center;
+  font-size: 12px;
+  font-style: italic;
+  color: gray;
+  margin: 2px 0 10px 0; /* Tight spacing */
 }
 
 .footerCmp footer h1 {
   text-transform: uppercase;
   font-size: 16px;
   font-weight: 600;
-  margin-bottom: 10px; /* Reduced margin */
+  margin-bottom: 10px;
   text-align: center;
 }
 
@@ -38,7 +54,7 @@
 }
 
 .footerCmp footer li {
-  margin-bottom: 8px; /* Reduced spacing */
+  margin-bottom: 8px;
   cursor: pointer;
   font-size: 14px;
   transition: color 0.3s ease-in-out;
@@ -68,9 +84,8 @@
 .footerCmp .paragraphFooter {
   width: 100%;
   text-align: center;
-  font-size: 12px; /* Smaller font size */
-margin-top: 10px; /* Reduced margin */
-  margin-bottom: 10px;
+  font-size: 12px;
+  margin: 10px 0; /* Reduced margin */
   color: black;
 }
 
@@ -82,7 +97,7 @@ margin-top: 10px; /* Reduced margin */
     flex-wrap: wrap;
     justify-content: center;
     text-align: center;
-    height: auto; /* Allowing dynamic height */
+    height: auto; /* Dynamic height */
     padding: 20px;
   }
 
@@ -104,7 +119,7 @@ margin-top: 10px; /* Reduced margin */
     flex-direction: column;
     align-items: center;
     text-align: center;
-    height: auto; /* Allowing dynamic height */
+    height: auto; /* Dynamic height */
     padding: 15px;
   }
 
@@ -113,6 +128,15 @@ margin-top: 10px; /* Reduced margin */
     max-width: 100%;
     text-align: center;
   }
+.footerCmp .footerIcons svg {
+  color: white;
+  font-size: 20px;
+  transition: color 0.3s ease-in-out;
+}
+
+.footerCmp .footerIcons svg:hover {
+  color: #f5f5f5;
+}
 
   .footerCmp .footerIcons {
     justify-content: center;

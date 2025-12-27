@@ -11,12 +11,21 @@ const reviewSchema = mongoose.Schema(
     profilePicture: { type: String, default: "" },
     rating: { type: Number, required: true },
     comment: { type: String, required: true },
+
     user: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
       ref: "User", //relation betwen the review and the user
     },
     approved: { type: Boolean, default: false },
+    helpful: {
+      type: Number,
+      default: 0,
+    },
+    notHelpful: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,

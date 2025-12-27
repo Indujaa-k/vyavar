@@ -356,29 +356,51 @@ const Nav = () => {
           </DrawerContent>
         </Drawer>
       </nav>
-      <marquee
-        behavior="scroll"
-        direction="left"
-        scrollAmount="6"
-        style={{
-          background: "#fbd983ff",
-          color: "black",
-          fontWeight: "600",
-          padding: "12px 0",
-          fontSize: "14px",
-          position: "sticky",
-          top: "70px",
-          zIndex: 999,
-          whiteSpace: "nowrap",
-        }}
-      >
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🎉 Flat 50%
-        Discount on Selected Products | Free Delivery on Orders Above ₹999 🎉
-        &nbsp;&nbsp;&nbsp;&nbsp; 🎉 Flat 50% Discount on Selected Products |
-        Free Delivery on Orders Above ₹999 🎉 &nbsp;&nbsp;&nbsp;&nbsp; 🎉 Flat
-        50% Discount on Selected Products | Free Delivery on Orders Above ₹999
-        🎉
-      </marquee>
+    <>
+  <style>
+    {`
+      @keyframes shine {
+        0% {
+          background-position: -200%;
+        }
+        100% {
+          background-position: 200%;
+        }
+      }
+    `}
+  </style>
+
+  <marquee
+    behavior="scroll"
+    direction="left"
+    scrollAmount="6"
+    style={{
+      background: "#fbd983ff",
+      padding: "12px 0",
+      position: "sticky",
+      top: "70px",
+      zIndex: 999,
+    }}
+  >
+    <span
+      style={{
+        fontWeight: "700",
+        fontSize: "14px",
+        background:
+          "linear-gradient(90deg, #000 25%, #fff 37%, #000 63%)",
+        backgroundSize: "200% auto",
+        color: "transparent",
+        WebkitBackgroundClip: "text",
+        animation: "shine 2s linear infinite",
+      }}
+    >
+      Flat 50% Discount on Selected Products | Free Delivery on Orders Above ₹999 
+      &nbsp;&nbsp;&nbsp;&nbsp;
+      Flat 50% Discount on Selected Products | Free Delivery on Orders Above ₹999 
+    </span>
+  </marquee>
+</>
+
     </>
   );
 };

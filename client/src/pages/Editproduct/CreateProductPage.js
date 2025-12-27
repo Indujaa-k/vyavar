@@ -25,12 +25,8 @@ import { useNavigate } from "react-router-dom";
 
 const CreateProductPage = () => {
   const navigate = useNavigate();
-  const [existingImages, setExistingImages] = useState(["", "", ""]);
   const [brandname, setbrandName] = useState("");
   const [description, setdescription] = useState("");
-  const [price, setPrice] = useState(0);
-  const [oldPrice, setOldPrice] = useState(0);
-  const [discount, setDiscount] = useState(0);
   const [isFeatured, setIsFeatured] = useState(false);
   const [SKU, setSKU] = useState("");
   const [productdetails, setProductdetails] = useState({
@@ -41,7 +37,6 @@ const CreateProductPage = () => {
     ageRange: "",
     color: "",
     fabric: "",
-    sizes: [],
   });
   const disableNumberScroll = (e) => {
     e.target.blur();
@@ -61,6 +56,7 @@ const CreateProductPage = () => {
       position: "top-right",
     });
   };
+
   const dispatch = useDispatch();
   const options = {
     gender: ["Men", "Women", "Unisex"],
@@ -110,17 +106,6 @@ const CreateProductPage = () => {
     return null; // ✅ all good
   };
 
-  const addColorVariant = () => {
-    setColorVariants((prev) => [
-      ...prev,
-      {
-        color: "",
-        sizes: [],
-        stockBySize: options.sizes.map((s) => ({ size: s, stock: 0 })),
-        images: [],
-      },
-    ]);
-  };
   const removeColorVariant = (removeIndex) => {
     setColorVariants((prev) =>
       prev.filter((_, index) => index !== removeIndex)
@@ -169,17 +154,22 @@ const CreateProductPage = () => {
       sizes: [],
       stockBySize: options.sizes.map((s) => ({ size: s, stock: 0 })),
       images: [],
+      oldPrice: 0,
+      discount: 0,
     },
   ]);
 
   const [stockBySize, setStockBySize] = useState(
     options.sizes.map((size) => ({ size, stock: 0 }))
   );
-  const calculatedPrice = () => {
+  const calculateVariantPrice = (oldPrice, discount = 0) => {
     const op = Number(oldPrice);
     const dis = Number(discount);
-    if (!op) return 0;
-    return Number((op - (op * dis) / 100).toFixed(2));
+
+    if (!Number.isFinite(op) || op <= 0) return 0;
+    if (!Number.isFinite(dis) || dis < 0) return op;
+
+    return +(op - (op * dis) / 100).toFixed(2);
   };
 
   const handleSizeChartUpload = (e) => {
@@ -190,6 +180,11 @@ const CreateProductPage = () => {
     } else {
       showError("Please upload a PDF file");
     }
+  };
+
+  const safeNumber = (val, fallback = 0) => {
+    const num = parseFloat(val);
+    return isNaN(num) ? fallback : num;
   };
 
   const submitHandler = (e) => {
@@ -203,13 +198,28 @@ const CreateProductPage = () => {
 
     for (let i = 0; i < colorVariants.length; i++) {
       const v = colorVariants[i];
+
       if (!v.color) {
         showError(`Color name missing for variant ${i + 1}`);
         return;
       }
+
       const imageError = validateImages(colorVariants);
       if (imageError) {
         showError(imageError);
+        return;
+      }
+
+      const oldPrice = safeNumber(v.oldPrice);
+      const discount = safeNumber(v.discount);
+
+      if (oldPrice <= 0) {
+        showError(`Enter valid old price for Color ${i + 1}`);
+        return;
+      }
+
+      if (discount < 0 || discount > 100) {
+        showError(`Invalid discount for Color ${i + 1}`);
         return;
       }
     }
@@ -218,9 +228,6 @@ const CreateProductPage = () => {
 
     // 🔹 BASIC
     formData.append("brandname", brandname);
-    formData.append("price", Number(calculatedPrice()));
-    formData.append("oldPrice", oldPrice);
-    formData.append("discount", discount);
     formData.append("description", description);
     formData.append("SKU", SKU);
     formData.append("isFeatured", isFeatured ? "true" : "false");
@@ -228,30 +235,41 @@ const CreateProductPage = () => {
     // 🔹 SHIPPING
     formData.append("shippingDetails", JSON.stringify(shippingDetails));
 
-    // 🔥 MAIN CHANGE → SEND VARIANTS
+    // 🔥 VARIANTS
     formData.append(
       "products",
       JSON.stringify(
-        colorVariants.map((variant) => ({
-          color: variant.color,
-          productdetails: {
-            gender: productdetails.gender,
-            category: productdetails.category,
-            subcategory: productdetails.subcategory,
-            type: productdetails.type,
-            ageRange: productdetails.ageRange,
-            fabric: productdetails.fabric,
-            color: variant.color,
-            sizes: variant.sizes,
-            stockBySize: variant.stockBySize.filter((s) =>
-              variant.sizes.includes(s.size)
-            ),
-          },
-        }))
+        colorVariants.map((variant) => {
+          const oldPrice = safeNumber(variant.oldPrice);
+          const discount = safeNumber(variant.discount);
+          const price = calculateVariantPrice(oldPrice, discount);
+
+          return {
+            color: variant.color || "",
+            oldPrice,
+            discount,
+            price,
+            productdetails: {
+              gender: productdetails.gender || "",
+              category: productdetails.category || "",
+              subcategory: productdetails.subcategory || "",
+              type: productdetails.type || "",
+              ageRange: productdetails.ageRange || "",
+              fabric: productdetails.fabric || "",
+              color: variant.color || "",
+              sizes: Array.isArray(variant.sizes) ? variant.sizes : [],
+              stockBySize: Array.isArray(variant.stockBySize)
+                ? variant.stockBySize.filter((s) =>
+                    variant.sizes?.includes(s.size)
+                  )
+                : [],
+            },
+          };
+        })
       )
     );
 
-    // 🔥 IMAGES PER COLOR
+    // 🔥 IMAGES
     colorVariants.forEach((variant) => {
       variant.images.forEach((file) => {
         formData.append("images", file);
@@ -263,31 +281,11 @@ const CreateProductPage = () => {
       formData.append("sizeChart", sizeChartFile);
     }
 
+    console.log("Variants:", colorVariants);
+    console.log("Images count:", colorVariants.flatMap((v) => v.images).length);
+
     // 🚀 DISPATCH
     dispatch(CreateProduct(formData));
-  };
-
-  const handleReplaceImage = (e, index) => {
-    const file = e.target.files[0];
-    if (file) {
-      const updatedImages = [...existingImages];
-      updatedImages[index] = URL.createObjectURL(file); // ✅ Show preview
-      setExistingImages(updatedImages);
-
-      // Store new image in `newImages` to upload later
-      const updatedNewImages = [...newImages];
-      updatedNewImages[index] = file;
-      setNewImages(updatedNewImages);
-    }
-  };
-  const handleSizeChange = (size) => {
-    setProductdetails((prevDetails) => {
-      const newSizes = prevDetails.sizes.includes(size)
-        ? prevDetails.sizes.filter((s) => s !== size)
-        : [...prevDetails.sizes, size];
-
-      return { ...prevDetails, sizes: newSizes };
-    });
   };
 
   return (
@@ -333,37 +331,6 @@ const CreateProductPage = () => {
           Mark as Featured Product
         </Checkbox>
         <Divider my={4} />
-        <Flex justify="space-between" gap={4}>
-          <FormControl isRequired>
-            <FormLabel>Old Price</FormLabel>
-            <Input
-              type="number"
-              onWheel={disableNumberScroll}
-              value={oldPrice}
-              placeholder="Enter old price"
-              onChange={(e) => setOldPrice(e.target.value)}
-            />
-          </FormControl>
-          <FormControl>
-            <FormLabel>Discount (%)</FormLabel>
-            <Input
-              type="number"
-              onWheel={disableNumberScroll}
-              value={discount}
-              placeholder="Enter discount percentage"
-              onChange={(e) => setDiscount(Number(e.target.value))}
-            />
-          </FormControl>
-          <FormControl>
-            <FormLabel>New Price</FormLabel>
-            <Input
-              type="number"
-              onWheel={disableNumberScroll}
-              value={calculatedPrice()}
-              readOnly
-            />
-          </FormControl>
-        </Flex>
         {/* <FormControl isRequired>
           <FormLabel>Stock Count</FormLabel>
           <Input
@@ -533,6 +500,60 @@ const CreateProductPage = () => {
               />
             </FormControl>
 
+            <Flex justify="space-between" gap={4} mb={3}>
+              <FormControl isRequired>
+                <FormLabel>Old Price</FormLabel>
+                <Input
+                  type="number"
+                  onWheel={disableNumberScroll}
+                  value={variant.oldPrice}
+                  placeholder="Enter old price"
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const num = value === "" ? 0 : parseFloat(value);
+                    const safe = isNaN(num) ? 0 : num; // ✅ always safe
+                    setColorVariants((prev) =>
+                      prev.map((v, idx) =>
+                        idx === index ? { ...v, oldPrice: safe } : v
+                      )
+                    );
+                  }}
+                />
+              </FormControl>
+
+              <FormControl>
+                <FormLabel>Discount (%)</FormLabel>
+                <Input
+                  type="number"
+                  onWheel={disableNumberScroll}
+                  value={variant.discount}
+                  placeholder="Discount %"
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const num = value === "" ? 0 : parseFloat(value);
+                    const safe = isNaN(num) ? 0 : num; // ✅ always safe
+                    setColorVariants((prev) =>
+                      prev.map((v, idx) =>
+                        idx === index ? { ...v, discount: safe } : v
+                      )
+                    );
+                  }}
+                />
+              </FormControl>
+
+              <FormControl>
+                <FormLabel>New Price</FormLabel>
+                <Input
+                  type="number"
+                  value={calculateVariantPrice(
+                    variant.oldPrice,
+                    variant.discount
+                  )}
+                  readOnly
+                />
+              </FormControl>
+            </Flex>
+
             {/* Sizes */}
             <FormLabel>Sizes</FormLabel>
             <Stack direction="row" mb={3}>
@@ -657,6 +678,9 @@ const CreateProductPage = () => {
                           stock: 0,
                         })),
                         images: [],
+
+                        oldPrice: 0,
+                        discount: 0,
                       },
                     ])
                   }

@@ -579,6 +579,52 @@ export const updateProductGroup =
       });
     }
   };
+export const markReviewHelpful =
+  (productId, reviewId) => async (dispatch, getState) => {
+    const {
+      userLogin: { userInfo },
+    } = getState();
+
+    const config = {
+      headers: {
+        Authorization: `Bearer ${userInfo.token}`,
+      },
+    };
+
+    await axios.put(
+      `/api/products/${productId}/reviews/${reviewId}/helpful`,
+      {},
+      config
+    );
+
+    // 🔥 VERY IMPORTANT
+    dispatch(listProductDetails(productId));
+  };
+
+
+export const markReviewNotHelpful =
+  (productId, reviewId) => async (dispatch, getState) => {
+    const {
+      userLogin: { userInfo },
+    } = getState();
+
+    const config = {
+      headers: {
+        Authorization: `Bearer ${userInfo.token}`,
+      },
+    };
+
+    await axios.put(
+      `/api/products/${productId}/reviews/${reviewId}/not-helpful`,
+      {},
+      config
+    );
+
+    // 🔥 VERY IMPORTANT
+    dispatch(listProductDetails(productId));
+  };
+
+
 export const listProductsByGroupId =
   (groupId) => async (dispatch, getState) => {
     try {
