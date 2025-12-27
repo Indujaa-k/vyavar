@@ -216,8 +216,8 @@ const addToCart = asyncHandler(async (req, res) => {
       (item) => item._id.toString() !== existingCartItem._id.toString()
     );
   } else if (existingCartItem) {
-    existingCartItem.qty = qty;
-    existingCartItem.price = qty * product.price;
+    existingCartItem.qty += qty; // 🔥 increment
+    existingCartItem.price = existingCartItem.qty * product.price;
   } else {
     user.cartItems.push({
       product: product._id,
@@ -228,6 +228,7 @@ const addToCart = asyncHandler(async (req, res) => {
   }
 
   await user.save();
+
   const updatedUser = await User.findById(userId).populate("cartItems.product");
 
   res.status(200).json({ cartItems: updatedUser.cartItems });
@@ -358,10 +359,7 @@ const createProduct = asyncHandler(async (req, res) => {
   try {
     const {
       brandname,
-      price,
       description,
-      discount,
-      oldPrice,
       SKU,
       shippingDetails,
       isFeatured,
@@ -408,16 +406,18 @@ const createProduct = asyncHandler(async (req, res) => {
         user: req.user._id,
         brandname,
         description,
-        price: Number(price),
-        oldPrice: Number(oldPrice),
-        discount: Number(discount),
+
+        // ✅ TAKE PRICE FROM VARIANT
+        price: Number(variant.price),
+        oldPrice: Number(variant.oldPrice),
+        discount: Number(variant.discount),
+
         images,
         sizeChart,
 
-        // ✅ SAME GROUP ID
         productGroupId,
 
-        // ✅ UNIQUE SKU PER VARIANT
+        // ✅ UNIQUE SKU
         SKU: `${SKU}-${variant.color.toUpperCase()}-${Date.now()}`,
 
         productdetails: variant.productdetails,
@@ -442,10 +442,14 @@ const createProduct = asyncHandler(async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+// @desc Mark review as Helpful / Not Helpful
+// @route PUT /api/products/:id/review/helpful
+// @access Private
 
 // @desc Update a product
 // @route PUT /api/products/:id
 // @access Private/Admin
+
 const updateProduct = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id);
 
@@ -489,6 +493,42 @@ const updateProduct = asyncHandler(async (req, res) => {
 // @desc Create a bulk product
 // @route Post /api/products
 // @access Private/Admin
+export const markReviewHelpful = async (req, res) => {
+  const { productId, reviewId } = req.params;
+
+  const product = await Product.findById(productId);
+  if (!product) {
+    return res.status(404).json({ message: "Product not found" });
+  }
+
+  const review = product.reviews.id(reviewId);
+  if (!review) {
+    return res.status(404).json({ message: "Review not found" });
+  }
+
+  review.helpful = (review.helpful || 0) + 1;
+
+  await product.save();
+  res.json({ message: "Marked as helpful" });
+};
+export const markReviewNotHelpful = async (req, res) => {
+  const { productId, reviewId } = req.params;
+
+  const product = await Product.findById(productId);
+  if (!product) {
+    return res.status(404).json({ message: "Product not found" });
+  }
+
+  const review = product.reviews.id(reviewId);
+  if (!review) {
+    return res.status(404).json({ message: "Review not found" });
+  }
+
+  review.notHelpful = (review.notHelpful || 0) + 1;
+
+  await product.save();
+  res.json({ message: "Marked as not helpful" });
+};
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage }).single("file");
@@ -587,21 +627,9 @@ const uploadProducts = asyncHandler(async (req, res) => {
 const createproductreview = asyncHandler(async (req, res) => {
   console.log("Incoming Review Request:", req.body);
   const { rating, comment } = req.body;
-  const product = new Product({
-    brandname,
-    price: Number(price),
-    oldPrice: Number(oldPrice),
-    discount: Number(discount),
-    description,
-    user: req.user._id,
-    images,
-    sizeChart,
-    SKU: `${SKU}-${variant.color.replace(/\s+/g, "-").toUpperCase()}`,
-    productdetails: variant.productdetails,
-    shippingDetails: parsedShippingDetails,
-    numReviews: 0,
-    isFeatured: isFeaturedBool,
-  });
+
+  // ✅ Fetch existing product instead of creating a new one
+  const product = await Product.findById(req.params.id);
 
   if (!product) {
     return res.status(404).json({ message: "Product not found" });

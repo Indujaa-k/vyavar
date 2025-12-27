@@ -6,6 +6,8 @@ import {
   listProductDetails,
   createproductReview,
   listProductsByGroupId,
+  markReviewHelpful,
+  markReviewNotHelpful,
 } from "../../actions/productActions";
 import { IoLogoFacebook } from "react-icons/io";
 import { AiFillStar, AiOutlineStar } from "react-icons/ai";
@@ -13,6 +15,10 @@ import { addToCart } from "../../actions/cartActions";
 import { AiFillShop } from "react-icons/ai";
 import ShareButton from "./ShareButton";
 import { MdDoNotDisturb } from "react-icons/md";
+import { MdVerified } from "react-icons/md";
+// import { FaCheckCircle } from "react-icons/fa";
+import { FaThumbsUp, FaThumbsDown, FaCheckCircle } from "react-icons/fa";
+
 import {
   Image,
   Select,
@@ -84,8 +90,14 @@ const Productpage = () => {
   const [sizeStock, setSizeStock] = useState({});
   const [showPDF, setShowPDF] = useState(false);
   const [showAllReviews, setShowAllReviews] = useState(false);
+  // const [reviewStats, setReviewStats] = useState([]);
+  // const handleHelpful = (reviewId) => {
+  //   dispatch(markReviewHelpful(product._id, reviewId));
+  // };
+  // const handleNotHelpful = (reviewId) => {
+  //   dispatch(markReviewNotHelpful(product._id, reviewId));
+  // };
 
-  
   const isDisabled = !selectedSize || sizeStock[selectedSize] === 0;
   // Check if logged-in user already reviewed this product
   const hasUserReviewed =
@@ -111,6 +123,33 @@ const Productpage = () => {
       -(imgId - 1) * displayWidth
     }px)`;
   }
+  const handleHelpful = (reviewId) => {
+    if (!userInfo) {
+      toast({
+        title: "Login Required",
+        description: "Please login to mark helpful",
+        status: "warning",
+        duration: 3000,
+      });
+      return;
+    }
+
+    dispatch(markReviewHelpful(product._id, reviewId));
+  };
+
+  const handleNotHelpful = (reviewId) => {
+    if (!userInfo) {
+      toast({
+        title: "Login Required",
+        description: "Please login to mark not helpful",
+        status: "warning",
+        duration: 3000,
+      });
+      return;
+    }
+
+    dispatch(markReviewNotHelpful(product._id, reviewId));
+  };
 
   // Update the useEffect that checks for purchased products
   useEffect(() => {
@@ -200,15 +239,21 @@ const Productpage = () => {
     }
   }, [dispatch, product?.productGroupId, userInfo]);
 
-  // product.reviews
-  const submithanlder = () => {
-    dispatch(
-      createproductReview(id, {
-        rating,
-        comment,
-      })
-    );
+  const submitHandler = () => {
+    if (rating === 0 || comment.trim() === "") {
+      toast({
+        title: "Missing fields",
+        description: "Please provide rating and comment",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    dispatch(createproductReview(id, { rating, comment }));
   };
+
   //Handler of button add to cart
   const addToCartHandler = () => {
     if (!userInfo) {
@@ -583,48 +628,116 @@ const Productpage = () => {
                   </div>
                 ))}
           </div> */}
-          <div>
-            {product.reviews &&
-              product.reviews
-                .filter((review) => review.approved)
-                .map((review) => (
-                  <div key={review._id} className="review-card">
-                    <div class="profile-section">
-                      {review.user?.profilePicture ? (
-                        <img
-                          src={review.user.profilePicture}
-                          alt={review.user.name}
-                          className="review-avatar"
-                        />
-                      ) : (
-                        <div className="review-avatar-fallback">
-                          {review.user?.name?.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      <div class="profile-info">
-                        <div class="user-name">
-                          {review.user?.name || review.name}
-                        </div>
-                        <div class="verified-status">
-                          <span class="check-mark">✓</span> Verified
-                        </div>
-                      </div>
-                    </div>
-                    <div class="content-section">
-                      <div class="content-header">
-                        <div class="stars">
-                          <Rating value={review.rating} />
-                        </div>
-                        <div class="date">
-                          {review.createdAt.substring(0, 10)}
-                        </div>
-                      </div>
-                      <h3 class="review-title">{review.comment}</h3>
-                      {/* <p class="review-body"></p> */}
-                    </div>
-                  </div>
-                ))}
-          </div>
+          {product.reviews?.map((review) => {
+            return (
+              <Box
+                key={review._id}
+                border="1px solid #e2e8f0"
+                borderRadius="xl"
+                p={4}
+                mb={4}
+                bg="white"
+                boxShadow="sm"
+                w="full"
+                _hover={{ boxShadow: "md" }}
+                transition="all 0.3s"
+              >
+                <Flex gap={6} w="full">
+                  {/* LEFT COLUMN: Avatar + Name + Verified */}
+                  <Flex flex="1" align="flex-start" gap={3}>
+                    <Box
+                      bgGradient="linear(to-r, blue.400, blue.600)"
+                      color="white"
+                      borderRadius="full"
+                      w="60px"
+                      h="60px"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                      fontWeight="bold"
+                      fontSize="2xl"
+                      boxShadow="sm"
+                    >
+                      {review.user?.name
+                        ? review.user.name.charAt(0).toUpperCase()
+                        : "U"}
+                    </Box>
+
+                    <Box>
+                      <Text fontWeight="bold" fontSize="md">
+                        {review.user?.name || "Verified User"}
+                      </Text>
+                      <Flex
+                        align="center"
+                        gap={1}
+                        fontSize="sm"
+                        color="green.500"
+                      >
+                        <MdVerified />
+                        Verified Buyer
+                      </Flex>
+                    </Box>
+                  </Flex>
+
+                  {/* RIGHT COLUMN: Comment + Stats */}
+                  <Flex flex="3" direction="column" gap={2} w="full">
+                    {/* Comment */}
+                    <Text
+                      fontSize="sm"
+                      color="gray.700"
+                      pl={2}
+                      borderLeft="3px solid #3182ce"
+                    >
+                      “{review.comment}”
+                    </Text>
+
+                    {/* Recommended + Star Rating + Date */}
+                    <Flex
+                      align="center"
+                      gap={4}
+                      justify="space-between"
+                      flexWrap="wrap"
+                    >
+                      <Flex align="center" gap={2}>
+                        <FaCheckCircle color="green" />
+                        <Text fontSize="sm" color="green.600">
+                          Recommended
+                        </Text>
+                        <Rating value={review.rating} />
+                      </Flex>
+
+                      {/* Date */}
+                      <Text fontSize="xs" color="gray.500">
+                        {review.createdAt?.substring(0, 10)}
+                      </Text>
+                    </Flex>
+
+                    {/* Helpful / Not Helpful */}
+                    <Flex gap={4} mt={2}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        leftIcon={<FaThumbsUp />}
+                        onClick={() => handleHelpful(review._id)}
+                      >
+                        Helpful ({review.helpful ?? 0})
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        leftIcon={<FaThumbsDown />}
+                        onClick={() => handleNotHelpful(review._id)}
+                      >
+                        Not Helpful ({review.notHelpful ?? 0})
+                      </Button>
+                    </Flex>
+                  </Flex>
+                </Flex>
+              </Box>
+            );
+          })}
+
           <div className="createreview">
             <h1>Create New Review :</h1>
 
@@ -670,13 +783,7 @@ const Productpage = () => {
                   placeholder="Leave Comment here :"
                 />
 
-                <Button
-                  className="submitbutton"
-                  colorScheme="blue"
-                  onClick={submithanlder}
-                  mt={3}
-                  isDisabled={rating === 0}
-                >
+                <Button colorScheme="blue" onClick={submitHandler} mt={3}>
                   Submit
                 </Button>
               </FormControl>

@@ -20,6 +20,8 @@ import {
   updateProductGroup,
   getProductFullById,
   getProductsByGroupId,
+  markReviewHelpful,
+  markReviewNotHelpful ,
 } from "../controlers/productControler.js";
 import { uploadProductFiles, uploadMultipleImages } from "../multer/multer.js";
 import { protect, adminOrSeller } from "../middleware/authMiddleware.js";
@@ -94,5 +96,19 @@ router.put(
   updateProductGroup
 );
 router.get("/group/:groupId", getProductsByGroupId);
+// Mark review as Helpful / Not Helpful
+router.put(
+  "/:productId/reviews/:reviewId/helpful",
+  protect,
+  markReviewHelpful
+);
+
+router.put(
+  "/:productId/reviews/:reviewId/not-helpful",
+  protect,
+  markReviewNotHelpful
+);
+
+
 
 export default router;
