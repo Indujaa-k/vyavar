@@ -41,9 +41,7 @@ import {
   PRODUCT_GROUP_UPDATE_REQUEST,
   PRODUCT_GROUP_UPDATE_SUCCESS,
   PRODUCT_GROUP_UPDATE_FAIL,
-  PRODUCT_VARIANT_UPDATE_REQUEST,
-  PRODUCT_VARIANT_UPDATE_SUCCESS,
-  PRODUCT_VARIANT_UPDATE_FAIL,
+ 
   PRODUCT_VARIANT_ADD_REQUEST,
   PRODUCT_VARIANT_ADD_SUCCESS,
   PRODUCT_VARIANT_ADD_FAIL,
@@ -56,6 +54,12 @@ import {
   VARIANT_ADD_REQUEST,
   VARIANT_ADD_SUCCESS,
   VARIANT_ADD_FAIL,
+  PRODUCT_GROUP_REQUEST,
+  PRODUCT_GROUP_SUCCESS,
+  PRODUCT_GROUP_FAIL,
+  PRODUCT_VARIANT_UPDATE_REQUEST,
+  PRODUCT_VARIANT_UPDATE_SUCCESS,
+  PRODUCT_VARIANT_UPDATE_FAIL,
 } from "../constants/productConstants";
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -479,22 +483,22 @@ export const updateGroupCommonFields =
 
 // Update variant
 export const updateProductVariant =
-  (productId, formData) => async (dispatch, getState) => {
+  (variantId, formData) => async (dispatch, getState) => {
     try {
       dispatch({ type: PRODUCT_VARIANT_UPDATE_REQUEST });
 
       const {
         userLogin: { userInfo },
       } = getState();
-      const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
 
-      const { data } = await axios.put(
-        `/api/products/${productId}`,
-        formData,
-        config
-      );
+      await axios.put(`/api/products/group/variant/${variantId}`, formData, {
+        headers: {
+          Authorization: `Bearer ${userInfo.token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
-      dispatch({ type: PRODUCT_VARIANT_UPDATE_SUCCESS, payload: data });
+      dispatch({ type: PRODUCT_VARIANT_UPDATE_SUCCESS });
     } catch (error) {
       dispatch({
         type: PRODUCT_VARIANT_UPDATE_FAIL,
@@ -601,7 +605,6 @@ export const markReviewHelpful =
     dispatch(listProductDetails(productId));
   };
 
-
 export const markReviewNotHelpful =
   (productId, reviewId) => async (dispatch, getState) => {
     const {
@@ -623,7 +626,6 @@ export const markReviewNotHelpful =
     // 🔥 VERY IMPORTANT
     dispatch(listProductDetails(productId));
   };
-
 
 export const listProductsByGroupId =
   (groupId) => async (dispatch, getState) => {
@@ -656,6 +658,54 @@ export const listProductsByGroupId =
           error.response && error.response.data.message
             ? error.response.data.message
             : error.message,
+      });
+    }
+  };
+export const getProductGroup = (groupId) => async (dispatch, getState) => {
+  try {
+    dispatch({ type: PRODUCT_GROUP_REQUEST });
+
+    const {
+      userLogin: { userInfo },
+    } = getState();
+
+    const { data } = await axios.get(`/api/products/group/comman/${groupId}`, {
+      headers: {
+        Authorization: `Bearer ${userInfo.token}`,
+      },
+    });
+
+    dispatch({
+      type: PRODUCT_GROUP_SUCCESS,
+      payload: data,
+    });
+  } catch (error) {
+    dispatch({
+      type: PRODUCT_GROUP_FAIL,
+      payload: error.response?.data?.message || error.message,
+    });
+  }
+};
+export const updateProductGroupCommon =
+  (groupId, commonData) => async (dispatch, getState) => {
+    try {
+      dispatch({ type: PRODUCT_GROUP_UPDATE_REQUEST });
+
+      const {
+        userLogin: { userInfo },
+      } = getState();
+
+      await axios.put(`/api/products/group/${groupId}/common`, commonData, {
+        headers: {
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      });
+
+      dispatch({ type: PRODUCT_GROUP_UPDATE_SUCCESS });
+    } catch (error) {
+      dispatch({
+        type: PRODUCT_GROUP_UPDATE_FAIL,
+        payload: error.response?.data?.message || error.message,
       });
     }
   };

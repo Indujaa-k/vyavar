@@ -158,8 +158,8 @@ const App = () => {
                     element={<Editproduct />}
                   /> */}
                   <Route
-                    path="/admin/product/:id/edit"
-                    element={<EditVariantProduct />}
+                    path="/admin/product/:groupId/edit"
+                    element={<EditVariantProduct/>}
                   />
                   <Route
                     path="/admin/product/:groupId/add-variant"

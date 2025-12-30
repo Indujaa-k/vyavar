@@ -915,55 +915,50 @@ const getProductFullById = asyncHandler(async (req, res) => {
 });
 
 const updateGroupCommonFields = asyncHandler(async (req, res) => {
-  const { groupId } = req.params;
-  const updateFields = {
-    brandname: req.body.brandname,
-    price: req.body.price,
-    oldPrice: req.body.oldPrice,
-    discount: req.body.discount,
-    description: req.body.description,
-    shippingDetails: req.body.shippingDetails,
-    isFeatured: req.body.isFeatured,
-  };
-
-  Object.keys(updateFields).forEach(
-    (key) => updateFields[key] === undefined && delete updateFields[key]
+  const products = await Product.updateMany(
+    { productGroupId: req.params.groupId },
+    {
+      $set: {
+        brandname: req.body.brandname,
+        description: req.body.description,
+        shippingDetails: req.body.shippingDetails,
+        isFeatured: req.body.isFeatured,
+        "productdetails.gender": req.body.gender,
+        "productdetails.category": req.body.category,
+        "productdetails.subcategory": req.body.subcategory,
+        "productdetails.type": req.body.type,
+        "productdetails.fabric": req.body.fabric,
+        "productdetails.ageRange": req.body.ageRange,
+      },
+    }
   );
 
-  const result = await Product.updateMany(
-    { productGroupId: groupId },
-    { $set: updateFields }
-  );
-
-  res.json({
-    message: "Group fields updated",
-    modifiedCount: result.modifiedCount,
-  });
+  res.json({ message: "Common fields updated" });
 });
 
 const addVariantToGroup = asyncHandler(async (req, res) => {
   const { groupId } = req.params;
-  let { color, sizes, stockBySize } = req.body;
 
-  // Parse sizes/stock if sent as JSON strings
+  let { color, sizes, stockBySize, oldPrice, discount, price } = req.body;
+
   if (typeof sizes === "string") sizes = JSON.parse(sizes);
   if (typeof stockBySize === "string") stockBySize = JSON.parse(stockBySize);
 
-  // Multer uploaded files
-  const files = req.files; // array of files from frontend
+  oldPrice = Number(oldPrice);
+  discount = Number(discount);
+  price = Number(price);
+
+  const files = req.files;
   if (!color || !sizes || !stockBySize || !files || files.length !== 3) {
     res.status(400);
     throw new Error("Variant fields are missing");
   }
 
-  // Extract Cloudinary URLs
-  const images = files.map((file) => file.path); // ✅ array of strings
+  const images = files.map((file) => file.path);
 
-  // Fetch base product
   const baseProduct = await Product.findOne({ productGroupId: groupId });
   if (!baseProduct) throw new Error("Product group not found");
 
-  // Prevent duplicate color
   const existingVariant = await Product.findOne({
     productGroupId: groupId,
     "productdetails.color": color,
@@ -971,7 +966,6 @@ const addVariantToGroup = asyncHandler(async (req, res) => {
   if (existingVariant)
     throw new Error("Variant with this color already exists");
 
-  // Generate SKU
   const SKU = `${
     baseProduct.SKU.split("-")[0]
   }-${color.toUpperCase()}-${Date.now()}`;
@@ -980,13 +974,15 @@ const addVariantToGroup = asyncHandler(async (req, res) => {
     productGroupId: groupId,
     brandname: baseProduct.brandname,
     description: baseProduct.description,
-    discount: baseProduct.discount,
     shippingDetails: baseProduct.shippingDetails,
     isFeatured: baseProduct.isFeatured,
-    oldPrice: baseProduct.oldPrice,
+
+    oldPrice,
+    discount,
+    price,
     SKU,
-    price: baseProduct.price,
-    images, // ✅ array of strings
+    images,
+
     productdetails: {
       gender: baseProduct.productdetails.gender,
       category: baseProduct.productdetails.category,
@@ -1042,6 +1038,7 @@ const updateProductGroup = asyncHandler(async (req, res) => {
     updatedCount: updatedProducts.nModified,
   });
 });
+
 const getProductsByGroupId = asyncHandler(async (req, res) => {
   const { groupId } = req.params;
 
@@ -1059,6 +1056,71 @@ const getProductsByGroupId = asyncHandler(async (req, res) => {
 
   res.json(products); // ✅ Must return JSON
 });
+const getProductGroup = asyncHandler(async (req, res) => {
+  const products = await Product.find({
+    productGroupId: req.params.groupId,
+  });
+
+  if (!products.length) {
+    res.status(404);
+    throw new Error("Product group not found");
+  }
+
+  // parent/common fields from first product
+  const base = products[0];
+
+  res.json({
+    common: {
+      brandname: base.brandname,
+      description: base.description,
+      shippingDetails: base.shippingDetails,
+      isFeatured: base.isFeatured,
+      productdetails: {
+        gender: base.productdetails.gender,
+        category: base.productdetails.category,
+        subcategory: base.productdetails.subcategory,
+        type: base.productdetails.type,
+        fabric: base.productdetails.fabric,
+        ageRange: base.productdetails.ageRange,
+      },
+    },
+    variants: products,
+  });
+});
+const updateVariant = asyncHandler(async (req, res) => {
+  const product = await Product.findById(req.params.id);
+
+  if (!product) {
+    res.status(404);
+    throw new Error("Variant not found");
+  }
+
+  // prices
+  if (req.body.oldPrice !== undefined)
+    product.oldPrice = Number(req.body.oldPrice);
+
+  if (req.body.discount !== undefined)
+    product.discount = Number(req.body.discount);
+
+  if (req.body.price !== undefined) product.price = Number(req.body.price);
+
+  // variant details
+  if (req.body.color) product.productdetails.color = req.body.color;
+
+  if (req.body.sizes) product.productdetails.sizes = req.body.sizes;
+
+  if (req.body.stockBySize)
+    product.productdetails.stockBySize = req.body.stockBySize;
+
+  // images (optional replace)
+  if (req.files && req.files.length > 0) {
+    product.images = req.files.map((f) => f.path);
+  }
+
+  const updated = await product.save();
+  res.json(updated);
+});
+
 export {
   getProducts,
   deleteProduct,
@@ -1080,4 +1142,6 @@ export {
   updateProductGroup,
   getProductFullById,
   getProductsByGroupId,
+  getProductGroup,
+  updateVariant,
 };

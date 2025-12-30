@@ -55,6 +55,10 @@ import {
   PRODUCT_LIST_BY_GROUP_REQUEST,
   PRODUCT_LIST_BY_GROUP_SUCCESS,
   PRODUCT_LIST_BY_GROUP_FAIL,
+  PRODUCT_GROUP_REQUEST,
+  PRODUCT_GROUP_SUCCESS,
+  PRODUCT_GROUP_FAIL,
+  
 } from "../constants/productConstants";
 export const productListReducer = (state = { products: [] }, action) => {
   switch (action.type) {
@@ -272,37 +276,6 @@ export const productGroupDetailsReducer = (
   }
 };
 
-export const productGroupUpdateReducer = (state = {}, action) => {
-  switch (action.type) {
-    case PRODUCT_GROUP_UPDATE_REQUEST:
-      return { loading: true };
-
-    case PRODUCT_GROUP_UPDATE_SUCCESS:
-      return { loading: false, success: true };
-
-    case PRODUCT_GROUP_UPDATE_FAIL:
-      return { loading: false, error: action.payload };
-
-    default:
-      return state;
-  }
-};
-
-export const productVariantUpdateReducer = (state = {}, action) => {
-  switch (action.type) {
-    case PRODUCT_VARIANT_UPDATE_REQUEST:
-      return { loading: true };
-
-    case PRODUCT_VARIANT_UPDATE_SUCCESS:
-      return { loading: false, success: true };
-
-    case PRODUCT_VARIANT_UPDATE_FAIL:
-      return { loading: false, error: action.payload };
-
-    default:
-      return state;
-  }
-};
 
 export const productVariantAddReducer = (state = {}, action) => {
   switch (action.type) {
@@ -342,6 +315,61 @@ export const productEditReducer = (
       return state;
   }
 };
+export const productGroupReducer = (
+  state = { common: {}, variants: [] },
+  action
+) => {
+  switch (action.type) {
+    case PRODUCT_GROUP_REQUEST:
+      return { loading: true, common: {}, variants: [] };
+
+    case PRODUCT_GROUP_SUCCESS:
+      return {
+        loading: false,
+        common: action.payload.common,
+        variants: action.payload.variants,
+      };
+
+    case PRODUCT_GROUP_FAIL:
+      return { loading: false, error: action.payload };
+
+    default:
+      return state;
+  }
+};
+
+export const productGroupUpdateReducer = (state = {}, action) => {
+  switch (action.type) {
+    case PRODUCT_GROUP_UPDATE_REQUEST:
+      return { loading: true };
+
+    case PRODUCT_GROUP_UPDATE_SUCCESS:
+      return { loading: false, success: true };
+
+    case PRODUCT_GROUP_UPDATE_FAIL:
+      return { loading: false, error: action.payload };
+
+    default:
+      return state;
+  }
+};
+
+export const productVariantUpdateReducer = (state = {}, action) => {
+  switch (action.type) {
+    case PRODUCT_VARIANT_UPDATE_REQUEST:
+      return { loading: true };
+
+    case PRODUCT_VARIANT_UPDATE_SUCCESS:
+      return { loading: false, success: true };
+
+    case PRODUCT_VARIANT_UPDATE_FAIL:
+      return { loading: false, error: action.payload };
+
+    default:
+      return state;
+  }
+};
+
 export const productListByGroupReducer = (state = { products: [] }, action) => {
   switch (action.type) {
     case PRODUCT_LIST_BY_GROUP_REQUEST:
