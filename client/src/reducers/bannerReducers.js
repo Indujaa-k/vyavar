@@ -20,6 +20,21 @@ import {
   USER_VIDEO_BANNER_LIST_REQUEST,
   USER_VIDEO_BANNER_LIST_SUCCESS,
   USER_VIDEO_BANNER_LIST_FAIL,
+   OFFER_BANNER_LIST_REQUEST,
+  OFFER_BANNER_LIST_SUCCESS,
+  OFFER_BANNER_LIST_FAIL,
+  OFFER_BANNER_ADD_REQUEST,
+  OFFER_BANNER_ADD_SUCCESS,
+  OFFER_BANNER_ADD_FAIL,
+  OFFER_BANNER_UPDATE_REQUEST,
+  OFFER_BANNER_UPDATE_SUCCESS,
+  OFFER_BANNER_UPDATE_FAIL,
+  OFFER_BANNER_DELETE_REQUEST,
+  OFFER_BANNER_DELETE_SUCCESS,
+  OFFER_BANNER_DELETE_FAIL,
+  OFFER_BANNER_ACTIVE_REQUEST,
+  OFFER_BANNER_ACTIVE_SUCCESS,
+  OFFER_BANNER_ACTIVE_FAIL,
 } from "../constants/bannerConstants";
 
 export const bannerListReducer = (state = { banners: [] }, action) => {
@@ -108,6 +123,87 @@ export const userVideoBannerListReducer = (state = { videos: [] }, action) => {
       return { loading: false, videos: action.payload };
     case "USER_VIDEO_BANNER_LIST_FAIL":
       return { loading: false, error: action.payload };
+    default:
+      return state;
+  }
+};
+export const offerBannerListReducer = (
+  state = { offerBanners: [] },
+  action
+) => {
+  switch (action.type) {
+    case OFFER_BANNER_LIST_REQUEST:
+      return { loading: true, offerBanners: [] };
+
+    case OFFER_BANNER_LIST_SUCCESS:
+      return { loading: false, offerBanners: action.payload };
+
+    case OFFER_BANNER_LIST_FAIL:
+      return { loading: false, error: action.payload };
+
+    default:
+      return state;
+  }
+};
+export const offerBannerAddReducer = (state = {}, action) => {
+  switch (action.type) {
+    case OFFER_BANNER_ADD_REQUEST:
+      return { loading: true };
+
+    case OFFER_BANNER_ADD_SUCCESS:
+      return { loading: false, success: true, banner: action.payload };
+
+    case OFFER_BANNER_ADD_FAIL:
+      return { loading: false, error: action.payload };
+
+    default:
+      return state;
+  }
+};
+export const offerBannerUpdateReducer = (state = {}, action) => {
+  switch (action.type) {
+    case OFFER_BANNER_UPDATE_REQUEST:
+      return { loading: true };
+
+    case OFFER_BANNER_UPDATE_SUCCESS:
+      return { loading: false, success: true };
+
+    case OFFER_BANNER_UPDATE_FAIL:
+      return { loading: false, error: action.payload };
+
+    default:
+      return state;
+  }
+};
+export const offerBannerDeleteReducer = (state = {}, action) => {
+  switch (action.type) {
+    case OFFER_BANNER_DELETE_REQUEST:
+      return { loading: true };
+
+    case OFFER_BANNER_DELETE_SUCCESS:
+      return { loading: false, success: true };
+
+    case OFFER_BANNER_DELETE_FAIL:
+      return { loading: false, error: action.payload };
+
+    default:
+      return state;
+  }
+};
+export const activeOfferBannerReducer = (
+  state = { banner: null },
+  action
+) => {
+  switch (action.type) {
+    case OFFER_BANNER_ACTIVE_REQUEST:
+      return { loading: true };
+
+    case OFFER_BANNER_ACTIVE_SUCCESS:
+      return { loading: false, banner: action.payload };
+
+    case OFFER_BANNER_ACTIVE_FAIL:
+      return { loading: false, error: action.payload };
+
     default:
       return state;
   }
