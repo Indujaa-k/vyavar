@@ -57,6 +57,11 @@ import BillingInvoice from "./pages/Admin/BillingInvoice";
 import ForgotPasswordScreen from "./components/ForgotPassword/ForgetPasswordScreen";
 import ResetPasswordScreen from "./components/ForgotPassword/ResetPasswordScreen";
 import EditVariantProduct from "./pages/Editproduct/EditVariantProduct";
+import Subscriptions from "./pages/screens/Subscriptions";
+import CreateSubscriptionModal from "./pages/screens/CreateSubscriptionModal";
+import SubscriptionPayment from "./components/SubscriptionPayment";
+import SubscriptionCheckout from "./components/SubscriptionCheckout";
+import AdminOfferBannerScreen from "./pages/AdminBanner/AdminOfferBannerScreen";
 // import ProtectedRoute from "./pages/ProtectedRoutes";
 const App = () => {
   const { userInfo } = useSelector((state) => state.userLogin);
@@ -120,6 +125,14 @@ const App = () => {
                   <Route path="/order/:id" element={<Order />} />
                   <Route path="/admin/user/:id/edit" element={<Edituser />} />
                   <Route
+                    path="/admin/subscription/create-subscription"
+                    element={<CreateSubscriptionModal />}
+                  ></Route>
+                  <Route
+                    path="/admin/subscription"
+                    element={<Subscriptions />}
+                  ></Route>
+                  <Route
                     path="/deliverydetails"
                     element={<DeliveryDetails />}
                   />
@@ -146,7 +159,7 @@ const App = () => {
                   /> */}
                   <Route
                     path="/admin/product/:id/edit"
-                    element={<EditVariantProduct/>}
+                    element={<EditVariantProduct />}
                   />
                   <Route
                     path="/admin/product/:groupId/add-variant"
@@ -159,6 +172,10 @@ const App = () => {
                   />{" "}
                   <Route path="/products/" element={<ProductsListPage />} />
                   <Route path="/search/:keyword" element={<Home />} />
+                  <Route
+                    path="/admin/offerbanner"
+                    element={<AdminOfferBannerScreen />}
+                  />
                   <Route path="/adminbanner" element={<AdminBannerScreen />} />
                   <Route
                     path="/adminvideobanner"
@@ -207,6 +224,14 @@ const App = () => {
                   />
 
                   <Route path="/profile" element={<ProfileScreen />} />
+                  <Route
+                    path="/subscription"
+                    element={<SubscriptionPayment />}
+                  />
+                  <Route
+                    path="/subscription/checkout"
+                    element={<SubscriptionCheckout />}
+                  />
                   <Route path="/shipping" element={<Checkout />} />
                   <Route path="/placeorder" element={<Placeorder />} />
                   <Route path="/order/:id" element={<Order />} />

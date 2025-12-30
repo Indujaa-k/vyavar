@@ -168,6 +168,19 @@ const AdminLayout = ({ children }) => {
                 >
                   🧑‍💼 Users
                 </Button>
+                <Button
+                  onClick={() => setActiveTab("subscription")}
+                  as={RouterLink}
+                  to="/admin/subscription"
+                  bg="transparent"
+                  color="white"
+                  justifyContent="flex-start"
+                  variant="ghost"
+                  fontSize="md"
+                >
+                  💳 Subscriptions
+                </Button>
+
                 {/* Orders Dropdown */}
 
                 <Button
@@ -408,6 +421,16 @@ const AdminLayout = ({ children }) => {
                       fontSize="md"
                     >
                       Video Banner
+                    </Button>
+                    <Button
+                      as={RouterLink}
+                      to="/admin/offerbanner"
+                      variant="ghost"
+                      color="white"
+                      justifyContent="flex-start"
+                      _hover={{ bg: "gray.700" }}
+                    >
+                      Offer Banner
                     </Button>
                   </VStack>
                 </Collapse>

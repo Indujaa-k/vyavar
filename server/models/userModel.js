@@ -11,6 +11,28 @@ const userSchema = mongoose.Schema(
       required: true,
       unique: true,
     },
+    isSubscribed: {
+      type: Boolean,
+      default: false,
+    },
+
+    subscription: {
+      subscriptionId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Subscription",
+        default: null,
+      },
+
+      planName: { type: String, default: "" },
+      price: {
+        type: Number,
+        default: 0,
+      },
+      isActive: { type: Boolean, default: false },
+      discountPercent: { type: Number, default: 0 },
+      startDate: { type: Date, default: null },
+      endDate: { type: Date, default: null },
+    },
     otp: { type: String },
     expiresAt: { type: Date },
     password: {
@@ -41,17 +63,17 @@ const userSchema = mongoose.Schema(
       default: "Male",
     },
     addresses: [
-  {
-    doorNo: { type: String, default: "" },
-    street: { type: String, default: "" },
-    nearestLandmark: { type: String, default: "" },
-    city: { type: String, default: "" },
-    state: { type: String, default: "" },
-    pin: { type: Number, default: null },
-    phoneNumber: { type: Number, default: null },
-    isDefault: { type: Boolean, default: false },
-  }
-],
+      {
+        doorNo: { type: String, default: "" },
+        street: { type: String, default: "" },
+        nearestLandmark: { type: String, default: "" },
+        city: { type: String, default: "" },
+        state: { type: String, default: "" },
+        pin: { type: Number, default: null },
+        phoneNumber: { type: Number, default: null },
+        isDefault: { type: Boolean, default: false },
+      },
+    ],
 
     cartItems: [
       {
@@ -87,7 +109,40 @@ const userSchema = mongoose.Schema(
         ref: "Product",
       },
     ],
+    subscription: {
+      subscriptionId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Subscription",
+        default: null,
+      },
+
+      planName: {
+        type: String,
+        default: "",
+      },
+
+      isActive: {
+        type: Boolean,
+        default: false,
+      },
+
+      discountPercent: {
+        type: Number,
+        default: 0,
+      },
+
+      startDate: {
+        type: Date,
+        default: null,
+      },
+
+      endDate: {
+        type: Date,
+        default: null,
+      },
+    },
   },
+
   {
     timestamps: true,
   }
