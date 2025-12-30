@@ -98,14 +98,10 @@ const Nav = () => {
     }
   }, [dispatch, userInfo]);
   useEffect(() => {
-  dispatch(getActiveOfferBanner());
-}, [dispatch]);
+    dispatch(getActiveOfferBanner());
+  }, [dispatch]);
 
-  const { banner } = useSelector(
-  (state) => state.activeOfferBanner || {}
-);
-
-
+  const { banner } = useSelector((state) => state.activeOfferBanner || {});
 
   return (
     <>
@@ -368,43 +364,51 @@ const Nav = () => {
         </Drawer>
       </nav>
       <>
-       <div
-  style={{
-    background: "#fbd983ff",
-    overflow: "hidden",
-    whiteSpace: "nowrap",
-    padding: "12px 0",
-    position: "sticky",
-    top: "70px",
-    zIndex: 999,
-    fontWeight: "700",
-  }}
->
-  <div
-    style={{
-      display: "inline-block",
-      paddingLeft: "100%",
-      animation: "marquee 15s linear infinite",
-      background: "linear-gradient(90deg, #b7c120ff, #fff, #fbd983)",
-      WebkitBackgroundClip: "text",
-      WebkitTextFillColor: "transparent",
-    }}
-  >
-    {banner
-      ? `${banner.offerText} • ${banner.offerText} • ${banner.offerText}`
-      : "Loading offers..."}
-  </div>
-  <style>
-    {`
+        <div
+          style={{
+            backgroundColor: "#fbd983", // your desired background
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+            padding: "12px 0",
+            position: "sticky",
+            top: "70px",
+            zIndex: 999,
+            fontWeight: "700",
+          }}
+        >
+          <div
+            style={{
+              display: "inline-block",
+              paddingLeft: "100%",
+              animation:
+                "marquee 15s linear infinite, shine 2s linear infinite",
+              fontSize: "16px",
+              background:
+                "linear-gradient(90deg, #000 40%, #fff 50%, #000 60%)",
+              backgroundSize: "200% auto",
+              color: "transparent",
+              WebkitBackgroundClip: "text",
+            }}
+          >
+            {banner
+              ? `${banner.offerText} • ${banner.offerText} • ${banner.offerText}`
+              : "Loading offers..."}
+          </div>
+
+          <style>
+            {`
       @keyframes marquee {
         0% { transform: translateX(0%); }
         100% { transform: translateX(-100%); }
       }
+
+      @keyframes shine {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+      }
     `}
-  </style>
-</div>
-
-
+          </style>
+        </div>
       </>
     </>
   );
