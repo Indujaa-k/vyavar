@@ -1,5 +1,7 @@
 import { async } from "regenerator-runtime";
 import Product from "../models/productModel.js";
+import OfferBanner from "../models/offerBannerModel.js";
+
 import asyncHandler from "express-async-handler";
 import path from "path";
 import fs from "fs";
@@ -190,6 +192,49 @@ const getUserVideoBanners = asyncHandler(async (req, res) => {
 
   res.json(allVideoBanners);
 });
+export const addOfferBanner = asyncHandler(async (req, res) => {
+  const { offerText } = req.body;
+
+  // deactivate old banners
+  await OfferBanner.updateMany({}, { isActive: false });
+
+  const banner = await OfferBanner.create({
+    offerText,
+    isActive: true,
+  });
+
+  res.status(201).json(banner);
+});
+
+export const getActiveOfferBanner = asyncHandler(async (req, res) => {
+  const banner = await OfferBanner.findOne({ isActive: true });
+  res.json(banner);
+});
+
+export const getAllOfferBanners = asyncHandler(async (req, res) => {
+  const banners = await OfferBanner.find().sort({ createdAt: -1 });
+  res.json(banners);
+});
+
+export const updateOfferBanner = asyncHandler(async (req, res) => {
+  const banner = await OfferBanner.findById(req.params.id);
+  if (!banner) {
+    res.status(404);
+    throw new Error("Offer banner not found");
+  }
+
+  banner.offerText = req.body.offerText || banner.offerText;
+  banner.isActive = req.body.isActive ?? banner.isActive;
+
+  const updated = await banner.save();
+  res.json(updated);
+});
+
+export const deleteOfferBanner = asyncHandler(async (req, res) => {
+  await OfferBanner.findByIdAndDelete(req.params.id);
+  res.json({ message: "Offer banner deleted" });
+});
+
 
 export {
   addBanner,

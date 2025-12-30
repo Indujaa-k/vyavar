@@ -63,6 +63,26 @@ const videoBannerSchema = mongoose.Schema(
   },
   { timestamps: true }
 );
+// const offerBannerSchema = new mongoose.Schema(
+//   {
+//     type: {
+//       type: String,
+//       default: "offer",
+//     },
+//     offerText: {
+//       type: String,
+//       required: true,
+//     },
+//     isActive: {
+//       type: Boolean,
+//       default: true,
+//     },
+//   },
+//   { timestamps: true }
+// );
+
+// const OfferBanner = mongoose.model("OfferBanner", offerBannerSchema);
+
 // Stock per size schema
 const sizeStockSchema = mongoose.Schema(
   {

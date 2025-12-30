@@ -32,6 +32,8 @@ import BrandImg from "../../src/assets/brandimg.svg";
 import CategoryImg from "../../src/assets/categoryimg.svg";
 import "./Nav.css";
 import { getUserDetails } from "../actions/userActions";
+import { getActiveOfferBanner } from "../actions/bannerActions";
+
 import {
   IconButton,
   Box,
@@ -95,6 +97,15 @@ const Nav = () => {
       dispatch(getUserDetails("profile"));
     }
   }, [dispatch, userInfo]);
+  useEffect(() => {
+  dispatch(getActiveOfferBanner());
+}, [dispatch]);
+
+  const { banner } = useSelector(
+  (state) => state.activeOfferBanner || {}
+);
+
+
 
   return (
     <>
@@ -356,51 +367,45 @@ const Nav = () => {
           </DrawerContent>
         </Drawer>
       </nav>
-    <>
+      <>
+       <div
+  style={{
+    background: "#fbd983ff",
+    overflow: "hidden",
+    whiteSpace: "nowrap",
+    padding: "12px 0",
+    position: "sticky",
+    top: "70px",
+    zIndex: 999,
+    fontWeight: "700",
+  }}
+>
+  <div
+    style={{
+      display: "inline-block",
+      paddingLeft: "100%",
+      animation: "marquee 15s linear infinite",
+      background: "linear-gradient(90deg, #b7c120ff, #fff, #fbd983)",
+      WebkitBackgroundClip: "text",
+      WebkitTextFillColor: "transparent",
+    }}
+  >
+    {banner
+      ? `${banner.offerText} • ${banner.offerText} • ${banner.offerText}`
+      : "Loading offers..."}
+  </div>
   <style>
     {`
-      @keyframes shine {
-        0% {
-          background-position: -200%;
-        }
-        100% {
-          background-position: 200%;
-        }
+      @keyframes marquee {
+        0% { transform: translateX(0%); }
+        100% { transform: translateX(-100%); }
       }
     `}
   </style>
+</div>
 
-  <marquee
-    behavior="scroll"
-    direction="left"
-    scrollAmount="6"
-    style={{
-      background: "#fbd983ff",
-      padding: "12px 0",
-      position: "sticky",
-      top: "70px",
-      zIndex: 999,
-    }}
-  >
-    <span
-      style={{
-        fontWeight: "700",
-        fontSize: "14px",
-        background:
-          "linear-gradient(90deg, #000 25%, #fff 37%, #000 63%)",
-        backgroundSize: "200% auto",
-        color: "transparent",
-        WebkitBackgroundClip: "text",
-        animation: "shine 2s linear infinite",
-      }}
-    >
-      Flat 50% Discount on Selected Products | Free Delivery on Orders Above ₹999 
-      &nbsp;&nbsp;&nbsp;&nbsp;
-      Flat 50% Discount on Selected Products | Free Delivery on Orders Above ₹999 
-    </span>
-  </marquee>
-</>
 
+      </>
     </>
   );
 };
