@@ -47,6 +47,8 @@ import ProductViewModal from "./ProductViewModal";
 import { Tooltip } from "@chakra-ui/react";
 const Products = () => {
   const { id } = useParams();
+  const { groupId } = useParams();
+
   const navigate = useNavigate();
   const [file, setFile] = useState(null);
   const dispatch = useDispatch();

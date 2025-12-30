@@ -14,11 +14,12 @@ import {
   reviewDeleteReducer,
   productVariantsReducer,
   productGroupDetailsReducer,
-  productGroupUpdateReducer,
-  productVariantUpdateReducer,
   productVariantAddReducer,
   productEditReducer,
   productListByGroupReducer,
+  productGroupReducer,
+  productGroupUpdateReducer,
+  productVariantUpdateReducer,
 } from "./reducers/productReducers";
 
 import { cartReducer } from "./reducers/cartReducers";
@@ -172,6 +173,7 @@ const reducer = combineReducers({
   productVariants: productVariantsReducer,
   productGroupDetails: productGroupDetailsReducer,
   productGroupUpdate: productGroupUpdateReducer,
+  productGroup: productGroupReducer,
   productVariantUpdate: productVariantUpdateReducer,
   productVariantAdd: productVariantAddReducer,
   productEdit: productEditReducer,

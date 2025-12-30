@@ -27,6 +27,9 @@ const AddVariant = () => {
       sizes: [],
       stockBySize: sizesList.map((s) => ({ size: s, stock: 0 })),
       images: [],
+      oldPrice: 0,
+      discount: 0,
+      price: 0,
     },
   ]);
   const { groupId } = useParams();
@@ -51,6 +54,9 @@ const AddVariant = () => {
         sizes: [],
         stockBySize: sizesList.map((s) => ({ size: s, stock: 0 })),
         images: [],
+        oldPrice: 0,
+        discount: 0,
+        price: 0,
       },
     ]);
   };
@@ -59,6 +65,15 @@ const AddVariant = () => {
   const removeColorVariant = (index) => {
     if (colorVariants.length <= 1) return;
     setColorVariants((prev) => prev.filter((_, i) => i !== index));
+  };
+  const disableNumberScroll = (e) => {
+    e.target.blur();
+  };
+
+  const calculateVariantPrice = (oldPrice, discount) => {
+    if (!oldPrice || oldPrice <= 0) return 0;
+    const finalPrice = oldPrice - (oldPrice * discount) / 100;
+    return Math.round(finalPrice);
   };
 
   // 💾 Save (for now just console)
@@ -87,7 +102,9 @@ const AddVariant = () => {
           variant.stockBySize.filter((s) => variant.sizes.includes(s.size))
         )
       );
-
+      formData.append("oldPrice", variant.oldPrice);
+      formData.append("discount", variant.discount);
+      formData.append("price", variant.price);
       // images
       variant.images.forEach((img) => formData.append("images", img));
 
@@ -179,7 +196,60 @@ const AddVariant = () => {
               />
             </Flex>
           ))}
+          <Flex justify="space-between" gap={4} mb={3}>
+            <FormControl isRequired>
+              <FormLabel>Old Price</FormLabel>
+              <Input
+                type="number"
+                onWheel={disableNumberScroll}
+                value={variant.oldPrice}
+                placeholder="Enter old price"
+                onChange={(e) => {
+                  const num = parseFloat(e.target.value) || 0;
+                  setColorVariants((prev) =>
+                    prev.map((v, idx) =>
+                      idx === index
+                        ? {
+                            ...v,
+                            oldPrice: num,
+                            price: calculateVariantPrice(num, v.discount),
+                          }
+                        : v
+                    )
+                  );
+                }}
+              />
+            </FormControl>
 
+            <FormControl>
+              <FormLabel>Discount (%)</FormLabel>
+              <Input
+                type="number"
+                onWheel={disableNumberScroll}
+                value={variant.discount}
+                placeholder="Discount %"
+                onChange={(e) => {
+                  const num = parseFloat(e.target.value) || 0;
+                  setColorVariants((prev) =>
+                    prev.map((v, idx) =>
+                      idx === index
+                        ? {
+                            ...v,
+                            discount: num,
+                            price: calculateVariantPrice(v.oldPrice, num),
+                          }
+                        : v
+                    )
+                  );
+                }}
+              />
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>New Price</FormLabel>
+              <Input type="number" value={variant.price} readOnly />
+            </FormControl>
+          </Flex>
           {/* Images */}
           <FormControl mt={4}>
             <FormLabel>
