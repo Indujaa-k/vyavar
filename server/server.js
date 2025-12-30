@@ -11,6 +11,7 @@ import dashboardRoutes from "./routes/dashboardRoutes.js";
 import deliveryRoutes from "./routes/deliveryRoutes.js";
 import transactionRoutes from "./routes/transactionRoutes.js";
 import bannerRoutes from "./routes/bannerRoutes.js";
+import subscriptionsRoutes from "./routes/subscriptionRoutes.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import cors from "cors";
 
@@ -25,6 +26,8 @@ app.use(
   })
 );
 // https://vyavar.vercel.app
+
+app.options("*", cors());
 app.use(express.json());
 
 if (process.env.NODE_ENV === "development") {
@@ -39,10 +42,12 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/banners", bannerRoutes);
 app.use("/api/delivery", deliveryRoutes);
+app.use("/api/subscriptions", subscriptionsRoutes);
 // app.use("/api/transactions", transactionRoutes);
-app.use("/api", transactionRoutes);
+app.use("/api", transactionRoutes); 
 
-app.options("*", cors());
+
+
 
 app.get("/api/config/paypal", (req, res) =>
   res.send(process.env.PAYPAL_CLIENT_ID)

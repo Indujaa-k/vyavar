@@ -48,6 +48,7 @@ import {
   FaSignOutAlt,
   FaCamera,
   FaTrash,
+  FaBoxOpen,
 } from "react-icons/fa";
 import { CloseIcon } from "@chakra-ui/icons";
 import Trust from "../components/Trustdetails/Trust";
@@ -424,6 +425,7 @@ const ProfileScreen = () => {
 
   const menuOptions = [
     { id: "profile", label: "Profile", image: profileimg, icon: FaUser },
+    { id: "subscription", label: "Subscriptions",path:"/subscription",icon: FaBoxOpen },
     {
       id: "addresses",
       label: "Address",

@@ -76,6 +76,7 @@ import {
   videoBannerListReducer,
   videoBannerDeleteReducer,
   userVideoBannerListReducer,
+  activeOfferBannerReducer,
 } from "./reducers/bannerReducers";
 import {
   deliveryDepositReducer,
@@ -88,6 +89,12 @@ import {
   billingInvoiceCreateReducer,
   billingInvoiceDetailsReducer,
 } from "./reducers/billingInvoiceReducers";
+import {
+  subscriptionCreateReducer,
+  subscriptionDeleteReducer,
+  subscriptionListReducer,
+  subscriptionUpdateReducer,
+} from "./reducers/subscriptionReducers";
 
 const reducer = combineReducers({
   productList: productListReducer,
@@ -137,6 +144,7 @@ const reducer = combineReducers({
   getvideoBanners: videoBannerListReducer,
   deletevideoBanners: videoBannerDeleteReducer,
   userVideoBanners: userVideoBannerListReducer,
+  activeOfferBanner: activeOfferBannerReducer,
   income: incomeReducer,
   transactionList: transactionListReducer,
   shipping: shippingReducer,
@@ -146,6 +154,12 @@ const reducer = combineReducers({
   reviewApprove: reviewApproveReducer,
   reviewDelete: reviewDeleteReducer,
   favorites: favoritesReducer,
+
+  subscriptionCreate: subscriptionCreateReducer,
+  subscriptionList: subscriptionListReducer,
+  subscriptionDelete: subscriptionDeleteReducer,
+  subscriptionUpdate: subscriptionUpdateReducer,
+
   orderStatusUpdate: orderStatusUpdateReducer,
   orderStatuses: orderStatusReducer,
   deliveryDeposit: deliveryDepositReducer,
