@@ -429,6 +429,8 @@ const AdminLayout = ({ children }) => {
                       color="white"
                       justifyContent="flex-start"
                       _hover={{ bg: "gray.700" }}
+                       leftIcon="•"
+                       fontSize="md"
                     >
                       Offer Banner
                     </Button>
