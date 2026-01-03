@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { addVariantToGroup } from "../../actions/productActions";
@@ -15,12 +15,20 @@ import {
   Heading,
   Flex,
   Button,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
+  useDisclosure,
 } from "@chakra-ui/react";
 import { FaTrash } from "react-icons/fa";
 
 const sizesList = ["S", "M", "L", "XL", "XXL"];
 
 const AddVariant = () => {
+  const [clearIndex, setClearIndex] = useState(null);
   const [colorVariants, setColorVariants] = useState([
     {
       color: "",
@@ -35,6 +43,8 @@ const AddVariant = () => {
   const { groupId } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const cancelRef = useRef();
 
   const variantAdd = useSelector((state) => state.productVariantAdd);
   const { loading, success, error } = variantAdd;
@@ -66,14 +76,27 @@ const AddVariant = () => {
     if (colorVariants.length <= 1) return;
     setColorVariants((prev) => prev.filter((_, i) => i !== index));
   };
+
   const disableNumberScroll = (e) => {
     e.target.blur();
   };
-
   const calculateVariantPrice = (oldPrice, discount) => {
     if (!oldPrice || oldPrice <= 0) return 0;
     const finalPrice = oldPrice - (oldPrice * discount) / 100;
     return Math.round(finalPrice);
+  };
+  const clearVariant = (index) => {
+    const updated = [...colorVariants];
+    updated[index] = {
+      color: "",
+      sizes: [],
+      stockBySize: sizesList.map((s) => ({ size: s, stock: 0 })),
+      images: [],
+      oldPrice: 0,
+      discount: 0,
+      price: 0,
+    };
+    setColorVariants(updated);
   };
 
   // 💾 Save (for now just console)
@@ -84,8 +107,8 @@ const AddVariant = () => {
         return;
       }
 
-      if (variant.images.length !== 3) {
-        alert("Each variant must have exactly 3 images");
+      if (variant.images.length < 3 || variant.images.length > 5) {
+        alert("Each variant must have between 3 and 5 images");
         return;
       }
 
@@ -131,13 +154,17 @@ const AddVariant = () => {
             <Heading size="sm">Color {index + 1}</Heading>
 
             <Box
-              cursor={colorVariants.length <= 1 ? "not-allowed" : "pointer"}
-              onClick={() => removeColorVariant(index)}
+              cursor="pointer"
+              onClick={() => {
+                if (colorVariants.length > 1) {
+                  removeColorVariant(index);
+                } else {
+                  setClearIndex(index);
+                  onOpen();
+                }
+              }}
             >
-              <FaTrash
-                size={18}
-                color={colorVariants.length <= 1 ? "gray" : "red"}
-              />
+              <FaTrash size={18} color={"red"} />
             </Box>
           </Flex>
 
@@ -152,7 +179,7 @@ const AddVariant = () => {
                 updated[index].color = e.target.value;
                 setColorVariants(updated);
               }}
-            />
+            />    
           </FormControl>
 
           {/* Sizes */}
@@ -181,6 +208,7 @@ const AddVariant = () => {
               <Text w="40px">{size}</Text>
               <Input
                 type="number"
+                onWheel={disableNumberScroll}
                 min={0}
                 placeholder={`Stock for ${size}`}
                 onChange={(e) => {
@@ -257,7 +285,7 @@ const AddVariant = () => {
             </FormLabel>
 
             <Flex gap={4}>
-              {[0, 1, 2].map((imgIndex) => (
+              {[0, 1, 2, 3, 4].map((imgIndex) => (
                 <Box
                   key={imgIndex}
                   w="100px"
@@ -313,9 +341,8 @@ const AddVariant = () => {
                 </Box>
               ))}
             </Flex>
-
             <Text fontSize="xs" color="gray.500" mt={2}>
-              Upload exactly 3 images for this color
+              Upload 3 to 5 images for this color
             </Text>
           </FormControl>
         </Box>
@@ -337,6 +364,39 @@ const AddVariant = () => {
           {error}
         </Text>
       )}
+      <AlertDialog
+        isOpen={isOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={onClose}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Clear Variant?
+            </AlertDialogHeader>
+
+            <AlertDialogBody>
+              This is the only variant. Do you want to clear all its inputs?
+            </AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={onClose}>
+                Cancel
+              </Button>
+              <Button
+                colorScheme="red"
+                ml={3}
+                onClick={() => {
+                  clearVariant(clearIndex);
+                  onClose();
+                }}
+              >
+                Yes, Clear
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </Box>
   );
 };

@@ -41,7 +41,6 @@ import {
   PRODUCT_GROUP_UPDATE_REQUEST,
   PRODUCT_GROUP_UPDATE_SUCCESS,
   PRODUCT_GROUP_UPDATE_FAIL,
- 
   PRODUCT_VARIANT_ADD_REQUEST,
   PRODUCT_VARIANT_ADD_SUCCESS,
   PRODUCT_VARIANT_ADD_FAIL,
@@ -494,7 +493,6 @@ export const updateProductVariant =
       await axios.put(`/api/products/group/variant/${variantId}`, formData, {
         headers: {
           Authorization: `Bearer ${userInfo.token}`,
-          "Content-Type": "multipart/form-data",
         },
       });
 
@@ -636,16 +634,7 @@ export const listProductsByGroupId =
         userLogin: { userInfo },
       } = getState();
 
-      const config = {
-        headers: {
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      };
-
-      const { data } = await axios.get(
-        `/api/products/group/${groupId}`,
-        config
-      );
+      const { data } = await axios.get(`/api/products/group/${groupId}`);
 
       dispatch({
         type: PRODUCT_LIST_BY_GROUP_SUCCESS,

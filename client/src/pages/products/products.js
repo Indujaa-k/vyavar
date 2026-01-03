@@ -246,7 +246,7 @@ const Products = () => {
             <Table variant="simple" size="sm">
               <Thead>
                 <Tr>
-                  <Th>Group ID</Th>
+                  <Th>Product ID</Th>
                   <Th>Name</Th>
                   <Th>Price</Th>
                   <Th>Category</Th>
@@ -259,7 +259,7 @@ const Products = () => {
               <Tbody>
                 {group.products.map((product, index) => (
                   <Tr key={product._id}>
-                    <Td>{index === 0 ? group.groupId : ""}</Td>
+                    <Td>{product._id}</Td>
                     <Td>{product.brandname}</Td>
                     <Td isNumeric>{product.price}</Td>
                     <Td>

@@ -1,6 +1,7 @@
 import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import { v2 as cloudinary } from "cloudinary";
+import fs from "fs";
 
 // 🔹 Cloudinary Configuration
 cloudinary.config({
@@ -64,9 +65,28 @@ const upload = multer({
 //  Export Upload Functions
 export const uploadProfileImage = upload.single("profilePicture");
 export const uploadSingleImage = upload.single("image");
-export const uploadMultipleImages = upload.array("images", 3);
+export const uploadMultipleImages = upload.array("images", 5);
 export const uploadSingleVideo = upload.single("video");
 export const uploadProductFiles = upload.fields([
-  { name: "images", maxCount: 30 },
+  { name: "images", maxCount: 50 },
   { name: "sizeChart", maxCount: 1 },
 ]);
+export const uploadImagesToCloudinary = async (imagePaths) => {
+  const uploadedImages = [];
+
+  for (const imgPath of imagePaths) {
+    if (!fs.existsSync(imgPath)) {
+      console.warn(`Image not found: ${imgPath}`);
+      continue;
+    }
+
+    const result = await cloudinary.uploader.upload(imgPath, {
+      folder: "products",
+    });
+
+    uploadedImages.push(result.secure_url);
+  }
+
+  return uploadedImages;
+};
+

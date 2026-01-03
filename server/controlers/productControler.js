@@ -6,6 +6,10 @@ import Product from "../models/productModel.js";
 import ProductGroup from "../models/productgroupModel.js";
 import User from "../models/userModel.js";
 import reviewnotificatioEmail from "../utils/reviewnotificationEmail.js";
+import { uploadImagesToCloudinary } from "../multer/multer.js";
+import upload from "../middleware/upload.js";
+import fs from "fs";
+import { v2 as cloudinary } from "cloudinary";
 
 // @desc Fetch all products
 // @route GET /api/products
@@ -378,47 +382,58 @@ const createProduct = asyncHandler(async (req, res) => {
         ? JSON.parse(shippingDetails)
         : shippingDetails;
 
-    // 🔥 CREATE ONE GROUP ID FOR ALL VARIANTS
+    // 🔥 GROUP ID
     const productGroupId = new mongoose.Types.ObjectId().toString();
 
     const sizeChart = req.files?.sizeChart?.[0]?.path || "";
     const allImages = req.files?.images || [];
 
-    if (allImages.length !== parsedProducts.length * 3) {
+    // ✅ TOTAL IMAGE VALIDATION
+    const minImages = parsedProducts.length * 3;
+    const maxImages = parsedProducts.length * 5;
+
+    if (allImages.length < minImages || allImages.length > maxImages) {
       return res.status(400).json({
-        message: "Each color variant must have exactly 3 images",
+        message: `Each variant must have 3–5 images.
+Expected ${minImages}–${maxImages}, got ${allImages.length}`,
       });
     }
 
     let imageIndex = 0;
     const createdProducts = [];
 
+    // ✅ SINGLE LOOP (FIXED)
     for (let i = 0; i < parsedProducts.length; i++) {
       const variant = parsedProducts[i];
 
+      const imageCount = Number(variant.imagesCount || 3);
+
+      if (imageCount < 3 || imageCount > 5) {
+        return res.status(400).json({
+          message: `Variant ${variant.productdetails.color} must have 3–5 images`,
+        });
+      }
+
       const images = allImages
-        .slice(imageIndex, imageIndex + 3)
+        .slice(imageIndex, imageIndex + imageCount)
         .map((file) => file.path);
 
-      imageIndex += 3;
+      imageIndex += imageCount;
 
       const product = new Product({
         user: req.user._id,
         brandname,
         description,
 
-        // ✅ TAKE PRICE FROM VARIANT
         price: Number(variant.price),
         oldPrice: Number(variant.oldPrice),
         discount: Number(variant.discount),
 
         images,
         sizeChart,
-
         productGroupId,
 
-        // ✅ UNIQUE SKU
-        SKU: `${SKU}-${variant.color.toUpperCase()}-${Date.now()}`,
+        SKU: `${SKU}-${variant.productdetails.color.toUpperCase()}-${Date.now()}`,
 
         productdetails: variant.productdetails,
         shippingDetails: parsedShippingDetails,
@@ -428,8 +443,7 @@ const createProduct = asyncHandler(async (req, res) => {
         numReviews: 0,
       });
 
-      const savedProduct = await product.save();
-      createdProducts.push(savedProduct);
+      createdProducts.push(await product.save());
     }
 
     res.status(201).json({
@@ -442,6 +456,7 @@ const createProduct = asyncHandler(async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
 // @desc Mark review as Helpful / Not Helpful
 // @route PUT /api/products/:id/review/helpful
 // @access Private
@@ -529,95 +544,110 @@ export const markReviewNotHelpful = async (req, res) => {
   await product.save();
   res.json({ message: "Marked as not helpful" });
 };
-
-const storage = multer.memoryStorage();
-const upload = multer({ storage }).single("file");
-
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_NAME,
+  api_key: process.env.CLOUDINARY_APIKEY,
+  api_secret: process.env.CLOUDINARY_SECRETKEY,
+});
 const uploadProducts = asyncHandler(async (req, res) => {
-  upload(req, res, async (err) => {
-    if (err) {
-      return res.status(400).json({ message: "File upload failed" });
+  if (!req.file) {
+    res.status(400);
+    throw new Error("Excel file required");
+  }
+
+  const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(sheet);
+
+  const groupMap = {}; // ExcelGroupId → MongoGroupId
+  let created = 0;
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+
+    if (!row.SKU || !row.productGroupId) {
+      throw new Error(`Row ${i + 2}: SKU & productGroupId required`);
     }
 
-    const file = req.file;
-
-    // ✅ Validate file extension
-    if (!file.originalname.match(/\.(xlsx|xls)$/)) {
-      return res.status(400).json({ message: "Only Excel files are allowed" });
+    // 🔹 Uniform Mongo productGroupId
+    if (!groupMap[row.productGroupId]) {
+      groupMap[row.productGroupId] = row.productGroupId;
     }
 
-    // ✅ Read and Parse Excel file
-    const workbook = XLSX.read(file.buffer, { type: "buffer" });
-    const sheetName = workbook.SheetNames[0];
-    const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-
-    // ✅ Validate and Process Data
-    const products = [];
-
-    for (const row of sheetData) {
-      if (!row.brandname || !row.productdetails) {
-        return res.status(400).json({ message: "Invalid data in Excel file" });
+    // 🔹 Upload images
+    let images = [];
+    if (row.images) {
+      const paths = row.images.split("|");
+      for (const p of paths) {
+        if (fs.existsSync(p)) {
+          const upload = await cloudinary.uploader.upload(p, {
+            folder: "products",
+          });
+          images.push(upload.secure_url);
+        }
       }
+    }
 
-      // ✅ Parse `productdetails`
-      let parsedProductDetails;
-      try {
-        parsedProductDetails =
-          typeof row.productdetails === "string"
-            ? JSON.parse(row.productdetails) // Parse if it's a JSON string
-            : row.productdetails;
-      } catch (error) {
-        return res
-          .status(400)
-          .json({ message: "Invalid productdetails format" });
-      }
+    // 🔹 Sizes & stock
+    const sizes = row.sizes.split(",");
+    const stockBySize = row.stockBySize.split(",").map((s) => {
+      const [size, stock] = s.split(":");
+      return { size, stock: Number(stock) };
+    });
 
-      // ✅ Destructure product details correctly
-      const {
-        gender,
-        category,
-        subcategory,
-        type,
-        ageRange,
-        color,
-        fabric,
+    const oldPrice = Number(row.oldPrice);
+    const discount = Number(row.discount || 0);
+    const price = oldPrice - (oldPrice * discount) / 100;
+
+    await Product.create({
+      user: req.user._id,
+      SKU: row.SKU,
+      productGroupId: groupMap[row.productGroupId],
+
+      brandname: row.brandname || "Default Brand",
+      description: row.description || "",
+
+      images,
+      price,
+      oldPrice,
+      discount,
+
+      productdetails: {
+        gender: row.gender || "unisex",
+        category: row.category || "general",
+        subcategory: row.subcategory || "general",
+        type: row.type || "general",
+        ageRange: row.ageRange || "all",
+        fabric: row.fabric || "cotton",
+        color: row.color,
         sizes,
         stockBySize,
-      } = parsedProductDetails;
-      const oldPrice = parseFloat(row.oldPrice);
-      const discount = parseFloat(row.discount);
-      const calculatedPrice = oldPrice - (oldPrice * discount) / 100;
-      products.push({
-        user: req.user._id,
-        brandname: row.brandname,
-        price: Number(calculatedPrice.toFixed(2)),
-        oldPrice: row.oldPrice,
-        discount: row.discount,
-        description: row.description,
-        images: row.images ? row.images.split(",") : [],
-        productdetails: {
-          gender,
-          category,
-          subcategory,
-          type,
-          ageRange,
-          color,
-          fabric,
-          sizes,
-          stockBySize,
-        },
-      });
-    }
+      },
 
-    // ✅ Insert products into the database
-    try {
-      await Product.insertMany(products);
-      res.status(201).json({ message: "Products uploaded successfully!" });
-    } catch (error) {
-      res
-        .status(500)
-        .json({ message: "Error inserting products into database", error });
-    }
+      // ✅ AUTO-FILLED SHIPPING DETAILS
+      shippingDetails: {
+        weight: 0.5,
+        dimensions: {
+          length: 10,
+          width: 10,
+          height: 2,
+        },
+        originAddress: {
+          street1: "Warehouse",
+          city: "Chennai",
+          state: "Tamil Nadu",
+          zip: 600001,
+          country: "India",
+        },
+      },
+    });
+
+    created++;
+  }
+
+  res.status(201).json({
+    message: "Bulk upload successful",
+    productsCreated: created,
   });
 });
 
@@ -948,28 +978,46 @@ const addVariantToGroup = asyncHandler(async (req, res) => {
   discount = Number(discount);
   price = Number(price);
 
-  const files = req.files;
-  if (!color || !sizes || !stockBySize || !files || files.length !== 3) {
+  const files = req.files || [];
+
+  // ✅ BASIC VALIDATION
+  if (!color || !sizes || !stockBySize) {
     res.status(400);
     throw new Error("Variant fields are missing");
   }
 
+  // ✅ IMAGE VALIDATION (3–5)
+  if (files.length < 3 || files.length > 5) {
+    res.status(400);
+    throw new Error("Each variant must have between 3 and 5 images");
+  }
+
   const images = files.map((file) => file.path);
 
+  // ✅ FIND BASE PRODUCT
   const baseProduct = await Product.findOne({ productGroupId: groupId });
-  if (!baseProduct) throw new Error("Product group not found");
+  if (!baseProduct) {
+    res.status(404);
+    throw new Error("Product group not found");
+  }
 
+  // ✅ PREVENT DUPLICATE COLOR
   const existingVariant = await Product.findOne({
     productGroupId: groupId,
     "productdetails.color": color,
   });
-  if (existingVariant)
-    throw new Error("Variant with this color already exists");
 
+  if (existingVariant) {
+    res.status(400);
+    throw new Error("Variant with this color already exists");
+  }
+
+  // ✅ SKU GENERATION
   const SKU = `${
     baseProduct.SKU.split("-")[0]
   }-${color.toUpperCase()}-${Date.now()}`;
 
+  // ✅ CREATE VARIANT
   const newVariant = new Product({
     productGroupId: groupId,
     brandname: baseProduct.brandname,
@@ -989,11 +1037,12 @@ const addVariantToGroup = asyncHandler(async (req, res) => {
       subcategory: baseProduct.productdetails.subcategory,
       type: baseProduct.productdetails.type,
       fabric: baseProduct.productdetails.fabric,
+      ageRange: baseProduct.productdetails.ageRange,
       color,
       sizes,
       stockBySize,
-      ageRange: baseProduct.productdetails.ageRange,
     },
+
     user: req.user._id,
     rating: 0,
     numReviews: 0,
@@ -1089,32 +1138,36 @@ const getProductGroup = asyncHandler(async (req, res) => {
 });
 const updateVariant = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id);
-
   if (!product) {
     res.status(404);
     throw new Error("Variant not found");
   }
 
   // prices
-  if (req.body.oldPrice !== undefined)
-    product.oldPrice = Number(req.body.oldPrice);
+  if (req.body.oldPrice !== "") product.oldPrice = Number(req.body.oldPrice);
+  if (req.body.discount !== "") product.discount = Number(req.body.discount);
+  if (req.body.price !== "") product.price = Number(req.body.price);
 
-  if (req.body.discount !== undefined)
-    product.discount = Number(req.body.discount);
-
-  if (req.body.price !== undefined) product.price = Number(req.body.price);
-
-  // variant details
+  // details
   if (req.body.color) product.productdetails.color = req.body.color;
-
-  if (req.body.sizes) product.productdetails.sizes = req.body.sizes;
-
+  if (req.body.sizes) product.productdetails.sizes = JSON.parse(req.body.sizes);
   if (req.body.stockBySize)
-    product.productdetails.stockBySize = req.body.stockBySize;
+    product.productdetails.stockBySize = JSON.parse(req.body.stockBySize);
 
-  // images (optional replace)
+  // ✅ IMAGE REPLACEMENT (IMPORTANT PART)
   if (req.files && req.files.length > 0) {
-    product.images = req.files.map((f) => f.path);
+    let imageIndexes = req.body.imageIndexes;
+
+    if (typeof imageIndexes === "string") {
+      imageIndexes = [imageIndexes];
+    }
+
+    req.files.forEach((file, i) => {
+      const index = Number(imageIndexes[i]);
+      if (!isNaN(index) && product.images[index]) {
+        product.images[index] = file.secure_url || file.path;
+      }
+    });
   }
 
   const updated = await product.save();
