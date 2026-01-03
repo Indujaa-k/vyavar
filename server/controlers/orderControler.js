@@ -571,61 +571,55 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     throw new Error("Order not found");
   }
 
-  // ✅ Update flags
-  if (status === "Packed") order.isPacked = true;
-  if (status === "Shipped") order.isAcceptedByDelivery = true;
-  if (status === "Delivered") order.isDelivered = true;
-  if (status === "Returned") order.isReturned = true;
+  if (status === "Confirmed") {
+    order.isPaid = true;
+    order.isPacked = false;
+    order.isAcceptedByDelivery = false;
+  }
+
+  if (status === "Packed") {
+    order.isPacked = true;
+    order.isAcceptedByDelivery = false;
+  }
+
+  if (status === "OutForDelivery") {
+    order.isAcceptedByDelivery = true;
+  }
 
   await order.save();
 
-  // ✅ SEND EMAIL ONLY FOR THESE STATUSES
-  if (["Shipped", "Delivered"].includes(status)) {
-    await sendEmail({
-      email: order.user.email,
-      status,
-      orderId: order._id,
-    });
-
-    console.log(`📧 ${status} mail sent to`, order.user.email);
-  }
-
-  res.json({
-    message: `Order updated to ${status} and mail sent`,
-    order,
-  });
+  res.json({ message: `Order updated to ${status}` });
 });
 
 // @desc   Get order statuses count
 // @route  GET /api/orders/status-count
 // @access Admin
 const getOrderStatusCounts = asyncHandler(async (req, res) => {
-  const orderStatuses = await Order.aggregate([
-    {
-      $group: {
-        _id: null,
-        pending: { $sum: { $cond: [{ $eq: ["$isPaid", false] }, 1, 0] } },
-        confirmed: { $sum: { $cond: [{ $eq: ["$isPaid", true] }, 1, 0] } },
-        packaging: { $sum: { $cond: [{ $eq: ["$isPacked", true] }, 1, 0] } },
-        outForDelivery: {
-          $sum: { $cond: [{ $eq: ["$isAcceptedByDelivery", true] }, 1, 0] },
-        },
-        delivered: { $sum: { $cond: [{ $eq: ["$isDelivered", true] }, 1, 0] } },
-        canceled: {
-          $sum: {
-            $cond: [{ $eq: ["$returnReason", "Canceled by user"] }, 1, 0],
-          },
-        },
-        returned: { $sum: { $cond: [{ $eq: ["$isReturned", true] }, 1, 0] } },
-        failed: {
-          $sum: { $cond: [{ $eq: ["$returnReason", "Failed"] }, 1, 0] },
-        },
-      },
-    },
-  ]);
+  const confirmed = await Order.countDocuments({
+    isPaid: true,
+    isPacked: false,
+  });
 
-  res.json(orderStatuses.length ? orderStatuses[0] : {});
+  const packed = await Order.countDocuments({
+    isPacked: true,
+    isAcceptedByDelivery: false,
+  });
+
+  const outForDelivery = await Order.countDocuments({
+    isAcceptedByDelivery: true,
+    isDelivered: false,
+  });
+
+  const allOrders = await Order.countDocuments();
+
+  res.json({
+    allOrders,
+    confirmed,
+    packed,
+    outForDelivery,
+  });
 });
+
 
 // @desc create billing invoice to an order
 // @route   POST /api/orders/billinginvoice

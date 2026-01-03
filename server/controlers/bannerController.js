@@ -195,16 +195,17 @@ const getUserVideoBanners = asyncHandler(async (req, res) => {
 export const addOfferBanner = asyncHandler(async (req, res) => {
   const { offerText } = req.body;
 
-  // deactivate old banners
-  await OfferBanner.updateMany({}, { isActive: false });
+  // Check if any active offer already exists
+  const existingActive = await OfferBanner.findOne({ isActive: true });
 
   const banner = await OfferBanner.create({
     offerText,
-    isActive: true,
+    isActive: existingActive ? false : true, // ⭐ KEY LOGIC
   });
 
   res.status(201).json(banner);
 });
+
 
 export const getActiveOfferBanner = asyncHandler(async (req, res) => {
   const banner = await OfferBanner.findOne({ isActive: true });
@@ -234,6 +235,29 @@ export const deleteOfferBanner = asyncHandler(async (req, res) => {
   await OfferBanner.findByIdAndDelete(req.params.id);
   res.json({ message: "Offer banner deleted" });
 });
+export const activateOfferBanner = asyncHandler(async (req, res) => {
+    console.log("Activate Offer ID:", req.params.id);
+  const { id } = req.params;
+
+
+  // Deactivate all offers
+  await OfferBanner.updateMany({}, { isActive: false });
+
+  // Activate selected offer
+  const banner = await OfferBanner.findByIdAndUpdate(
+    id,
+    { isActive: true },
+    { new: true }
+  );
+
+  if (!banner) {
+    res.status(404);
+    throw new Error("Offer banner not found");
+  }
+
+  res.json(banner);
+});
+
 
 
 export {
@@ -244,4 +268,5 @@ export {
   getvideobanner,
   deletevideobanner,
   getUserVideoBanners,
+  // activateOfferBanner,
 };

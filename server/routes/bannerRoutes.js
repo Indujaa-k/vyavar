@@ -12,6 +12,7 @@ import {
   getActiveOfferBanner,
   updateOfferBanner,
   deleteOfferBanner,
+  activateOfferBanner,
 } from "../controlers/bannerController.js";
 import { uploadSingleImage, uploadSingleVideo } from "../multer/multer.js";
 import { protect, adminOrSeller } from "../middleware/authMiddleware.js";
@@ -40,5 +41,11 @@ router.get("/offerbanner", getActiveOfferBanner);
 router.get("/offerbanners", protect, adminOrSeller, getAllOfferBanners);
 router.put("/offerbanner/:id", protect, adminOrSeller, updateOfferBanner);
 router.delete("/offerbanner/:id", protect, adminOrSeller, deleteOfferBanner);
-
+// ACTIVATE OFFER (Radio button)
+router.put(
+  "/offerbanner/activate/:id",
+  protect,
+  adminOrSeller,
+  activateOfferBanner
+);
 export default router;

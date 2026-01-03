@@ -12,6 +12,7 @@ import {
   Spinner,
   Alert,
   AlertIcon,
+  Radio,
 } from "@chakra-ui/react";
 import axios from "axios";
 import { useSelector } from "react-redux";
@@ -66,7 +67,7 @@ const AdminOfferBannerScreen = () => {
 
     await axios.put(
       `/api/banners/offerbanner/${id}`,
-      { offerText: newText, isActive: true },
+      { offerText: newText }, // ✅ ONLY TEXT
       config
     );
 
@@ -125,9 +126,36 @@ const AdminOfferBannerScreen = () => {
               borderRadius="md"
               boxShadow="sm"
             >
-              <HStack justify="space-between">
-                <Text fontWeight="bold">{offer.offerText}</Text>
-                <HStack>
+              <HStack justify="space-between" align="center" w="100%">
+                {/* Left side: Radio + text */}
+                <HStack spacing={3}>
+                  <Radio
+                    name="activeOffer"
+                    isChecked={offer.isActive}
+                    onChange={async () => {
+                      try {
+                        const { data } = await axios.put(
+                          `/api/banners/offerbanner/activate/${offer._id}`,
+                          {}, // PUT body can be empty
+                          config
+                        );
+                        console.log("Activate offer response:", data); // 🔹 Step 2: Debug log
+                        fetchOffers();
+                      } catch (err) {
+                        console.error(
+                          "Activate offer error:",
+                          err.response?.data || err.message
+                        ); // 🔹 Step 3: More info
+                        alert("Failed to activate offer");
+                      }
+                    }}
+                  />
+
+                  <Text fontWeight="bold">{offer.offerText}</Text>
+                </HStack>
+
+                {/* Right side: Buttons */}
+                <HStack spacing={2}>
                   <Button
                     colorScheme="yellow"
                     size="sm"

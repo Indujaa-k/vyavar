@@ -136,6 +136,21 @@ const AdminNavbar = () => {
           >
             Preview
           </button>
+
+          <button
+            onClick={() => navigate("/admin")}
+            style={{
+              padding: "8px 16px",
+              backgroundColor: "#000",
+              color: "#fff",
+              border: "none",
+              cursor: "pointer",
+              borderRadius: "4px",
+            }}
+          >
+            Back
+          </button>
+
           <Button bg="violet" onClick={onOpen}>
             Logout
           </Button>

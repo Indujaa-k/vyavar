@@ -51,12 +51,12 @@ const AdminLayout = ({ children }) => {
       icon: FaListAlt,
       color: "purple.500",
     },
-    {
-      label: "Pending",
-      key: "pending",
-      icon: MdPendingActions,
-      color: "blue.500",
-    },
+    // {
+    //   label: "Pending",
+    //   key: "pending",
+    //   icon: MdPendingActions,
+    //   color: "blue.500",
+    // },
     {
       label: "Confirmed",
       key: "confirmed",
@@ -64,8 +64,8 @@ const AdminLayout = ({ children }) => {
       color: "green.500",
     },
     {
-      label: "Packaging",
-      key: "packaging",
+      label: "packed",
+      key: "packed",
       icon: GiCardboardBox,
       color: "orange.500",
     },
@@ -75,25 +75,25 @@ const AdminLayout = ({ children }) => {
       icon: MdLocalShipping,
       color: "green.500",
     },
-    {
-      label: "Delivered",
-      key: "delivered",
-      icon: AiOutlineDeliveredProcedure,
-      color: "blue.500",
-    },
-    { label: "Canceled", key: "canceled", icon: MdCancel, color: "red.500" },
-    {
-      label: "Returned",
-      key: "returned",
-      icon: AiOutlineRollback,
-      color: "blue.500",
-    },
-    {
-      label: "Failed to deliver",
-      key: "failed",
-      icon: ImCross,
-      color: "red.500",
-    },
+    // {
+    //   label: "Delivered",
+    //   key: "delivered",
+    //   icon: AiOutlineDeliveredProcedure,
+    //   color: "blue.500",
+    // },
+    // { label: "Canceled", key: "canceled", icon: MdCancel, color: "red.500" },
+    // {
+    //   label: "Returned",
+    //   key: "returned",
+    //   icon: AiOutlineRollback,
+    //   color: "blue.500",
+    // },
+    // {
+    //   label: "Failed to deliver",
+    //   key: "failed",
+    //   icon: ImCross,
+    //   color: "red.500",
+    // },
   ];
 
   return (
@@ -226,37 +226,37 @@ const AdminLayout = ({ children }) => {
                       <Spinner size="lg" />
                     ) : (
                       orderStatusList.map((status) => (
-                        <Button
+                          <Button
                           key={status.label}
-                          as={RouterLink}
+                            as={RouterLink}
                           to={`/orders/${status.key}`}
-                          bg="transparent"
-                          color="white"
-                          justifyContent="flex-start"
-                          variant="ghost"
-                          fontSize="md"
-                        >
-                          <Flex alignItems="center">
-                            <status.icon
-                              style={{ marginRight: 8, color: status.color }}
-                            />
-                            {status.label}
-                          </Flex>
-                          <Box
-                            ml="auto"
-                            bg={status.color}
+                            bg="transparent"
                             color="white"
-                            fontSize="sm"
-                            fontWeight="bold"
-                            px={2}
-                            py={1}
-                            borderRadius="full" // Ensures a rounded background
-                            minW="30px"
-                            textAlign="center"
+                            justifyContent="flex-start"
+                          variant="ghost"
+                            fontSize="md"
                           >
+                            <Flex alignItems="center">
+                            <status.icon
+                                style={{ marginRight: 8, color: status.color }}
+                              />
+                              {status.label}
+                            </Flex>
+                            <Box
+                              ml="auto"
+                              bg={status.color}
+                              color="white"
+                              fontSize="sm"
+                              fontWeight="bold"
+                              px={2}
+                              py={1}
+                            borderRadius="full" // Ensures a rounded background
+                              minW="30px"
+                              textAlign="center"
+                            >
                             {orderStatuses[status.key] || 0}
-                          </Box>
-                        </Button>
+                            </Box>
+                          </Button>
                       ))
                     )}
                   </VStack>
@@ -429,8 +429,8 @@ const AdminLayout = ({ children }) => {
                       color="white"
                       justifyContent="flex-start"
                       _hover={{ bg: "gray.700" }}
-                       leftIcon="•"
-                       fontSize="md"
+                      leftIcon="•"
+                      fontSize="md"
                     >
                       Offer Banner
                     </Button>
