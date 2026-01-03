@@ -1,5 +1,6 @@
 import express from "express";
 const router = express.Router();
+import excelUpload from "../middleware/excelUpload.js";
 import {
   getProducts,
   deleteProduct,
@@ -25,21 +26,10 @@ import {
   getProductGroup,
   updateVariant,
 } from "../controlers/productControler.js";
+
 import { uploadProductFiles, uploadMultipleImages } from "../multer/multer.js";
 import { protect, adminOrSeller } from "../middleware/authMiddleware.js";
-import multer from "multer";
-
-// Multer setup for image upload
-const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    cb(null, "uploads/"); // make sure this folder exists
-  },
-  filename(req, file, cb) {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  },
-});
-const upload = multer({ storage });
-
+import upload from "../middleware/upload.js";
 // --- REVIEW ROUTES ---
 // Pending reviews
 router.route("/sku/:sku").get(getProductBySku);
@@ -63,7 +53,13 @@ router.route("/").get(getProducts);
 router
   .route("/create")
   .post(protect, adminOrSeller, uploadProductFiles, createProduct);
-router.post("/upload", protect, adminOrSeller, uploadProducts);
+router.post(
+  "/upload",
+  protect,
+  adminOrSeller,
+  excelUpload.single("file"),
+  uploadProducts
+);
 router.get("/:id/full", getProductFullById);
 router.route("/:id/reviews").post(protect, createproductreview);
 router.route("/getcart").get(protect, getCart);
@@ -85,12 +81,18 @@ router.put(
 
 router.post(
   "/group/:groupId/variant",
+  protect,
+  adminOrSeller,
+  uploadMultipleImages,
+  addVariantToGroup
+);
+router.put(
+  "/group/variant/:id",
   uploadMultipleImages,
   protect,
   adminOrSeller,
-  addVariantToGroup
+  updateVariant
 );
-router.put("/group/variant/:id", protect, adminOrSeller, updateVariant);
 router.put(
   "/group/:groupId/variant",
   protect,
@@ -108,3 +110,4 @@ router.put(
 );
 
 export default router;
+      

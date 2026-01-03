@@ -58,9 +58,9 @@ import {
   ORDER_ASSIGN_REQUEST,
   ORDER_ASSIGN_SUCCESS,
   ORDER_ASSIGN_FAIL,
-  INCOME_BY_CITY_REQUEST,
-  INCOME_BY_CITY_SUCCESS,
-  INCOME_BY_CITY_FAIL,
+  INCOME_BY_PINCODE_REQUEST,
+  INCOME_BY_PINCODE_SUCCESS,
+  INCOME_BY_PINCODE_FAIL,
 } from "../constants/orderConstants";
 
 export const CreateOrderReducers = (state = {}, action) => {
@@ -307,19 +307,20 @@ export const invoiceReducer = (state = { invoice: {} }, action) => {
       return state;
   }
 };
-export const incomeReducer = (state = { income: {} }, action) => {
+export const incomeByPincodeReducer = (
+  state = { loading: true, incomeByPincode: [] },
+  action
+) => {
   switch (action.type) {
-    case INCOME_BY_CITY_REQUEST:
-      return { ...state, loading: true };
-    case INCOME_BY_CITY_SUCCESS:
-      return {
-        ...state,
-        loading: false,
-        totalIncome: action.payload.totalIncome,
-        incomeByCity: action.payload.incomeByCity,
-      };
-    case INCOME_BY_CITY_FAIL:
-      return { ...state, loading: false, error: action.payload };
+    case INCOME_BY_PINCODE_REQUEST:
+      return { loading: true, incomeByPincode: [] };
+
+    case INCOME_BY_PINCODE_SUCCESS:
+      return { loading: false, incomeByPincode: action.payload };
+
+    case INCOME_BY_PINCODE_FAIL:
+      return { loading: false, error: action.payload };
+
     default:
       return state;
   }
@@ -384,3 +385,5 @@ export const orderStatusReducer = (state = {}, action) => {
       return state;
   }
 };
+
+

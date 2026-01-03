@@ -129,7 +129,9 @@ const EditProductPage = () => {
     fabric: ["Cotton", "Polyester", "Leather"],
     sizes: ["S", "M", "L", "XL", "XXL"],
   };
-
+ const disableNumberScroll = (e) => {
+    e.target.blur();
+  };
   // Redux
   const productDetails = useSelector((state) => state.productDetails);
   const { loading, error, product } = productDetails;
@@ -328,6 +330,7 @@ const EditProductPage = () => {
               <FormLabel>Old Price</FormLabel>
               <Input
                 type="number"
+                onWheel={disableNumberScroll}
                 value={oldPrice}
                 onChange={(e) => setOldPrice(e.target.value)}
               />
@@ -336,13 +339,14 @@ const EditProductPage = () => {
               <FormLabel>Discount (%)</FormLabel>
               <Input
                 type="number"
+                onWheel={disableNumberScroll}
                 value={discount}
                 onChange={(e) => setDiscount(Number(e.target.value))}
               />
             </FormControl>
             <FormControl>
               <FormLabel>New Price</FormLabel>
-              <Input type="number" value={calculatedPrice()} readOnly />
+              <Input type="number" onWheel={disableNumberScroll} value={calculatedPrice()} readOnly />
             </FormControl>
           </Flex>
 
@@ -421,6 +425,7 @@ const EditProductPage = () => {
                       <Text w="50px">{s.size}</Text>
                       <Input
                         type="number"
+                        onWheel={disableNumberScroll}
                         min={0}
                         value={s.stock}
                         placeholder={`Stock for ${s.size}`}

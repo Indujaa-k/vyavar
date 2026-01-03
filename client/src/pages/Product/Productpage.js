@@ -234,7 +234,7 @@ const Productpage = () => {
   } = productListByGroup;
 
   useEffect(() => {
-    if (product?.productGroupId && userInfo?.token) {
+    if (product?.productGroupId) {
       dispatch(listProductsByGroupId(product.productGroupId));
     }
   }, [dispatch, product?.productGroupId, userInfo]);

@@ -84,9 +84,9 @@ const CreateProductPage = () => {
     for (let i = 0; i < variants.length; i++) {
       const images = variants[i].images;
 
-      // 1️⃣ Exactly 3 images
-      if (!images || images.length !== 3) {
-        return `Upload exactly 3 images for Color ${i + 1}`;
+      // Minimum 3, Maximum 5 images
+      if (!images || images.length < 3 || images.length > 5) {
+        return `Upload minimum 3 and maximum 5 images for Color ${i + 1}`;
       }
 
       // 2️⃣ Validate each image
@@ -249,6 +249,7 @@ const CreateProductPage = () => {
             oldPrice,
             discount,
             price,
+            imagesCount: variant.images.filter(Boolean).length,
             productdetails: {
               gender: productdetails.gender || "",
               category: productdetails.category || "",
@@ -270,8 +271,11 @@ const CreateProductPage = () => {
     );
 
     // 🔥 IMAGES
+
     colorVariants.forEach((variant) => {
-      variant.images.forEach((file) => {
+      const validImages = variant.images.filter(Boolean); // ✅ remove holes
+
+      validImages.forEach((file) => {
         formData.append("images", file);
       });
     });
@@ -604,7 +608,7 @@ const CreateProductPage = () => {
                 Images for {variant.color || `Color ${index + 1}`}
               </FormLabel>
               <Flex gap={4}>
-                {[0, 1, 2].map((imgIndex) => (
+                {[0, 1, 2, 3, 4].map((imgIndex) => (
                   <Box
                     key={imgIndex}
                     w="100px"
@@ -648,8 +652,15 @@ const CreateProductPage = () => {
                       onChange={(e) => {
                         const file = e.target.files[0];
                         if (!file) return;
+
                         const updated = [...colorVariants];
                         const imgs = updated[index].images || [];
+
+                        if (imgs.length >= 5 && !imgs[imgIndex]) {
+                          showError("Maximum 5 images allowed per color");
+                          return;
+                        }
+
                         imgs[imgIndex] = file;
                         updated[index].images = imgs;
                         setColorVariants(updated);
@@ -659,7 +670,7 @@ const CreateProductPage = () => {
                 ))}
               </Flex>
               <Text fontSize="xs" color="gray.500" mt={2}>
-                Upload exactly 3 images for this color
+                Upload minimum 3 and maximum 5 images for this color
               </Text>
               {index === colorVariants.length - 1 && (
                 <Button

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { listTransactions } from "../../actions/orderActions";
 import {
@@ -24,6 +24,7 @@ const TransactionTable = () => {
     transactions: [],
   };
   const { loading, error, transactions = [] } = transactionList;
+  const [filter, setFilter] = useState("all"); // all | week | month
 
   // Fetch transactions on component mount
   useEffect(() => {
@@ -32,16 +33,50 @@ const TransactionTable = () => {
 
   // Debugging: Check transactions data
   console.log("Transactions data:", transactions);
+  const sortedTransactions = [...transactions].sort(
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+  );
+  const filteredTransactions = useMemo(() => {
+    const now = new Date();
+
+    return sortedTransactions.filter((order) => {
+      const orderDate = new Date(order.createdAt);
+
+      if (filter === "week") {
+        const weekAgo = new Date();
+        weekAgo.setDate(now.getDate() - 7);
+        return orderDate >= weekAgo;
+      }
+
+      if (filter === "month") {
+        return (
+          orderDate.getMonth() === now.getMonth() &&
+          orderDate.getFullYear() === now.getFullYear()
+        );
+      }
+
+      return true; // all
+    });
+  }, [sortedTransactions, filter]);
+  const stats = useMemo(() => {
+    return filteredTransactions.reduce(
+      (acc, order) => {
+        acc.totalAmount += order.totalPrice;
+        acc.totalTax += order.taxPrice;
+        acc.totalOrders += 1;
+        return acc;
+      },
+      { totalAmount: 0, totalTax: 0, totalOrders: 0 }
+    );
+  }, [filteredTransactions]);
 
   // Format transaction data for display
-  const formattedTransactions = transactions.map((order) => {
+  const formattedTransactions = filteredTransactions.map((order) => {
     const dateObj = new Date(order.createdAt);
-    const formattedDate = dateObj.toLocaleDateString(); // Extract Date (MM/DD/YYYY or local format)
-    const formattedTime = dateObj.toLocaleTimeString(); // Extract Time (HH:MM AM/PM)
 
     return {
-      date: formattedDate,
-      time: formattedTime,
+      date: dateObj.toLocaleDateString(),
+      time: dateObj.toLocaleTimeString(),
       paymentType: order.paymentMethod,
       status: order.isPaid ? "✅ Paid" : "❌ Unpaid",
       totalPrice: order.totalPrice,
@@ -53,8 +88,91 @@ const TransactionTable = () => {
 
   return (
     <Box p={6} minH="100vh" m={10}>
-      <h1 className="titlepanel">💰 Transaction</h1>
       {/* Loading & Error Handling */}
+      <Flex
+        justify="space-between"
+        align="center"
+        mb={8}
+        flexWrap="wrap"
+        gap={4}
+      >
+        <Text fontSize="2xl" fontWeight="bold" color="black">
+          💰 Transactions Overview
+        </Text>
+
+        <Flex gap={3}>
+          {["all", "week", "month"].map((type) => (
+            <Box
+              key={type}
+              as="button"
+              px={5}
+              py={2}
+              bg={filter === type ? "purple.500" : "gray.700"}
+              color="white"
+              borderRadius="full"
+              fontWeight="semibold"
+              _hover={{ bg: "purple.400" }}
+              onClick={() => setFilter(type)}
+            >
+              {type === "all"
+                ? "All"
+                : type === "week"
+                ? "Last 7 Days"
+                : "This Month"}
+            </Box>
+          ))}
+        </Flex>
+        <Flex gap={6} mb={10} flexWrap="wrap">
+          <Box
+            bg="linear-gradient(135deg, #38A169, #2F855A)"
+            p={6}
+            borderRadius="xl"
+            color="white"
+            minW="240px"
+            boxShadow="lg"
+          >
+            <Text fontSize="sm" opacity={0.8}>
+              Total Amount
+            </Text>
+            <Text fontSize="3xl" fontWeight="bold">
+              ₹{stats.totalAmount.toFixed(2)}
+            </Text>
+          </Box>
+
+          <Box
+            bg="linear-gradient(135deg, #3182CE, #2C5282)"
+            p={6}
+            borderRadius="xl"
+            color="white"
+            minW="240px"
+            boxShadow="lg"
+          >
+            <Text fontSize="sm" opacity={0.8}>
+              Total Tax Collected
+            </Text>
+            <Text fontSize="3xl" fontWeight="bold">
+              ₹{stats.totalTax.toFixed(2)}
+            </Text>
+          </Box>
+
+          <Box
+            bg="linear-gradient(135deg, #805AD5, #553C9A)"
+            p={6}
+            borderRadius="xl"
+            color="white"
+            minW="240px"
+            boxShadow="lg"
+          >
+            <Text fontSize="sm" opacity={0.8}>
+              Total Orders
+            </Text>
+            <Text fontSize="3xl" fontWeight="bold">
+              {stats.totalOrders}
+            </Text>
+          </Box>
+        </Flex>
+      </Flex>
+
       {loading ? (
         <Flex justify="center" align="center" height="200px">
           <Spinner size="xl" color="white" />
@@ -103,11 +221,11 @@ const TransactionTable = () => {
                   >
                     {t.status}
                   </Td>
-                  <Td>${t.totalPrice.toFixed(2)}</Td>
+                  <Td>₹{t.totalPrice.toFixed(2)}</Td>
                   <Td>{t.qty}</Td>
-                  <Td>${t.taxPrice.toFixed(2)}</Td>
-                  <Td>${t.shippingPrice.toFixed(2)}</Td>
-                  <Td fontWeight="bold">${t.totalPrice.toFixed(2)}</Td>
+                  <Td>₹{t.taxPrice.toFixed(2)}</Td>
+                  <Td>₹{t.shippingPrice.toFixed(2)}</Td>
+                  <Td fontWeight="bold">₹{t.totalPrice.toFixed(2)}</Td>
                 </Tr>
               ))}
             </Tbody>

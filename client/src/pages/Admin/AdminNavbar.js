@@ -24,6 +24,7 @@ import { CgProfile } from "react-icons/cg";
 import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 import { getUserDetails } from "../../actions/userActions";
+import { getActiveOfferBanner } from "../../actions/bannerActions";
 import { useEffect } from "react";
 
 const AdminNavbar = () => {
@@ -35,6 +36,7 @@ const AdminNavbar = () => {
 
   const cancelRef = useRef();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { banner } = useSelector((state) => state.activeOfferBanner || {});
 
   useEffect(() => {
     dispatch(getUserDetails("profile")); // 🔥 REQUIRED
@@ -70,57 +72,59 @@ const AdminNavbar = () => {
 
         {/* Navbar Links */}
         <HStack spacing={6} ms={9}>
-         <div className="ic_sett_dis">
-  <RouterLink
-    to="/profile"
-    className="user-profile"
-    style={{
-      display: "flex",
-      alignItems: "center",
-      gap: "6px",
-      textDecoration: "none",
-    }}
-  >
-    {/* Profile Image */}
-    {user?.profilePicture && (
-      <img
-        src={
-          user.profilePicture.startsWith("http")
-            ? user.profilePicture
-            : `http://localhost:5000${user.profilePicture}`
-        }
-        alt="Profile"
-        style={{
-          width: "32px",
-          height: "32px",
-          borderRadius: "50%",
-          objectFit: "cover",
-        }}
-        onError={(e) => {
-          e.target.style.display = "none";
-          e.target.nextSibling.style.display = "flex";
-        }}
-      />
-    )}
+          <div className="ic_sett_dis">
+            <RouterLink
+              to="/profile"
+              className="user-profile"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                textDecoration: "none",
+              }}
+            >
+              {/* Profile Image */}
+              {user?.profilePicture && (
+                <img
+                  src={
+                    user.profilePicture.startsWith("http")
+                      ? user.profilePicture
+                      : `http://localhost:5000${user.profilePicture}`
+                  }
+                  alt="Profile"
+                  style={{
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                    e.target.nextSibling.style.display = "flex";
+                  }}
+                />
+              )}
 
-    {/* Default Empty Profile Icon */}
-    <CgProfile
-      size={25}
-      style={{
-        display: user?.profilePicture ? "none" : "flex",
-        color: "#666",
-      }}
-    />
+              {/* Default Empty Profile Icon */}
+              <CgProfile
+                size={25}
+                style={{
+                  display: user?.profilePicture ? "none" : "flex",
+                  color: "#666",
+                }}
+              />
 
-    <span style={{ color: "black", fontWeight: "500" }}>
-      {user?.name || "Admin"}
-    </span>
-  </RouterLink>
-</div>
+              <span style={{ color: "black", fontWeight: "500" }}>
+                {user?.name || "Admin"}
+              </span>
+            </RouterLink>
+          </div>
 
           <button
-           onClick={() => navigate("/?gender=Men")}
-
+            onClick={() => {
+              dispatch(getActiveOfferBanner());
+              navigate("/");
+            }}
             style={{
               padding: "8px 16px",
               backgroundColor: "#000",
@@ -192,6 +196,51 @@ const AdminNavbar = () => {
           </AlertDialog>
         </HStack>
       </Flex>
+      {banner && (
+        <div
+          style={{
+            backgroundColor: "#fbd983",
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+            padding: "12px 8px",
+            position: "sticky",
+            top: "70px",
+            zIndex: 999,
+            fontWeight: "700",
+          }}
+        >
+          <div
+            style={{
+              display: "inline-block",
+              paddingLeft: "100%",
+              animation:
+                "marquee 15s linear infinite, shine 2s linear infinite",
+              fontSize: "16px",
+              background:
+                "linear-gradient(90deg, #000 40%, #fff 50%, #000 60%)",
+              backgroundSize: "200% auto",
+              color: "transparent",
+              WebkitBackgroundClip: "text",
+            }}
+          >
+            {`${banner.offerText} • ${banner.offerText} • ${banner.offerText}`}
+          </div>
+
+          <style>
+            {`
+        @keyframes marquee {
+          0% { transform: translateX(0%); }
+          100% { transform: translateX(-100%); }
+        }
+
+        @keyframes shine {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+      `}
+          </style>
+        </div>
+      )}
     </Box>
   );
 };

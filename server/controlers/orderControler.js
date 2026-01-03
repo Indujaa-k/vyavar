@@ -684,6 +684,34 @@ const getBillingInvoiceByNumber = asyncHandler(async (req, res) => {
 
   res.json(invoice);
 });
+const getIncomeByPincode = asyncHandler(async (req, res) => {
+  const data = await Order.aggregate([
+    {
+      $match: {
+        "shippingAddress.pin": { $ne: null },
+        isPaid: true,
+      },
+    },
+    {
+      $group: {
+        _id: "$shippingAddress.pin",
+        income: { $sum: "$totalPrice" },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        pinCode: "$_id",
+        income: 1,
+      },
+    },
+    {
+      $sort: { income: -1 },
+    },
+  ]);
+
+  res.status(200).json(data);
+});
 
 export {
   addorderitems,
@@ -709,4 +737,5 @@ export {
   getBillingInvoiceByNumber,
   createRazorpayOrder,
   verifyRazorpayPayment,
+  getIncomeByPincode,
 };

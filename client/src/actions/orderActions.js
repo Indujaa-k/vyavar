@@ -56,9 +56,9 @@ import {
   INVOICE_REQUEST,
   INVOICE_SUCCESS,
   INVOICE_FAIL,
-  INCOME_BY_CITY_REQUEST,
-  INCOME_BY_CITY_SUCCESS,
-  INCOME_BY_CITY_FAIL,
+  INCOME_BY_PINCODE_REQUEST,
+  INCOME_BY_PINCODE_SUCCESS,
+  INCOME_BY_PINCODE_FAIL,
 } from "../constants/orderConstants";
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -500,9 +500,10 @@ export const getInvoice = (id) => async (dispatch, getState) => {
     });
   }
 };
-export const getIncomeByCity = () => async (dispatch, getState) => {
+export const getIncomeByPincode = () => async (dispatch, getState) => {
   try {
-    dispatch({ type: INCOME_BY_CITY_REQUEST });
+    dispatch({ type: INCOME_BY_PINCODE_REQUEST });
+
     const {
       userLogin: { userInfo },
     } = getState();
@@ -512,25 +513,24 @@ export const getIncomeByCity = () => async (dispatch, getState) => {
         Authorization: `Bearer ${userInfo.token}`,
       },
     };
+
     const { data } = await axios.get(
-      `${API_URL}/api/orders/admin/incomebycity?timestamp=${new Date().getTime()}`,
+      `${API_URL}/api/orders/admin/incomebypincode?timestamp=${Date.now()}`,
       config
     );
-    console.log(data);
+
     dispatch({
-      type: INCOME_BY_CITY_SUCCESS,
+      type: INCOME_BY_PINCODE_SUCCESS,
       payload: data,
     });
   } catch (error) {
     dispatch({
-      type: INCOME_BY_CITY_FAIL,
-      payload:
-        error.response && error.response.data.message
-          ? error.response.data.message
-          : error.message,
+      type: INCOME_BY_PINCODE_FAIL,
+      payload: error.response?.data?.message || error.message,
     });
   }
 };
+
 export const listTransactions = (filters) => async (dispatch, getState) => {
   try {
     dispatch({ type: TRANSACTION_LIST_REQUEST });

@@ -147,8 +147,12 @@ export const productBulkUploadReducer = (state = {}, action) => {
   switch (action.type) {
     case PRODUCT_BULK_UPLOAD_REQUEST:
       return { loading: true };
-    case PRODUCT_BULK_UPLOAD_SUCCESS:
-      return { loading: false, success: true, message: action.payload };
+   case PRODUCT_BULK_UPLOAD_SUCCESS:
+  return {
+    loading: false,
+    success: true,
+    message: action.payload,
+  };
     case PRODUCT_BULK_UPLOAD_FAIL:
       return { loading: false, error: action.payload };
     case PRODUCT_BULK_UPLOAD_RESET:

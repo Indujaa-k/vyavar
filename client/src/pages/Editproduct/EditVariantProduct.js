@@ -84,6 +84,21 @@ const EditVariantProduct = () => {
     fabric: ["Cotton", "Polyester", "Leather"],
     sizes: ["S", "M", "L", "XL", "XXL"],
   };
+  const calculatePrice = (oldPrice, discount) => {
+    if (!oldPrice || discount < 0) return 0;
+    if (discount > 100) discount = 100;
+
+    const price = oldPrice - (oldPrice * discount) / 100;
+    return Math.round(price);
+  };
+
+  const calculateDiscount = (oldPrice, price) => {
+    if (!oldPrice || !price || price > oldPrice) return 0;
+
+    const discount = ((oldPrice - price) / oldPrice) * 100;
+    return Math.round(discount);
+  };
+
   const toggleSize = (variantId, size) => {
     setVariantState((prev) =>
       prev.map((v) => {
@@ -92,8 +107,18 @@ const EditVariantProduct = () => {
         const sizes = v.productdetails.sizes || [];
         const stockBySize = v.productdetails.stockBySize || [];
 
-        // REMOVE size
+        const existingStock = stockBySize.find((s) => s.size === size);
+        const stockValue = existingStock?.stock || 0;
+
+        // ===== UNCHECK =====
         if (sizes.includes(size)) {
+          if (stockValue > 0) {
+            const confirmRemove = window.confirm(
+              `Stock for size ${size} is ${stockValue}. Remove this size and reset stock?`
+            );
+            if (!confirmRemove) return v;
+          }
+
           return {
             ...v,
             productdetails: {
@@ -103,25 +128,8 @@ const EditVariantProduct = () => {
             },
           };
         }
-        const updateStockBySize = (variantId, size, stock) => {
-          setVariantState((prev) =>
-            prev.map((v) =>
-              v._id === variantId
-                ? {
-                    ...v,
-                    productdetails: {
-                      ...v.productdetails,
-                      stockBySize: v.productdetails.stockBySize.map((s) =>
-                        s.size === size ? { ...s, stock } : s
-                      ),
-                    },
-                  }
-                : v
-            )
-          );
-        };
 
-        // ADD size
+        // ===== CHECK =====
         return {
           ...v,
           productdetails: {
@@ -133,6 +141,10 @@ const EditVariantProduct = () => {
       })
     );
   };
+  const [activeImage, setActiveImage] = useState({
+    variantId: null,
+    index: null,
+  });
 
   // ================= FETCH GROUP =================
   useEffect(() => {
@@ -157,10 +169,24 @@ const EditVariantProduct = () => {
         },
       });
       if (variants) {
-        setVariantState(variants);
+        const normalized = variants.map((v) => ({
+          ...v,
+          productdetails: {
+            ...v.productdetails,
+            sizes: v.productdetails.sizes || [],
+            stockBySize: Array.isArray(v.productdetails.stockBySize)
+              ? v.productdetails.stockBySize
+              : [],
+          },
+        }));
+
+        setVariantState(normalized);
       }
     }
   }, [common, variants]);
+  const disableNumberScroll = (e) => {
+    e.target.blur();
+  };
 
   // ================= TOAST HANDLERS =================
   useEffect(() => {
@@ -226,67 +252,23 @@ const EditVariantProduct = () => {
       )
     );
   };
-  const addNewSize = (variantId) => {
-    setVariantState((prev) =>
-      prev.map((v) =>
-        v._id === variantId
-          ? {
-              ...v,
-              productdetails: {
-                ...v.productdetails,
-                sizes: [...(v.productdetails.sizes || []), ""],
-                stockBySize: {
-                  ...(v.productdetails.stockBySize || {}),
-                  "": 0,
-                },
-              },
-            }
-          : v
-      )
-    );
-  };
-
-  const updateSize = (variantId, index, value) => {
+  const updateStockBySize = (variantId, size, value) => {
     setVariantState((prev) =>
       prev.map((v) => {
         if (v._id !== variantId) return v;
 
-        const newSizes = [...v.productdetails.sizes];
-        const oldSize = newSizes[index];
-        newSizes[index] = value;
-
-        const newStock = { ...v.productdetails.stockBySize };
-        newStock[value] = newStock[oldSize] || 0;
-        delete newStock[oldSize];
+        const stockBySize = v.productdetails.stockBySize.map((item) =>
+          item.size === size ? { ...item, stock: value } : item
+        );
 
         return {
           ...v,
           productdetails: {
             ...v.productdetails,
-            sizes: newSizes,
-            stockBySize: newStock,
+            stockBySize,
           },
         };
       })
-    );
-  };
-
-  const updateStock = (variantId, size, value) => {
-    setVariantState((prev) =>
-      prev.map((v) =>
-        v._id === variantId
-          ? {
-              ...v,
-              productdetails: {
-                ...v.productdetails,
-                stockBySize: {
-                  ...v.productdetails.stockBySize,
-                  [size]: Number(value),
-                },
-              },
-            }
-          : v
-      )
     );
   };
 
@@ -300,14 +282,16 @@ const EditVariantProduct = () => {
     formData.append("color", variant.productdetails.color);
 
     formData.append("sizes", JSON.stringify(variant.productdetails.sizes));
-
     formData.append(
       "stockBySize",
       JSON.stringify(variant.productdetails.stockBySize)
     );
 
-    if (variant.newImages) {
-      variant.newImages.forEach((img) => formData.append("images", img));
+    if (variant.replacedImages) {
+      Object.entries(variant.replacedImages).forEach(([index, file]) => {
+        formData.append("images", file);
+        formData.append("imageIndexes", index);
+      });
     }
 
     dispatch(updateProductVariant(variant._id, formData));
@@ -503,26 +487,28 @@ const EditVariantProduct = () => {
                     Color: {variant.productdetails?.color || "N/A"}
                   </Text>
                   <Text fontSize="xs" color="gray.500">
-                    SKU: {variant.sku || "--"}
+                    SKU: {variant.SKU || "--"}
                   </Text>
                 </Flex>
 
                 {/* Images */}
                 <Flex gap={2}>
-                  {(variant.images || []).slice(0, 3).map((img, index) => (
+                  {(variant.images || []).slice(0, 5).map((img, index) => (
                     <Image
                       key={index}
                       src={img}
                       boxSize="70px"
                       objectFit="cover"
                       borderRadius="md"
-                      border="1px solid #e2e8f0"
                       cursor="pointer"
-                      onClick={() => openImagePicker(variant._id)}
+                      onClick={() => {
+                        setActiveImage({ variantId: variant._id, index });
+                        openImagePicker(variant._id);
+                      }}
                     />
                   ))}
 
-                  {variant.images?.length > 3 && (
+                  {variant.images?.length > 5 && (
                     <Flex
                       boxSize="70px"
                       align="center"
@@ -532,7 +518,7 @@ const EditVariantProduct = () => {
                       cursor="pointer"
                       onClick={() => openImagePicker(variant._id)}
                     >
-                      +{variant.images.length - 3}
+                      +{variant.images.length - 5}
                     </Flex>
                   )}
                 </Flex>
@@ -540,16 +526,32 @@ const EditVariantProduct = () => {
                 {/* Hidden file input */}
                 <Input
                   type="file"
-                  multiple
                   hidden
                   ref={(el) => (fileInputRefs.current[variant._id] = el)}
-                  onChange={(e) =>
-                    updateVariantField(
-                      variant._id,
-                      "newImages",
-                      Array.from(e.target.files)
-                    )
-                  }
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    const previewUrl = URL.createObjectURL(file);
+
+                    setVariantState((prev) =>
+                      prev.map((v) => {
+                        if (v._id !== activeImage.variantId) return v;
+
+                        const updatedImages = [...v.images];
+                        updatedImages[activeImage.index] = previewUrl;
+
+                        return {
+                          ...v,
+                          images: updatedImages,
+                          replacedImages: {
+                            ...(v.replacedImages || {}),
+                            [activeImage.index]: file, // 👈 track by index
+                          },
+                        };
+                      })
+                    );
+                  }}
                 />
 
                 {/* Inputs */}
@@ -574,30 +576,43 @@ const EditVariantProduct = () => {
                     <Input
                       size="sm"
                       type="number"
+                      onWheel={disableNumberScroll}
+                      min={0}
                       value={variant.oldPrice || ""}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const oldPrice = Number(e.target.value);
+                        const discount = variant.discount || 0;
+
+                        updateVariantField(variant._id, "oldPrice", oldPrice);
                         updateVariantField(
                           variant._id,
-                          "oldPrice",
-                          e.target.value
-                        )
-                      }
+                          "price",
+                          calculatePrice(oldPrice, discount)
+                        );
+                      }}
                     />
                   </FormControl>
 
                   <FormControl>
-                    <FormLabel fontSize="xs">Discount</FormLabel>
+                    <FormLabel fontSize="xs">Discount (%)</FormLabel>
                     <Input
                       size="sm"
                       type="number"
+                      onWheel={disableNumberScroll}
+                      min={0}
+                      max={100}
                       value={variant.discount || ""}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const discount = Number(e.target.value);
+                        const oldPrice = variant.oldPrice || 0;
+
+                        updateVariantField(variant._id, "discount", discount);
                         updateVariantField(
                           variant._id,
-                          "discount",
-                          e.target.value
-                        )
-                      }
+                          "price",
+                          calculatePrice(oldPrice, discount)
+                        );
+                      }}
                     />
                   </FormControl>
 
@@ -606,12 +621,23 @@ const EditVariantProduct = () => {
                     <Input
                       size="sm"
                       type="number"
+                      onWheel={disableNumberScroll}
+                      min={0}
                       value={variant.price || ""}
-                      onChange={(e) =>
-                        updateVariantField(variant._id, "price", e.target.value)
-                      }
+                      onChange={(e) => {
+                        const price = Number(e.target.value);
+                        const oldPrice = variant.oldPrice || 0;
+
+                        updateVariantField(variant._id, "price", price);
+                        updateVariantField(
+                          variant._id,
+                          "discount",
+                          calculateDiscount(oldPrice, price)
+                        );
+                      }}
                     />
                   </FormControl>
+
                   {/* ===== Sizes & Stock ===== */}
                   {/* Sizes */}
                   <Box>
@@ -641,6 +667,7 @@ const EditVariantProduct = () => {
                           <Input
                             size="sm"
                             type="number"
+                            onWheel={disableNumberScroll}
                             min={0}
                             value={item.stock}
                             onChange={(e) =>
@@ -660,6 +687,7 @@ const EditVariantProduct = () => {
                 <Button
                   size="sm"
                   colorScheme="green"
+                  isLoading={variantUpdate.loading}
                   onClick={() => saveVariantHandler(variant)}
                 >
                   Save Variant
