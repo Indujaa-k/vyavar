@@ -1,11 +1,16 @@
 import express from "express";
 import {
   createSubscription,
-  deleteSubscription,
   getSubscriptions,
   updateSubscription,
+  toggleSubscriptionStatus,
+  getActiveSubscription,
 } from "../controlers/subscriptionController.js";
-import { protect, adminOnly } from "../middleware/authMiddleware.js"; // updated
+import {
+  createSubscriptionOrder,
+  confirmSubscriptionPayment,
+} from "../controlers/subscriptionPaymentController.js";
+import { protect, adminOnly } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -13,9 +18,12 @@ router
   .route("/")
   .get(protect, adminOnly, getSubscriptions)
   .post(protect, adminOnly, createSubscription);
-router
-  .route("/:id")
-  .delete(protect, adminOnly, deleteSubscription)
-  .put(protect, adminOnly, updateSubscription);
+router.route("/:id").put(protect, adminOnly, updateSubscription);
+router.route("/:id/toggle").put(protect, adminOnly, toggleSubscriptionStatus);
+
+router.post("/order/:id", protect, createSubscriptionOrder);
+router.post("/confirm", protect, confirmSubscriptionPayment);
+
+router.get("/active", getActiveSubscription);
 
 export default router;

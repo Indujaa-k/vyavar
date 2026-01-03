@@ -14,6 +14,9 @@ import bannerRoutes from "./routes/bannerRoutes.js";
 import subscriptionsRoutes from "./routes/subscriptionRoutes.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import cors from "cors";
+import "./utils/subscriptionCron.js";
+import './utils/razorpayInstance.js'
+
 
 connectDB();
 const app = express();
@@ -43,6 +46,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/banners", bannerRoutes);
 app.use("/api/delivery", deliveryRoutes);
 app.use("/api/subscriptions", subscriptionsRoutes);
+// app.use("/api/users", subscriptionPaymentRoutes);
 // app.use("/api/transactions", transactionRoutes);
 app.use("/api", transactionRoutes); 
 

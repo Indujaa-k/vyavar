@@ -38,7 +38,7 @@ import {
   orderAssignReducer,
   undeliveredOrderListReducer,
   invoiceReducer,
-  incomeReducer,
+  incomeByPincodeReducer,
   orderStatusUpdateReducer,
   transactionListReducer,
   StripepaymentReducer,
@@ -91,9 +91,11 @@ import {
   billingInvoiceDetailsReducer,
 } from "./reducers/billingInvoiceReducers";
 import {
+  subscriptionConfirmReducer,
   subscriptionCreateReducer,
-  subscriptionDeleteReducer,
   subscriptionListReducer,
+  subscriptionOrderReducer,
+  subscriptionToggleReducer,
   subscriptionUpdateReducer,
 } from "./reducers/subscriptionReducers";
 
@@ -146,7 +148,7 @@ const reducer = combineReducers({
   deletevideoBanners: videoBannerDeleteReducer,
   userVideoBanners: userVideoBannerListReducer,
   activeOfferBanner: activeOfferBannerReducer,
-  income: incomeReducer,
+  incomeByPincode: incomeByPincodeReducer,
   transactionList: transactionListReducer,
   shipping: shippingReducer,
   shipment: shipmentReducer,
@@ -156,10 +158,13 @@ const reducer = combineReducers({
   reviewDelete: reviewDeleteReducer,
   favorites: favoritesReducer,
 
-  subscriptionCreate: subscriptionCreateReducer,
   subscriptionList: subscriptionListReducer,
-  subscriptionDelete: subscriptionDeleteReducer,
+  subscriptionCreate: subscriptionCreateReducer,
   subscriptionUpdate: subscriptionUpdateReducer,
+  subscriptionToggle: subscriptionToggleReducer,
+
+  subscriptionOrder: subscriptionOrderReducer,
+  subscriptionConfirm: subscriptionConfirmReducer,
 
   orderStatusUpdate: orderStatusUpdateReducer,
   orderStatuses: orderStatusReducer,

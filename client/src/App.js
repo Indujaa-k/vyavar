@@ -60,7 +60,6 @@ import EditVariantProduct from "./pages/Editproduct/EditVariantProduct";
 import Subscriptions from "./pages/screens/Subscriptions";
 import CreateSubscriptionModal from "./pages/screens/CreateSubscriptionModal";
 import SubscriptionPayment from "./components/SubscriptionPayment";
-import SubscriptionCheckout from "./components/SubscriptionCheckout";
 import AdminOfferBannerScreen from "./pages/AdminBanner/AdminOfferBannerScreen";
 // import ProtectedRoute from "./pages/ProtectedRoutes";
 const App = () => {
@@ -159,7 +158,7 @@ const App = () => {
                   /> */}
                   <Route
                     path="/admin/product/:groupId/edit"
-                    element={<EditVariantProduct/>}
+                    element={<EditVariantProduct />}
                   />
                   <Route
                     path="/admin/product/:groupId/add-variant"
@@ -224,14 +223,12 @@ const App = () => {
                   />
 
                   <Route path="/profile" element={<ProfileScreen />} />
+
                   <Route
                     path="/subscription"
                     element={<SubscriptionPayment />}
                   />
-                  <Route
-                    path="/subscription/checkout"
-                    element={<SubscriptionCheckout />}
-                  />
+
                   <Route path="/shipping" element={<Checkout />} />
                   <Route path="/placeorder" element={<Placeorder />} />
                   <Route path="/order/:id" element={<Order />} />

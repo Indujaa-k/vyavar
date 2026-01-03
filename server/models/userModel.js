@@ -1,5 +1,22 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+
+const userSubscriptionSchema = mongoose.Schema(
+  {
+    subscriptionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Subscription",
+    },
+    planName: String,
+    price: Number,
+    discountPercent: Number,
+    isActive: Boolean,
+    startDate: Date,
+    endDate: Date,
+  },
+  { _id: false }
+);
+
 const userSchema = mongoose.Schema(
   {
     name: {
@@ -11,28 +28,12 @@ const userSchema = mongoose.Schema(
       required: true,
       unique: true,
     },
-    isSubscribed: {
-      type: Boolean,
-      default: false,
-    },
-
+    isSubscribed: { type: Boolean, default: false },
     subscription: {
-      subscriptionId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Subscription",
-        default: null,
-      },
-
-      planName: { type: String, default: "" },
-      price: {
-        type: Number,
-        default: 0,
-      },
-      isActive: { type: Boolean, default: false },
-      discountPercent: { type: Number, default: 0 },
-      startDate: { type: Date, default: null },
-      endDate: { type: Date, default: null },
+      type: userSubscriptionSchema,
+      default: undefined,
     },
+
     otp: { type: String },
     expiresAt: { type: Date },
     password: {
@@ -109,38 +110,6 @@ const userSchema = mongoose.Schema(
         ref: "Product",
       },
     ],
-    subscription: {
-      subscriptionId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Subscription",
-        default: null,
-      },
-
-      planName: {
-        type: String,
-        default: "",
-      },
-
-      isActive: {
-        type: Boolean,
-        default: false,
-      },
-
-      discountPercent: {
-        type: Number,
-        default: 0,
-      },
-
-      startDate: {
-        type: Date,
-        default: null,
-      },
-
-      endDate: {
-        type: Date,
-        default: null,
-      },
-    },
   },
 
   {
