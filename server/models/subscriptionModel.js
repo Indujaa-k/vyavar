@@ -2,44 +2,28 @@ import mongoose from "mongoose";
 
 const subscriptionSchema = mongoose.Schema(
   {
-    planName: {
+    title: {
       type: String,
-      required: true, // e.g. BASIC, PRO, PREMIUM
+      required: true,
     },
 
-    planType: {
+    description: {
       type: String,
-      enum: ["MONTHLY", "YEARLY"],
-      required: true,
-    },
-    price: {
-      type: Number,
       required: true,
     },
 
-    discountPercent: {
-      type: Number,
-      required: true,
-      min: 0,
-      max: 50, // subscription discount cap
-    },
-
-    startDate: {
-      type: Date,
-      required: true,
-    },
-
-    endDate: {
-      type: Date,
-      required: true,
-    },
-    durationInDays: {
-      type: Number, // optional, for reference
-    },
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
+    offers: [
+      {
+        type: String,
+        required: true,
+      },
+    ],
+    price: { type: Number, required: true },
+    discountPercent: { type: Number, required: true, min: 0, max: 50 },
+    startDate: { type: Date, required: true },
+    endDate: { type: Date, required: true },
+    durationInDays: { type: Number },
+    isActive: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

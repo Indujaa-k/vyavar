@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Modal,
   ModalOverlay,
@@ -6,186 +6,221 @@ import {
   ModalHeader,
   ModalCloseButton,
   ModalBody,
-  VStack,
-  Input,
+  ModalFooter,
   Button,
-  Select,
-  Text,
-  FormLabel,
+  Input,
   FormControl,
-  Spinner,
-  SimpleGrid,
+  FormLabel,
+  VStack,
+  Text,
+  Select,
+  HStack,
 } from "@chakra-ui/react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  createSubscription,
-  updateSubscription,
-} from "../../actions/subscriptionActions";
+import { createSubscription } from "../../actions/subscriptionActions";
+import { SUBSCRIPTION_CREATE_RESET } from "../../constants/subscriptionConstants";
 
-const CreateSubscriptionModal = ({ isOpen, onClose, subscription }) => {
+const CreateSubscriptionModal = ({ isOpen, onClose }) => {
   const dispatch = useDispatch();
-  const isEdit = Boolean(subscription);
 
-  const [planName, setPlanName] = useState("");
-  const [planType, setPlanType] = useState("MONTHLY");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [offers, setOffers] = useState([""]);
   const [price, setPrice] = useState("");
-  const [discountPercent, setDiscountPercent] = useState(0);
+  const [discountPercent, setDiscountPercent] = useState("");
+  const [durationInDays, setDurationInDays] = useState("");
   const [startDate, setStartDate] = useState("");
-  const [days, setDays] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  const { loading, error, success } = useSelector(
-    (state) => state.subscriptionCreate
-  );
+  const subscriptionCreate = useSelector((state) => state.subscriptionCreate);
+  const { loading, success, error } = subscriptionCreate;
 
-  const { loading: updateLoading, success: updateSuccess } = useSelector(
-    (state) => state.subscriptionUpdate
-  );
+  const subscriptionList = useSelector((state) => state.subscriptionList);
+  const { subscriptions = [] } = subscriptionList;
 
-  // Prefill when editing
+  const activePlanExists = subscriptions.some((s) => s.isActive);
+
+  /* Auto calculate end date */
   useEffect(() => {
-    if (subscription) {
-      setPlanName(subscription.planName);
-      setPlanType(subscription.planType);
-      setPrice(subscription.price);
-      setDiscountPercent(subscription.discountPercent || 0);
-      setStartDate(subscription.startDate.split("T")[0]);
-      setDays(subscription.durationInDays);
-    }
-  }, [subscription]);
-
-  // Auto calculate end date
-  useEffect(() => {
-    if (startDate && days) {
+    if (startDate && durationInDays) {
       const end = new Date(startDate);
-      end.setDate(end.getDate() + Number(days));
+      end.setDate(end.getDate() + Number(durationInDays) - 1);
       setEndDate(end.toISOString().split("T")[0]);
+    } else {
+      setEndDate("");
     }
-  }, [startDate, days]);
+  }, [startDate, durationInDays]);
 
-  // Close modal on success
+  /* Reset on success */
   useEffect(() => {
-    if (success || updateSuccess) {
-      handleClose();
-    }
-  }, [success, updateSuccess]);
+    if (success) {
+      dispatch({ type: SUBSCRIPTION_CREATE_RESET });
 
-  const handleClose = () => {
-    setPlanName("");
-    setPlanType("MONTHLY");
-    setPrice("");
-    setDiscountPercent(0);
-    setStartDate("");
-    setDays("");
-    setEndDate("");
-    onClose();
+      setTitle("");
+      setDescription("");
+      setOffers([""]);
+      setPrice("");
+      setDiscountPercent("");
+      setDurationInDays("");
+      setStartDate("");
+      setEndDate("");
+
+      onClose();
+    }
+  }, [success, dispatch, onClose]);
+
+  /* Offers handlers */
+  const handleOfferChange = (index, value) => {
+    const updated = [...offers];
+    updated[index] = value;
+    setOffers(updated);
   };
 
-  const submitHandler = (e) => {
-    e.preventDefault();
+  const addOffer = () => setOffers([...offers, ""]);
+  const removeOffer = (index) =>
+    setOffers(offers.filter((_, i) => i !== index));
+  const submitHandler = () => {
+    const cleanedOffers = offers.filter((o) => o.trim() !== "");
 
-    const payload = {
-      planName,
-      planType,
-      price: Number(price),
-      discountPercent: Number(discountPercent),
-      startDate,
-      durationInDays: Number(days),
-    };
-
-    if (isEdit) {
-      dispatch(updateSubscription(subscription._id, payload));
-    } else {
-      dispatch(createSubscription(payload));
+    if (
+      !title ||
+      !description ||
+      cleanedOffers.length === 0 ||
+      !price ||
+      !durationInDays ||
+      !startDate
+    ) {
+      alert("All fields are required");
+      return;
     }
+
+    dispatch(
+      createSubscription({
+        title,
+        description,
+        offers: cleanedOffers, // ✅ always valid array
+        price: Number(price),
+        discountPercent: Number(discountPercent || 0),
+        durationInDays: Number(durationInDays),
+        startDate,
+      })
+    );
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} isCentered size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} size="md">
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader textAlign="center">
-          {isEdit ? "Edit Subscription" : "Create Subscription"}
-        </ModalHeader>
+        <ModalHeader>Create Subscription</ModalHeader>
         <ModalCloseButton />
 
-        <ModalBody pb={6}>
-          {(loading || updateLoading) && (
-            <Spinner display="block" mx="auto" mb={4} />
+        <ModalBody>
+          {error && (
+            <Text color="red.500" mb={2}>
+              {error}
+            </Text>
           )}
-          {error && <Text color="red.500">{error}</Text>}
-          <form onSubmit={submitHandler}>
-            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-              <FormControl isRequired>
-                <FormLabel>Plan Name</FormLabel>
-                <Input
-                  value={planName}
-                  onChange={(e) => setPlanName(e.target.value)}
-                  placeholder="Enter plan name"
-                />
-              </FormControl>
 
-              <FormControl isRequired>
-                <FormLabel>Plan Type</FormLabel>
-                <Select
-                  value={planType}
-                  onChange={(e) => setPlanType(e.target.value)}
-                >
-                  <option value="MONTHLY">MONTHLY</option>
-                  <option value="YEARLY">YEARLY</option>
-                </Select>
-              </FormControl>
+          {activePlanExists && (
+            <Text color="red.500" mb={2} fontSize="sm">
+              An active subscription already exists. Deactivate it first.
+            </Text>
+          )}
 
-              <FormControl isRequired>
-                <FormLabel>Price</FormLabel>
-                <Input
-                  type="number"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  placeholder="e.g. 1000"
-                />
-              </FormControl>
+          <VStack spacing={4}>
+            <FormControl isRequired>
+              <FormLabel>Title</FormLabel>
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+            </FormControl>
 
-              <FormControl>
-                <FormLabel>Discount %</FormLabel>
-                <Input
-                  type="number"
-                  value={discountPercent}
-                  onChange={(e) => setDiscountPercent(e.target.value)}
-                  placeholder="10 / 20 / 30"
-                />
-              </FormControl>
+            <FormControl isRequired>
+              <FormLabel>Description</FormLabel>
+              <Input
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </FormControl>
 
-              <FormControl isRequired>
-                <FormLabel>Start Date</FormLabel>
-                <Input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                />
-              </FormControl>
+            <FormControl isRequired>
+              <FormLabel>Offers</FormLabel>
+              <VStack align="stretch">
+                {offers.map((offer, index) => (
+                  <HStack key={index}>
+                    <Input
+                      placeholder={`Offer ${index + 1}`}
+                      value={offer}
+                      onChange={(e) => handleOfferChange(index, e.target.value)}
+                    />
+                    {offers.length > 1 && (
+                      <Button
+                        size="sm"
+                        colorScheme="red"
+                        onClick={() => removeOffer(index)}
+                      >
+                        X
+                      </Button>
+                    )}
+                  </HStack>
+                ))}
+              </VStack>
+              <Button mt={2} size="sm" colorScheme="blue" onClick={addOffer}>
+                + Add Offer
+              </Button>
+            </FormControl>
 
-              <FormControl isRequired>
-                <FormLabel>Duration (Days)</FormLabel>
-                <Input
-                  type="number"
-                  value={days}
-                  onChange={(e) => setDays(e.target.value)}
-                  placeholder="30 / 60 / 90"
-                />
-              </FormControl>
+            <FormControl isRequired>
+              <FormLabel>Price</FormLabel>
+              <Input
+                type="number"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+              />
+            </FormControl>
 
-              <FormControl>
-                <FormLabel>End Date</FormLabel>
-                <Input value={endDate} isReadOnly />
-              </FormControl>
-            </SimpleGrid>
+            <FormControl>
+              <FormLabel>Discount (%)</FormLabel>
+              <Input
+                type="number"
+                value={discountPercent}
+                onChange={(e) => setDiscountPercent(e.target.value)}
+              />
+            </FormControl>
 
-            <Button mt={4} type="submit" colorScheme="teal" width="100%">
-              {isEdit ? "Update" : "Create"}
-            </Button>
-          </form>
+            <FormControl isRequired>
+              <FormLabel>Duration (Days)</FormLabel>
+              <Input
+                type="number"
+                value={durationInDays}
+                onChange={(e) => setDurationInDays(e.target.value)}
+              />
+            </FormControl>
+
+            <FormControl isRequired>
+              <FormLabel>Start Date</FormLabel>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>End Date</FormLabel>
+              <Input value={endDate} isReadOnly />
+            </FormControl>
+          </VStack>
         </ModalBody>
+
+        <ModalFooter>
+          <Button
+            colorScheme="blue"
+            onClick={submitHandler}
+            isLoading={loading}
+            isDisabled={activePlanExists}
+          >
+            Create
+          </Button>
+        </ModalFooter>
       </ModalContent>
     </Modal>
   );

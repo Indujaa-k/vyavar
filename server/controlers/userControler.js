@@ -4,6 +4,8 @@ import User from "../models/userModel.js";
 import Product from "../models/productModel.js";
 import RegisterEmailOtp from "../utils/registerEmailOtp.js";
 import ResetEmailOtp from "../utils/resetEmailOtp.js";
+import Subscription from "../models/subscriptionModel.js";
+
 // @desc Auth user & get token
 // @route POST /api/users/login
 // @access Public
@@ -18,7 +20,7 @@ const authUser = asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
       isAdmin: user.isAdmin,
-      isSeller:user.isSeller,
+      isSeller: user.isSeller,
       isDelivery: user.isDelivery,
       token: generateToken(user._id),
     });
@@ -64,7 +66,7 @@ const registerUser = asyncHandler(async (req, res) => {
     email: user.email,
     isAdmin: user.isAdmin,
     isDelivery: user.isDelivery,
-    isSeller: user .isSeller,
+    isSeller: user.isSeller,
     token: generateToken(user._id),
   });
 });
@@ -274,7 +276,9 @@ const getUserProfile = asyncHandler(async (req, res) => {
       isAdmin: user.isAdmin,
       profilePicture: user.profilePicture,
       isDelivery: user.isDelivery,
-     addresses: user.addresses,
+      addresses: user.addresses,
+      subscription: user.subscription,
+      isSubscribed: user.isSubscribed,
     });
   } else {
     res.status(404);
@@ -329,7 +333,6 @@ const updateUserProfile = asyncHandler(async (req, res) => {
         pin: addr.pin ? Number(addr.pin) : null,
         phoneNumber: addr.phoneNumber ? Number(addr.phoneNumber) : null,
       }));
-      
 
       // Ensure only one default address
       const defaultExists = addresses.some((addr) => addr.isDefault);
@@ -479,6 +482,12 @@ const getFavorites = asyncHandler(async (req, res) => {
 
   res.status(200).json(user.favorites);
 });
+
+// @desc Activate user subscription after payment
+// @route POST /api/users/subscribe
+// @access Private
+
+
 export {
   authUser,
   registerUser,
