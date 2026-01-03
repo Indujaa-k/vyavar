@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const offerBannerSchema = new mongoose.Schema(
+const offerBannerSchema = mongoose.Schema(
   {
     type: {
       type: String,
@@ -12,12 +12,11 @@ const offerBannerSchema = new mongoose.Schema(
     },
     isActive: {
       type: Boolean,
-      default: true,
+      default: false,
     },
   },
   { timestamps: true }
 );
-
 const OfferBanner = mongoose.model("OfferBanner", offerBannerSchema);
 
 export default OfferBanner;

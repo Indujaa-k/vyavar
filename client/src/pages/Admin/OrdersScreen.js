@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, Link } from "react-router-dom";
+import axios from "axios";
 import { listOrders, updateOrderStatus } from "../../actions/orderActions";
 import {
   Box,
@@ -15,6 +16,9 @@ import {
   Tr,
   Th,
   Td,
+  Tabs,
+  TabList,
+  Tab,
   HStack,
   Image,
   Badge,
@@ -29,6 +33,7 @@ const OrdersScreen = () => {
   const [statusUpdates, setStatusUpdates] = useState({}); // For storing dropdown selections
   const { status } = useParams();
   const dispatch = useDispatch();
+  const [activeTab, setActiveTab] = useState("ALL");
 
   const orderList = useSelector((state) => state.orderList);
   const { loading, error, orders } = orderList;
@@ -37,15 +42,22 @@ const OrdersScreen = () => {
   const { success } = orderStatusUpdate;
 
   useEffect(() => {
-    dispatch(listOrders(status));
-  }, [dispatch, status, success]); // refetch on status change success
+    dispatch(listOrders());
+  }, [dispatch, success]);
+  // refetch on status change success
 
   const handleDateChange = (e) => {
     setSelectedDate(e.target.value);
   };
 
   const handleStatusChange = (orderId, newStatus) => {
-    setStatusUpdates({ ...statusUpdates, [orderId]: newStatus });
+    axios
+      .put(`/api/orders/${orderId}/updateorderstatus`, { status: newStatus })
+      .then((res) => {
+        console.log("Order updated", res.data);
+        // update local state to show new status immediately
+      })
+      .catch((err) => console.log(err));
   };
 
   const handleStatusUpdate = (orderId) => {
@@ -55,11 +67,17 @@ const OrdersScreen = () => {
     }
   };
 
-  const filteredOrders = selectedDate
-    ? orders.filter(
-        (order) => order.createdAt.substring(0, 10) === selectedDate
-      )
-    : orders;
+  const filteredOrders = orders
+    ?.filter((order) => {
+      if (activeTab === "ALL") return true;
+      if (activeTab === "CONFIRMED") return order.isPaid;
+      if (activeTab === "PACKED") return order.isPacked;
+      if (activeTab === "OUT_FOR_DELIVERY") return order.isAcceptedByDelivery;
+      return true;
+    })
+    .filter((order) =>
+      selectedDate ? order.createdAt.substring(0, 10) === selectedDate : true
+    );
 
   const getOrderStatus = (order) => {
     if (order.isReturned) return { label: "Returned", color: "red" };
@@ -83,6 +101,7 @@ const OrdersScreen = () => {
         <Heading fontSize="lg">
           {status ? `${status.toUpperCase()} Orders` : "All Orders"}
         </Heading>
+
         <Box maxW="200px" flexShrink={0}>
           <Input
             type="date"
@@ -101,7 +120,7 @@ const OrdersScreen = () => {
         <VStack spacing={4} align="stretch">
           {filteredOrders.length > 0 ? (
             filteredOrders.map((order) => {
-              console.log("ORDER ITEMS:", order.orderItems); 
+              console.log("ORDER ITEMS:", order.orderItems);
               const statusObj = getOrderStatus(order);
               const shipment = order.shipmentDetails?.[0] || {};
               const currentStatus = statusUpdates[order._id] || statusObj.label;
@@ -130,7 +149,6 @@ const OrdersScreen = () => {
                         <Th textAlign="center">Product Image</Th>
                         <Th textAlign="center">size</Th>
                         <Th textAlign="center">Actions</Th>
-                        
                       </Tr>
                     </Thead>
                     <Tbody>
@@ -161,41 +179,48 @@ const OrdersScreen = () => {
                               statusUpdates[order._id] ||
                               getOrderStatus(order).label
                             }
-                            onChange={(e) =>
-                              handleStatusChange(order._id, e.target.value)
-                            }
+                            onChange={(e) => {
+                              const newStatus = e.target.value;
+                              // update local state
+                              setStatusUpdates((prev) => ({
+                                ...prev,
+                                [order._id]: newStatus,
+                              }));
+                              // optional: send axios immediately if you want instant update
+                              // handleStatusChange(order._id, newStatus);
+                            }}
                             minW="150px"
                           >
-                            <option value="Ordered">Ordered</option>
-                            <option value="Packed">Packed</option>
-                            <option value="Shipped">Shipped</option>
-                            <option value="Delivered">Delivered</option>
-                            <option value="Returned">Returned</option>
+                            <option value="CONFIRMED">Confirmed</option>
+                            <option value="PACKED">Packed</option>
+                            <option value="OUT_FOR_DELIVERY">
+                              Out for Delivery
+                            </option>
                           </Select>
                         </Td>
+
                         <Td textAlign="center">
                           {shipment.trackingNumber || "N/A"}
                         </Td>
                         <Td textAlign="center">
                           <HStack spacing={2} justify="center">
                             {order.orderItems?.map((item, index) => (
-  <Box key={index} textAlign="center">
-    {item?.product?.images?.length > 0 ? (
-      <Image
-        src={item.product.images[0]}
-        alt={item.product.brandname || "Product"}
-        boxSize="50px"
-        objectFit="cover"
-        borderRadius="5px"
-      />
-    ) : (
-      <Text fontSize="xs" color="gray.500">
-        No Image
-      </Text>
-    )}
-  </Box>
-))}
-
+                              <Box key={index} textAlign="center">
+                                {item?.product?.images?.length > 0 ? (
+                                  <Image
+                                    src={item.product.images[0]}
+                                    alt={item.product.brandname || "Product"}
+                                    boxSize="50px"
+                                    objectFit="cover"
+                                    borderRadius="5px"
+                                  />
+                                ) : (
+                                  <Text fontSize="xs" color="gray.500">
+                                    No Image
+                                  </Text>
+                                )}
+                              </Box>
+                            ))}
                           </HStack>
                         </Td>
                         <Td textAlign="center">
@@ -211,7 +236,7 @@ const OrdersScreen = () => {
                             ))}
                           </VStack>
                         </Td>
-                        
+
                         <Td textAlign="center">
                           <Stack spacing={2}>
                             <Button
@@ -222,7 +247,7 @@ const OrdersScreen = () => {
                               Update
                             </Button>
                             <Button size="xs" colorScheme="blue">
-                               <Link to={`/order/${order._id}`}>
+                              <Link to={`/order/${order._id}`}>
                                 <AiOutlineEdit size={14} /> Details
                               </Link>
                             </Button>
