@@ -36,6 +36,7 @@ import {
   OFFER_BANNER_ACTIVE_REQUEST,
   OFFER_BANNER_ACTIVE_SUCCESS,
   OFFER_BANNER_ACTIVE_FAIL,
+  CLEAR_ACTIVE_OFFER_BANNER,
 } from "../constants/bannerConstants";
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -368,6 +369,11 @@ export const getActiveOfferBanner = () => async (dispatch) => {
   }
 };
 
+export const clearActiveOfferBanner = () => {
+  return {
+    type: CLEAR_ACTIVE_OFFER_BANNER,
+  };
+};
 
 
 

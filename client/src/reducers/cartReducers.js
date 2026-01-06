@@ -8,6 +8,7 @@ import {
   CART_FETCH_REQUEST,
   CART_FETCH_SUCCESS,
   CART_FETCH_FAIL,
+  CART_CLEAR_ITEMS,
 } from "../constants/cartConstants";
 export const cartReducer = (
   state = {
@@ -71,6 +72,11 @@ export const cartReducer = (
       return {
         ...state,
         shippingCost: action.payload,
+      };
+    case CART_CLEAR_ITEMS:
+      return {
+        ...state,
+        cartItems: [],
       };
 
     case SAVE_SHIPPING_RATES:

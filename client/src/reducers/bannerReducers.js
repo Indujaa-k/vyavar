@@ -20,7 +20,7 @@ import {
   USER_VIDEO_BANNER_LIST_REQUEST,
   USER_VIDEO_BANNER_LIST_SUCCESS,
   USER_VIDEO_BANNER_LIST_FAIL,
-   OFFER_BANNER_LIST_REQUEST,
+  OFFER_BANNER_LIST_REQUEST,
   OFFER_BANNER_LIST_SUCCESS,
   OFFER_BANNER_LIST_FAIL,
   OFFER_BANNER_ADD_REQUEST,
@@ -35,6 +35,7 @@ import {
   OFFER_BANNER_ACTIVE_REQUEST,
   OFFER_BANNER_ACTIVE_SUCCESS,
   OFFER_BANNER_ACTIVE_FAIL,
+  CLEAR_ACTIVE_OFFER_BANNER,
 } from "../constants/bannerConstants";
 
 export const bannerListReducer = (state = { banners: [] }, action) => {
@@ -190,10 +191,7 @@ export const offerBannerDeleteReducer = (state = {}, action) => {
       return state;
   }
 };
-export const activeOfferBannerReducer = (
-  state = { banner: null },
-  action
-) => {
+export const activeOfferBannerReducer = (state = { banner: null }, action) => {
   switch (action.type) {
     case OFFER_BANNER_ACTIVE_REQUEST:
       return { loading: true };
@@ -203,6 +201,8 @@ export const activeOfferBannerReducer = (
 
     case OFFER_BANNER_ACTIVE_FAIL:
       return { loading: false, error: action.payload };
+    case CLEAR_ACTIVE_OFFER_BANNER:
+      return {};
 
     default:
       return state;

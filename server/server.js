@@ -12,6 +12,7 @@ import deliveryRoutes from "./routes/deliveryRoutes.js";
 import transactionRoutes from "./routes/transactionRoutes.js";
 import bannerRoutes from "./routes/bannerRoutes.js";
 import subscriptionsRoutes from "./routes/subscriptionRoutes.js";
+import offerRoutes from "./routes/offerRoutes.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import cors from "cors";
 import "./utils/subscriptionCron.js";
@@ -49,7 +50,7 @@ app.use("/api/subscriptions", subscriptionsRoutes);
 // app.use("/api/users", subscriptionPaymentRoutes);
 // app.use("/api/transactions", transactionRoutes);
 app.use("/api", transactionRoutes); 
-
+app.use("/api/offers", offerRoutes);
 
 
 

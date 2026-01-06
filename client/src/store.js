@@ -22,6 +22,14 @@ import {
   productVariantUpdateReducer,
 } from "./reducers/productReducers";
 
+import {
+  offerCreateReducer,
+  offerDeleteReducer,
+  offerUpdateReducer,
+  offerListReducer,
+  offerValidateReducer,
+} from "./reducers/offerReducers";
+
 import { cartReducer } from "./reducers/cartReducers";
 import {
   CreateOrderReducers,
@@ -183,6 +191,11 @@ const reducer = combineReducers({
   productVariantAdd: productVariantAddReducer,
   productEdit: productEditReducer,
   productListByGroup: productListByGroupReducer,
+  offerList: offerListReducer,
+  offerCreate: offerCreateReducer,
+  offerDelete: offerDeleteReducer,
+  offerUpdate: offerUpdateReducer,
+  offerValidate: offerValidateReducer,
 });
 
 const userInfoFromStorage = localStorage.getItem("userInfo")

@@ -24,7 +24,10 @@ import { CgProfile } from "react-icons/cg";
 import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 import { getUserDetails } from "../../actions/userActions";
-import { getActiveOfferBanner } from "../../actions/bannerActions";
+import {
+  getActiveOfferBanner,
+  clearActiveOfferBanner,
+} from "../../actions/bannerActions";
 import { useEffect } from "react";
 
 const AdminNavbar = () => {
@@ -45,6 +48,10 @@ const AdminNavbar = () => {
   const logoutHandler = () => {
     dispatch(logout());
     onClose();
+  };
+  const handleBack = () => {
+    dispatch(clearActiveOfferBanner());
+    navigate(-1);
   };
 
   return (
@@ -137,19 +144,7 @@ const AdminNavbar = () => {
             Preview
           </button>
 
-          <button
-            onClick={() => navigate("/admin")}
-            style={{
-              padding: "8px 16px",
-              backgroundColor: "#000",
-              color: "#fff",
-              border: "none",
-              cursor: "pointer",
-              borderRadius: "4px",
-            }}
-          >
-            Back
-          </button>
+          <button onClick={handleBack}>Back</button>
 
           <Button bg="violet" onClick={onOpen}>
             Logout

@@ -180,6 +180,18 @@ const AdminLayout = ({ children }) => {
                 >
                   💳 Subscriptions
                 </Button>
+                
+                 <Button
+                      as={RouterLink}
+                      to="/admin/coupon"
+                      variant="ghost"
+                      color="white"
+                      justifyContent="flex-start"
+                      _hover={{ bg: "gray.700" }}
+                      fontSize="md"
+                    >
+                    🎟️ Coupon Code
+                    </Button>
 
                 {/* Orders Dropdown */}
 

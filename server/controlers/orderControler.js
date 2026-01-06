@@ -2,6 +2,7 @@ import asyncHandler from "express-async-handler";
 import User from "../models/userModel.js";
 import Product from "../models/productModel.js";
 import Order from "../models/orderModel.js";
+import Offer from "../models/OfferModel.js";
 import BillingInvoice from "../models/billingInvoiceModel.js";
 import sendEmail from "../utils/sendEmail.js";
 import Razorpay from "razorpay";
@@ -11,17 +12,14 @@ import crypto from "crypto";
 // @route POST /api/orders
 // @access Private
 const addorderitems = asyncHandler(async (req, res) => {
-  console.log("🛒 Order request received from:", req.user.email);
-
   const {
     orderItems,
     shippingAddress,
     paymentMethod,
-    itemsPrice,
     taxPrice,
     shippingPrice,
     totalPrice,
-    shippingRates,
+    couponCode,
   } = req.body;
 
   if (!orderItems || orderItems.length === 0) {
@@ -29,19 +27,17 @@ const addorderitems = asyncHandler(async (req, res) => {
     throw new Error("No order items");
   }
 
-  // ✅ Identify if it's COD
-  const isCOD = paymentMethod === "Cash on Delivery";
-
+  // ✅ Create order
   const order = new Order({
     user: req.user._id,
     orderItems,
     shippingAddress,
     paymentMethod,
-    itemsPrice,
     taxPrice,
     shippingPrice,
     totalPrice,
     shippingRates,
+    couponCode,
     isPaid: !isCOD, // false for COD, true for online
     paidAt: !isCOD ? Date.now() : null,
     orderStatus: !isCOD ? "CONFIRMED" : "ORDERED",
@@ -53,83 +49,31 @@ const addorderitems = asyncHandler(async (req, res) => {
           email_address: req.user.email,
         }
       : req.body.paymentResult || {},
+    couponCode,
+    isPaid: true,
+    paidAt: Date.now(),
   });
 
-  let createdOrder;
-  try {
-    createdOrder = await order.save();
-    console.log("✅ Order saved successfully:", createdOrder._id);
+  const createdOrder = await order.save();
 
-    // Reduce stock for each product
-    // Reduce stock for each product by size
-    // 🔒 Reduce stock safely
-    // 🔽 Reduce stock per size (controller-level)
-    for (const item of orderItems) {
-      if (!item.size) {
-        throw new Error(`Size missing for product ${item.product}`);
-      }
-      const product = await Product.findById(item.product);
+  // ✅ Clear user's cart
+  await User.findByIdAndUpdate(req.user._id, { $set: { cartItems: [] } });
 
-      if (!product) {
-        throw new Error("Product not found");
-      }
+  // ✅ Update coupon usage if couponCode exists
+  if (couponCode) {
+    const offer = await Offer.findOne({ code: couponCode.toUpperCase() });
 
-      const stockBySize = product.productdetails.stockBySize;
+    if (offer) {
+      // Increment used count
+      offer.usedCount = (offer.usedCount || 0) + 1;
 
-      const sizeIndex = stockBySize.findIndex((s) => s.size === item.size);
-
-      if (sizeIndex === -1) {
-        throw new Error(`Size ${item.size} not found`);
+      // Add user to usedBy if not already there
+      if (!offer.usedBy.includes(req.user._id)) {
+        offer.usedBy.push(req.user._id);
       }
 
-      if (stockBySize[sizeIndex].stock < item.qty) {
-        throw new Error(
-          `Insufficient stock for ${product.brandname} - ${item.size}`
-        );
-      }
-
-      // ✅ Reduce size stock
-      stockBySize[sizeIndex].stock -= item.qty;
-
-      // 🔔 CRITICAL LINE (this is what you were missing)
-      product.markModified("productdetails.stockBySize");
-
-      await product.save();
+      await offer.save();
     }
-
-    console.log("📦 Product stock updated for order items");
-  } catch (err) {
-    console.error("❌ Mongoose Save Error:", err.message);
-    return res
-      .status(500)
-      .json({ message: "Order not saved", error: err.message });
-  }
-
-  // ✅ Send order confirmation email
-  try {
-    await sendEmail({
-      email: req.user.email,
-      status: "Created",
-      orderId: createdOrder._id,
-    });
-    console.log("✅ Order status email sent to:", req.user.email);
-  } catch (error) {
-    console.error("❌ Error sending order email:", error.message);
-  }
-
-  // ✅ Update user order history
-  await User.findByIdAndUpdate(req.user._id, {
-    $push: { orderHistory: createdOrder._id },
-  });
-
-  // ✅ Clear cart
-  try {
-    await User.findByIdAndUpdate(req.user._id, {
-      $set: { cartItems: [] },
-    });
-    console.log("🧹 User cartItems cleared");
-  } catch (err) {
-    console.error("❌ Failed to clear cartItems:", err.message);
   }
 
   res.status(201).json(createdOrder);
@@ -484,28 +428,87 @@ const razorpay = new Razorpay({
 // CREATE ORDER
 const createRazorpayOrder = async (req, res) => {
   try {
-    const order = await razorpay.orders.create({
-      amount: Number(req.body.amount) * 100,
-      currency: "INR",
-      receipt: "order_" + Date.now(),
+    const { couponCode, shippingPrice } = req.body;
+
+    // 🔐 Get user from auth middleware
+    const user = await User.findById(req.user._id);
+
+    if (!user || user.cartItems.length === 0) {
+      return res.status(400).json({ message: "Cart is empty" });
+    }
+
+    let subtotal = 0;
+
+    // 🔐 Calculate subtotal ONLY from DB
+    for (const item of user.cartItems) {
+      const product = await Product.findById(item.product);
+
+      if (!product) {
+        return res.status(400).json({ message: "Product not found" });
+      }
+
+      subtotal += product.price * item.qty;
+    }
+
+    // 🧮 Tax (5%)
+    const taxAmount = (subtotal * 5) / 100;
+
+    // 🚚 Shipping
+    const shippingAmount = Number(shippingPrice || 0);
+
+    // 🎟️ Coupon discount
+    let discountAmount = 0;
+
+    if (couponCode) {
+      const offer = await Offer.findOne({
+        code: couponCode.toUpperCase(),
+      });
+
+      if (!offer) {
+        return res.status(400).json({ message: "Invalid coupon" });
+      }
+
+      if (offer.expiryDate && offer.expiryDate < new Date()) {
+        return res.status(400).json({ message: "Coupon expired" });
+      }
+
+      discountAmount = (subtotal * offer.offerPercentage) / 100;
+    }
+
+    // 💰 Final amount
+    const finalAmount = subtotal + taxAmount + shippingAmount - discountAmount;
+
+    if (finalAmount < 1) {
+      return res.status(400).json({ message: "Final amount too low" });
+    }
+
+    // 🔢 Round properly
+    const roundedFinalAmount = Math.round(finalAmount * 100) / 100;
+
+    console.log("💰 Razorpay Amount Breakdown:", {
+      subtotal,
+      taxAmount,
+      shippingAmount,
+      discountAmount,
+      roundedFinalAmount,
     });
-    console.log("✅ Order created:", order);
+
+    // 💳 Create Razorpay Order
+    const razorpayOrder = await razorpay.orders.create({
+      amount: Math.round(roundedFinalAmount * 100), // paise
+      currency: "INR",
+      receipt: `order_${Date.now()}`,
+    });
+
     res.json({
-      id: order.id,
-      amount: order.amount,
-      currency: order.currency,
+      id: razorpayOrder.id,
+      amount: razorpayOrder.amount,
+      currency: razorpayOrder.currency,
       keyId: process.env.RAZORPAY_KEY_ID,
     });
   } catch (err) {
-    console.error("❌ Razorpay Full Error:", {
-      message: err.message,
-      error: err.error,
-      stack: err.stack,
-    });
-
-    res.status(500).json({
-      message: err.message || "Razorpay order creation failed",
-    });
+    console.error("❌ Razorpay error:", err);
+    res.status(500).json({ message: "Razorpay order failed" });
   }
 };
 
@@ -618,7 +621,7 @@ const getOrderStatusCounts = asyncHandler(async (req, res) => {
 // @route   POST /api/orders/billinginvoice
 // @access  Private/Admin
 const createBillingInvoice = asyncHandler(async (req, res) => {
-  console.log("Incoming Billing Invoice Request Body:", req.body); // 🐞 log to debug
+  console.log("Incoming Billing Invoice Request Body:", req.body);
 
   const { logo, from, to, invoiceNumber, date, items, notes, signature } =
     req.body;
