@@ -66,7 +66,7 @@ router.post(
   uploadProducts
 );
 router.get("/:id/full",optionalAuth, getProductFullById);
-router.route("/:id/reviews").post(protect, createproductreview);
+// router.route("/:id/reviews").post(protect, createproductreview);
 router.route("/getcart").get(protect, getCart);
 router.route("/:cartItemId/deletecart").delete(protect, deleteCartItem);
 router.route("/:id/addtocart").post(protect, addToCart);

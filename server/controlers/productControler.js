@@ -1257,7 +1257,7 @@ export {
   deleteProduct,
   createProduct,
   updateProduct,
-  createproductreview,
+  // createproductreview,
   uploadProducts,
   addToCart,
   getCart,
