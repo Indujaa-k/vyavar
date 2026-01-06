@@ -112,7 +112,8 @@
 
 // export default SubscriptionPayment; 
 
-import React, { useEffect, useState } from "react";
+
+import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   createSubscriptionOrder,
@@ -136,21 +137,16 @@ import { CheckIcon } from "@chakra-ui/icons";
 
 const SubscriptionPayment = () => {
   const dispatch = useDispatch();
-  const [billingCycle, setBillingCycle] = useState("yearly");
 
   /* ================= REDUX STATE ================= */
   const { userInfo } = useSelector((state) => state.userLogin);
-  const { loading: userLoading, user } = useSelector(
-    (state) => state.userDetails
-  );
-  const { subscriptions, loading: subsLoading } = useSelector(
+  const { loading: userLoading, user } = useSelector((state) => state.userDetails);
+  const { subscriptions = [], loading: subsLoading } = useSelector(
     (state) => state.subscriptionList
   );
-  const {
-    loading: orderLoading,
-    order,
-    error: orderError,
-  } = useSelector((state) => state.subscriptionOrder);
+  const { loading: orderLoading, order, error: orderError } = useSelector(
+    (state) => state.subscriptionOrder
+  );
   const { success: confirmSuccess } = useSelector(
     (state) => state.subscriptionConfirm
   );
@@ -158,25 +154,32 @@ const SubscriptionPayment = () => {
   /* ================= FETCH DATA ================= */
   useEffect(() => {
     dispatch(getUserDetails("profile"));
+
+    // fetch active plan ONLY if user is not already subscribed
     if (!user?.isSubscribed) {
       dispatch(getActiveSubscription());
     }
   }, [dispatch, user?.isSubscribed, confirmSuccess]);
 
-  /* ================= ACTIVE PLAN LOGIC (UNCHANGED) ================= */
+  /* ================= ACTIVE ADMIN PLAN ================= */
   const today = new Date();
-
-  const activePlan = subscriptions?.find(
+  const activeAdminPlan = subscriptions.find(
     (p) =>
       p.isActive &&
       new Date(p.startDate) <= today &&
       new Date(p.endDate) >= today
   );
 
-  /* ================= PAY ================= */
+  /* ================= USER SUBSCRIPTION (FROM USER DB) ================= */
+  const userSubscription = user?.isSubscribed ? user.subscription : null;
+
+  /* ================= PLAN TO SHOW ================= */
+  const planToShow = userSubscription || activeAdminPlan;
+
+  /* ================= PAYMENT ================= */
   const handlePayment = () => {
-    if (!activePlan) return;
-    dispatch(createSubscriptionOrder(activePlan._id));
+    if (!activeAdminPlan) return;
+    dispatch(createSubscriptionOrder(activeAdminPlan._id));
   };
 
   /* ================= RAZORPAY ================= */
@@ -198,7 +201,11 @@ const SubscriptionPayment = () => {
             razorpayOrderId: response.razorpay_order_id,
             razorpaySignature: response.razorpay_signature,
           })
-        );
+        )
+        .then(() => {
+          // ✅ REFRESH USER DATA AFTER SUCCESSFUL PAYMENT
+          dispatch(getUserDetails("profile"));
+        });
       },
       prefill: {
         name: userInfo?.name,
@@ -220,28 +227,29 @@ const SubscriptionPayment = () => {
     );
   }
 
-  /* ================= NO ACTIVE SUBSCRIPTION ================= */
-if (!activePlan) {
-  return (
-    <Box bg="#1a2b33" minH="100vh" py={20} px={10}>
-      <Flex
-        align="center"
-        justify="center"
-        minH="60vh"
-        direction="column"
-        color="white"
-      >
-        <Text fontSize="3xl" fontWeight="bold" mb={4}>
-          No Subscription Available
-        </Text>
-        <Text fontSize="lg" color="gray.300">
-          Please come back later 
-        </Text>
-      </Flex>
-    </Box>
-  );
-}
+  /* ================= NO PLAN AT ALL ================= */
+  if (!planToShow) {
+    return (
+      <Box bg="#1a2b33" minH="100vh" py={20} px={10}>
+        <Flex
+          align="center"
+          justify="center"
+          minH="60vh"
+          direction="column"
+          color="white"
+        >
+          <Text fontSize="3xl" fontWeight="bold" mb={4}>
+            No Subscription Available
+          </Text>
+          <Text fontSize="lg" color="gray.300">
+            Please come back later
+          </Text>
+        </Flex>
+      </Box>
+    );
+  }
 
+  /* ================= UI ================= */
   return (
     <Box bg="#1a2b33" minH="100vh" py={20} px={10}>
       <Flex
@@ -254,15 +262,14 @@ if (!activePlan) {
         {/* LEFT SIDE */}
         <Box color="white" flex="1" pr={{ md: 10 }} mb={{ base: 10, md: 0 }}>
           <Text fontSize={{ base: "4xl", md: "6xl" }} fontWeight="bold">
-            {activePlan?.title || "Subscription"}
+            {planToShow.title}
           </Text>
-
           <Text fontSize="xl" mt={6}>
-            {activePlan?.description}
+            {planToShow.description}
           </Text>
         </Box>
 
-        {/* RIGHT SIDE CARD */}
+        {/* RIGHT CARD */}
         <Box
           bg="white"
           p={8}
@@ -270,62 +277,44 @@ if (!activePlan) {
           boxShadow="2xl"
           width={{ base: "100%", md: "420px" }}
         >
-          {/* TOGGLE (UI ONLY) */}
-          <HStack bg="#f4f6f8" p={1} borderRadius="md" mb={6}>
-            {/* <Button
-              flex="1"
-              size="sm"
-              bg={billingCycle === "monthly" ? "white" : "transparent"}
-              onClick={() => setBillingCycle("monthly")}
-            >
-              Monthly
-            </Button>
-            <Button
-              flex="1"
-              size="sm"
-              bg={billingCycle === "yearly" ? "gray.500" : "transparent"}
-              color={billingCycle === "yearly" ? "white" : "gray.600"}
-              onClick={() => setBillingCycle("yearly")}
-            >
-              Yearly
-            </Button> */}
+          <HStack bg="#f4f6f8" p={3} borderRadius="md" mb={6}>
             <Text fontSize="2xl" fontWeight="bold">
-              {activePlan?.title || "Subscription"}
+              {planToShow.title}
             </Text>
           </HStack>
 
-          {/* PRICE */}
           <Text fontSize="2xl" fontWeight="bold" mb={1}>
-            ₹{activePlan?.price}
+            ₹{planToShow.price}
           </Text>
 
-          {activePlan?.discount > 0 && (
+          {/* DISCOUNT */}
+          {planToShow.discountPercent > 0 && (
             <Badge colorScheme="green" mb={4}>
-              {activePlan.discount}% OFF
+              {planToShow.discountPercent}% OFF
             </Badge>
           )}
 
           {/* OFFERS */}
           <List spacing={3} mb={6} color="gray.700">
-            {activePlan?.offers?.map((offer, index) => (
-              <ListItem key={index} fontSize="sm">
-                <ListIcon as={CheckIcon} color="green.500" />
-                {offer}
-              </ListItem>
-            ))}
+            {Array.isArray(planToShow.offers) &&
+              planToShow.offers.map((offer, index) => (
+                <ListItem key={index} fontSize="sm">
+                  <ListIcon as={CheckIcon} color="green.500" />
+                  {offer}
+                </ListItem>
+              ))}
           </List>
 
-          {/* DATE INFO */}
+          {/* DATES */}
           <Text fontSize="xs" color="gray.500" mb={4}>
-            Valid from
-            {new Date(activePlan?.startDate).toLocaleDateString()} –{" "}
-            {new Date(activePlan?.endDate).toLocaleDateString()}
+            Valid from {new Date(planToShow.startDate).toLocaleDateString()} –{" "}
+            {new Date(planToShow.endDate).toLocaleDateString()}
           </Text>
 
           {/* ACTION */}
           {user?.isSubscribed ? (
             <Badge colorScheme="green" width="100%" textAlign="center" p={2}>
-              You already have an active subscription
+              Already Subscribed
             </Badge>
           ) : (
             <Button

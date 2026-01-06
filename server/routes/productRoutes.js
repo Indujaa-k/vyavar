@@ -6,7 +6,6 @@ import {
   deleteProduct,
   createProduct,
   updateProduct,
-  createproductreview,
   uploadProducts,
   addToCart,
   getCart,
@@ -25,14 +24,16 @@ import {
   markReviewNotHelpful,
   getProductGroup,
   updateVariant,
+  createProductReview,
 } from "../controlers/productControler.js";
 
-import { uploadProductFiles, uploadMultipleImages } from "../multer/multer.js";
+import { uploadProductFiles, uploadMultipleImages,uploadReviewImages, } from "../multer/multer.js";
 import { protect, adminOrSeller } from "../middleware/authMiddleware.js";
 import upload from "../middleware/upload.js";
+import optionalAuth from "../middleware/optionalAuthMiddleware.js";
 // --- REVIEW ROUTES ---
 // Pending reviews
-router.route("/sku/:sku").get(getProductBySku);
+router.route("/sku/:sku").get(optionalAuth,getProductBySku);
 router.route("/reviews/pending").get(protect, adminOrSeller, getPendingReviews);
 
 // Delete a review by reviewId
@@ -46,10 +47,14 @@ router
   .put(protect, adminOrSeller, approveReview);
 
 // Create a review for a product
-router.route("/:id/reviews").post(protect, createproductreview);
+router.route("/:id/reviews").post(
+  protect,
+  uploadReviewImages,
+createProductReview
+);
 
 //products
-router.route("/").get(getProducts);
+router.route("/").get(optionalAuth,getProducts);
 router
   .route("/create")
   .post(protect, adminOrSeller, uploadProductFiles, createProduct);
@@ -60,14 +65,14 @@ router.post(
   excelUpload.single("file"),
   uploadProducts
 );
-router.get("/:id/full", getProductFullById);
+router.get("/:id/full",optionalAuth, getProductFullById);
 router.route("/:id/reviews").post(protect, createproductreview);
 router.route("/getcart").get(protect, getCart);
 router.route("/:cartItemId/deletecart").delete(protect, deleteCartItem);
 router.route("/:id/addtocart").post(protect, addToCart);
 router
   .route("/:id")
-  .get(getProductById)
+  .get(optionalAuth,getProductById)
 
   .delete(protect, adminOrSeller, deleteProduct)
   .put(protect, adminOrSeller, uploadProductFiles, updateProduct);
@@ -99,7 +104,7 @@ router.put(
   adminOrSeller,
   updateProductGroup
 );
-router.get("/group/:groupId", getProductsByGroupId);
+router.get("/group/:groupId", optionalAuth,getProductsByGroupId);
 // Mark review as Helpful / Not Helpful
 router.put("/:productId/reviews/:reviewId/helpful", protect, markReviewHelpful);
 router.get("/group/comman/:groupId", protect, adminOrSeller, getProductGroup);
@@ -108,6 +113,5 @@ router.put(
   protect,
   markReviewNotHelpful
 );
-
 export default router;
       

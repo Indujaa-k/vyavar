@@ -10,6 +10,7 @@ import { uploadImagesToCloudinary } from "../multer/multer.js";
 import upload from "../middleware/upload.js";
 import fs from "fs";
 import { v2 as cloudinary } from "cloudinary";
+import { applySubscriptionPrice } from "../utils/applySubscriptionPrice.js";
 
 // @desc Fetch all products
 // @route GET /api/products
@@ -117,28 +118,86 @@ const getProducts = asyncHandler(async (req, res) => {
   }
 
   // Fetch Products
-  const products = await Product.find(filterCriteria).sort(sortOptions);
+  const products = await Product.find(filterCriteria).sort(sortOptions).lean();
 
-  res.json(products);
+  const finalProducts = products.map((product) =>
+    applySubscriptionPrice(product, req.user)
+  );
+
+  res.json(finalProducts);
 });
 
 // @desc Fetch single  product
 // @route GET /api/products/:id
 // @access Public
+// @desc    Fetch single product
+// @route   GET /api/products/:id
+// @access  Public
 const getProductById = asyncHandler(async (req, res) => {
-  const product = await Product.findById(req.params.id).populate({
-    path: "reviews.user",
-    select: "name profilePicture",
-  });
-  if (product) {
-    res.json(product);
-  } else {
-    // status it's 500 by default cuz of errHandler
+  const product = await Product.findById(req.params.id)
+    .populate({
+      path: "reviews.user",
+      select: "name profilePicture",
+    })
+    .lean(); // plain JS object
+
+  if (!product) {
     res.status(404);
     throw new Error("Product not found");
   }
+
+  // ✅ Filter only approved reviews
+  const approvedReviews = product.reviews.filter((r) => r.approved === true);
+
+  // ✅ Apply subscription price
+  const pricedProduct = applySubscriptionPrice(product, req.user);
+
+  // ✅ Attach approved reviews
+  pricedProduct.reviews = approvedReviews;
+
+  res.json(pricedProduct);
 });
 
+const createProductReview = asyncHandler(async (req, res) => {
+  const { rating, comment } = req.body;
+
+  if (!rating || !comment) {
+    res.status(400);
+    throw new Error("Rating and comment required");
+  }
+
+  const product = await Product.findById(req.params.id);
+  if (!product) {
+    res.status(404);
+    throw new Error("Product not found");
+  }
+
+  if (!req.files || req.files.length !== 3) {
+    return res.status(400).json({
+      message: "Please upload exactly 3 review images",
+    });
+  }
+
+  const photos = req.files.map((file) => file.path);
+
+  const review = {
+    name: req.user.name,
+    rating: Number(rating),
+    comment,
+    photos,
+    user: req.user._id,
+  };
+
+  product.reviews.push(review);
+  product.numReviews = product.reviews.length;
+  product.rating =
+    product.reviews.reduce((acc, r) => acc + r.rating, 0) /
+    product.reviews.length;
+
+  await product.save();
+
+  res.status(201).json({ message: "Review added" });
+});
 // Alternative: If you want a separate endpoint for variants
 const getProductVariants = async (req, res) => {
   try {
@@ -178,8 +237,10 @@ const getProductBySku = asyncHandler(async (req, res) => {
 
   // 4️⃣ Response
   res.json({
-    product,
-    variants,
+    product: applySubscriptionPrice(product.toObject(), req.user),
+    variants: variants.map((v) =>
+      applySubscriptionPrice(v.toObject(), req.user)
+    ),
   });
 });
 
@@ -220,14 +281,19 @@ const addToCart = asyncHandler(async (req, res) => {
       (item) => item._id.toString() !== existingCartItem._id.toString()
     );
   } else if (existingCartItem) {
-    existingCartItem.qty += qty; // 🔥 increment
-    existingCartItem.price = existingCartItem.qty * product.price;
+    const pricedProduct = applySubscriptionPrice(product.toObject(), user);
+
+    existingCartItem.qty = qty;
+
+    existingCartItem.price = qty * pricedProduct.subscriptionPrice;
   } else {
+    const pricedProduct = applySubscriptionPrice(product.toObject(), user);
+
     user.cartItems.push({
       product: product._id,
       qty,
       size,
-      price: qty * product.price,
+      price: qty * pricedProduct.subscriptionPrice, // ✅ CORRECT
     });
   }
 
@@ -253,9 +319,16 @@ const getCart = asyncHandler(async (req, res) => {
     throw new Error("User not found");
   }
 
-  res.status(200).json({
-    cartItems: user.cartItems,
+  const cartItems = user.cartItems.map((item) => {
+    const pricedProduct = applySubscriptionPrice(item.product.toObject(), user);
+
+    return {
+      ...item.toObject(),
+      product: pricedProduct,
+    };
   });
+
+  res.status(200).json({ cartItems });
 });
 
 // @desc detlete cart product
@@ -654,95 +727,95 @@ const uploadProducts = asyncHandler(async (req, res) => {
 // @desc Create new Review
 // @route PUT /api/products/:id/reviews
 // @access Private
-const createproductreview = asyncHandler(async (req, res) => {
-  console.log("Incoming Review Request:", req.body);
-  const { rating, comment } = req.body;
+// const createproductreview = asyncHandler(async (req, res) => {
+//   console.log("Incoming Review Request:", req.body);
+//   const { rating, comment } = req.body;
 
-  // ✅ Fetch existing product instead of creating a new one
-  const product = await Product.findById(req.params.id);
+//   // ✅ Fetch existing product instead of creating a new one
+//   const product = await Product.findById(req.params.id);
 
-  if (!product) {
-    return res.status(404).json({ message: "Product not found" });
-  }
+//   if (!product) {
+//     return res.status(404).json({ message: "Product not found" });
+//   }
 
-  const alreadyReviewed = product.reviews.find(
-    (r) => r.user.toString() === req.user._id.toString()
-  );
-  if (alreadyReviewed) {
-    res.status(400);
-    throw new Error("Product already reviewed");
-  }
+//   const alreadyReviewed = product.reviews.find(
+//     (r) => r.user.toString() === req.user._id.toString()
+//   );
+//   if (alreadyReviewed) {
+//     res.status(400);
+//     throw new Error("Product already reviewed");
+//   }
 
-  const review = {
-    name: req.user.name,
-    rating: Number(rating),
-    comment,
-    user: req.user._id,
-    approved: false,
-    profilePicture: req.user.profilePicture,
-  };
+//   const review = {
+//     name: req.user.name,
+//     rating: Number(rating),
+//     comment,
+//     user: req.user._id,
+//     approved: false,
+//     profilePicture: req.user.profilePicture,
+//   };
 
-  product.reviews.push(review);
-  product.numReviews = product.reviews.length;
-  product.rating =
-    product.reviews.reduce((acc, item) => item.rating + acc, 0) /
-    product.reviews.length;
+//   product.reviews.push(review);
+//   product.numReviews = product.reviews.length;
+//   product.rating =
+//     product.reviews.reduce((acc, item) => item.rating + acc, 0) /
+//     product.reviews.length;
 
-  await product.save();
+//   await product.save();
 
-  /* ================= MAIL SECTION ================= */
+//   /* ================= MAIL SECTION ================= */
 
-  try {
-    console.log("➡️ Sending admin mail...");
+//   try {
+//     console.log("➡️ Sending admin mail...");
 
-    await reviewnotificatioEmail({
-      to: process.env.ADMIN_EMAIL,
-      subject: "📝 New Product Review Submitted",
-      text: `
-Product: ${product.brandname}
-Reviewer: ${req.user.name}
-Rating: ${rating}
-Comment: ${comment}
-    `,
-    });
+//     await reviewnotificatioEmail({
+//       to: process.env.ADMIN_EMAIL,
+//       subject: "📝 New Product Review Submitted",
+//       text: `
+// Product: ${product.brandname}
+// Reviewer: ${req.user.name}
+// Rating: ${rating}
+// Comment: ${comment}
+//     `,
+//     });
 
-    console.log("✅ Admin mail sent");
+//     console.log("✅ Admin mail sent");
 
-    console.log("➡️ Fetching sellers...");
-    const sellers = await User.find({
-      isSeller: true,
-      email: { $exists: true, $ne: "" },
-    });
-    console.log("🧾 SELLERS FOUND COUNT:", sellers.length);
+//     console.log("➡️ Fetching sellers...");
+//     const sellers = await User.find({
+//       isSeller: true,
+//       email: { $exists: true, $ne: "" },
+//     });
+//     console.log("🧾 SELLERS FOUND COUNT:", sellers.length);
 
-    if (sellers.length === 0) {
-      console.log("❌ SELLER NOT FOUND");
-    }
+//     if (sellers.length === 0) {
+//       console.log("❌ SELLER NOT FOUND");
+//     }
 
-    for (const seller of sellers) {
-      console.log("📧 Sending mail to seller:", seller.email);
+//     for (const seller of sellers) {
+//       console.log("📧 Sending mail to seller:", seller.email);
 
-      await reviewnotificatioEmail({
-        to: seller.email,
-        subject: "📝 New Product Review Submitted",
-        text: `
-Product: ${product.brandname}
-Rating: ${rating}
-Comment: ${comment}
-      `,
-      });
-    }
+//       await reviewnotificatioEmail({
+//         to: seller.email,
+//         subject: "📝 New Product Review Submitted",
+//         text: `
+// Product: ${product.brandname}
+// Rating: ${rating}
+// Comment: ${comment}
+//       `,
+//       });
+//     }
 
-    console.log("✅ Seller mail section completed");
-  } catch (err) {
-    console.error("❌ MAIL ERROR:", err);
-  }
+//     console.log("✅ Seller mail section completed");
+//   } catch (err) {
+//     console.error("❌ MAIL ERROR:", err);
+//   }
 
-  /* ================= END MAIL ================= */
+//   /* ================= END MAIL ================= */
 
-  // 🔥 SEND RESPONSE ONLY AFTER ALL LOGIC
-  res.status(201).json({ message: "Review added & notifications sent" });
-});
+//   // 🔥 SEND RESPONSE ONLY AFTER ALL LOGIC
+//   res.status(201).json({ message: "Review added & notifications sent" });
+// });
 
 // const createproductreview = asyncHandler(async (req, res) => {
 //   console.log("Incoming Review Request:", req.body);
@@ -872,6 +945,7 @@ const getPendingReviews = asyncHandler(async (req, res) => {
             name: review.name,
             rating: review.rating,
             comment: review.comment,
+            photos: review.photos || [],
             createdAt: review.createdAt,
           });
         }
@@ -938,8 +1012,8 @@ const getProductFullById = asyncHandler(async (req, res) => {
   const group = await ProductGroup.findById(product.productGroupId).lean();
 
   res.json({
-    product,
-    variants,
+    product: applySubscriptionPrice(product, req.user),
+    variants: variants.map((v) => applySubscriptionPrice(v, req.user)),
     group,
   });
 });
@@ -1096,14 +1170,18 @@ const getProductsByGroupId = asyncHandler(async (req, res) => {
     throw new Error("Group ID is required");
   }
 
-  const products = await Product.find({ productGroupId: groupId });
+  const products = await Product.find({ productGroupId: groupId }).lean();
+
+  const finalProducts = products.map((product) =>
+    applySubscriptionPrice(product, req.user)
+  );
 
   if (!products) {
     res.status(404);
     throw new Error("No products found for this group");
   }
 
-  res.json(products); // ✅ Must return JSON
+  res.json(finalProducts); // ✅ Must return JSON
 });
 const getProductGroup = asyncHandler(async (req, res) => {
   const products = await Product.find({
@@ -1197,4 +1275,5 @@ export {
   getProductsByGroupId,
   getProductGroup,
   updateVariant,
+  createProductReview,
 };
