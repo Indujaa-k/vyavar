@@ -44,6 +44,7 @@ const addorderitems = asyncHandler(async (req, res) => {
     shippingRates,
     isPaid: !isCOD, // false for COD, true for online
     paidAt: !isCOD ? Date.now() : null,
+    orderStatus: !isCOD ? "CONFIRMED" : "ORDERED",
     paymentResult: isCOD
       ? {
           id: "COD-" + Date.now(),
@@ -164,6 +165,12 @@ const updateOrderToPaid = asyncHandler(async (req, res) => {
       update_time: req.body.update_time,
       email_address: req.body.payer.email_address,
     };
+
+    // ✅ Add this line: set orderStatus to CONFIRMED if it was not set yet
+    if (!order.orderStatus || order.orderStatus === "ORDERED") {
+      order.orderStatus = "CONFIRMED";
+    }
+
     const updatedOrder = await order.save();
     res.json(updatedOrder);
   } else {
@@ -178,7 +185,7 @@ const updateOrderToPaid = asyncHandler(async (req, res) => {
 const updateOrderToDelivered = asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.id);
   if (order) {
-    order.isDelivered = true;
+    order.orderStatus = "DELIVERED";
     order.deliveredAt = Date.now();
     const updatedOrder = await order.save();
     res.json(updatedOrder);
@@ -206,7 +213,7 @@ const GetOrders = asyncHandler(async (req, res) => {
 
   let filter = {};
   if (status && status !== "all") {
-    filter.status = status; // Apply filter only if status is provided
+    filter.orderStatus = status;
   }
 
   const orders = await Order.find(filter).populate("user", "id name").populate({
@@ -223,7 +230,7 @@ const GetOrders = asyncHandler(async (req, res) => {
 const getOrdersForDeliveryPerson = asyncHandler(async (req, res) => {
   const orders = await Order.find({
     deliveryPerson: req.user._id,
-    isPacked: true,
+    orderStatus: "OUT_FOR_DELIVERY",
   }).populate("user", "name email");
   res.json(orders);
 });
@@ -233,8 +240,8 @@ const getOrdersForDeliveryPerson = asyncHandler(async (req, res) => {
 // access Private Delivery
 const acceptOrder = asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.id);
-  if (order && order.isPacked && !order.isAcceptedByDelivery) {
-    order.isAcceptedByDelivery = true;
+  if (order && order.orderStatus === "PACKED") {
+    order.orderStatus = "OUT_FOR_DELIVERY";
     await order.save();
     try {
       await sendEmail({
@@ -273,9 +280,10 @@ const rejectOrder = asyncHandler(async (req, res) => {
 // access Private Delivery
 const markOrderAsCompleted = asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.id);
-  if (order && order.isAcceptedByDelivery && !order.isDelivered) {
-    order.isDelivered = true;
+  if (order && order.orderStatus === "OUT_FOR_DELIVERY") {
+    order.orderStatus = "DELIVERED";
     order.deliveredAt = Date.now();
+
     if (order.paymentMethod === "COD") {
       order.isPaid = true;
       order.paidAt = Date.now();
@@ -328,7 +336,9 @@ const getUndeliveredOrders = asyncHandler(async (req, res) => {
     const totalOrders = await Order.countDocuments();
     console.log("📦 Total Orders:", totalOrders);
 
-    const orders = await Order.find({ isDelivered: false })
+    const orders = await Order.find({
+      orderStatus: { $ne: "DELIVERED" },
+    })
       .populate("user", "name email")
       .populate("orderItems.product", "brandname images price");
 
@@ -359,7 +369,7 @@ const assignOrderToDeliveryPerson = asyncHandler(async (req, res) => {
     .populate("orderItems.product", "name image");
   if (order) {
     order.deliveryPerson = deliveryPersonId;
-    order.isPacked = true;
+    order.orderStatus = "PACKED";
     await order.save();
     res.json({ message: "Order assigned to delivery person" });
   } else {
@@ -558,56 +568,40 @@ const StripePayment = asyncHandler(async (req, res) => {
 // @desc    update Trackingststatus
 // @route   put /api/orders/:id/updatestatus
 // @access  private/admin
-const updateOrderStatus = asyncHandler(async (req, res) => {
+export const updateOrderStatus = async (req, res) => {
   const { status } = req.body;
 
-  const order = await Order.findById(req.params.id).populate(
-    "user",
-    "email name"
-  ); // ✅ MUST
+  const order = await Order.findById(req.params.id);
 
   if (!order) {
-    res.status(404);
-    throw new Error("Order not found");
+    return res.status(404).json({ message: "Order not found" });
   }
 
-  if (status === "Confirmed") {
-    order.isPaid = true;
-    order.isPacked = false;
-    order.isAcceptedByDelivery = false;
-  }
-
-  if (status === "Packed") {
-    order.isPacked = true;
-    order.isAcceptedByDelivery = false;
-  }
-
-  if (status === "OutForDelivery") {
-    order.isAcceptedByDelivery = true;
-  }
+  // 🔥 THIS IS THE KEY LINE
+  order.orderStatus = status;
 
   await order.save();
 
-  res.json({ message: `Order updated to ${status}` });
-});
+  res.json({
+    message: "Order status updated",
+    orderStatus: order.orderStatus,
+  });
+};
 
 // @desc   Get order statuses count
 // @route  GET /api/orders/status-count
 // @access Admin
 const getOrderStatusCounts = asyncHandler(async (req, res) => {
   const confirmed = await Order.countDocuments({
-    isPaid: true,
-    isPacked: false,
+    orderStatus: "CONFIRMED",
   });
 
   const packed = await Order.countDocuments({
-    isPacked: true,
-    isAcceptedByDelivery: false,
+    orderStatus: "PACKED",
   });
 
   const outForDelivery = await Order.countDocuments({
-    isAcceptedByDelivery: true,
-    isDelivered: false,
+    orderStatus: "OUT_FOR_DELIVERY",
   });
 
   const allOrders = await Order.countDocuments();
@@ -619,7 +613,6 @@ const getOrderStatusCounts = asyncHandler(async (req, res) => {
     outForDelivery,
   });
 });
-
 
 // @desc create billing invoice to an order
 // @route   POST /api/orders/billinginvoice
@@ -725,7 +718,6 @@ export {
   incomebycity,
   getTransactions,
   StripePayment,
-  updateOrderStatus,
   getOrderStatusCounts,
   createBillingInvoice,
   getBillingInvoiceByNumber,

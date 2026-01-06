@@ -33,7 +33,7 @@ const OrdersScreen = () => {
   const [statusUpdates, setStatusUpdates] = useState({}); // For storing dropdown selections
   const { status } = useParams();
   const dispatch = useDispatch();
-  const [activeTab, setActiveTab] = useState("ALL");
+  // const [activeTab, setActiveTab] = useState("ALL");
 
   const orderList = useSelector((state) => state.orderList);
   const { loading, error, orders } = orderList;
@@ -69,10 +69,17 @@ const OrdersScreen = () => {
 
   const filteredOrders = orders
     ?.filter((order) => {
-      if (activeTab === "ALL") return true;
-      if (activeTab === "CONFIRMED") return order.isPaid;
-      if (activeTab === "PACKED") return order.isPacked;
-      if (activeTab === "OUT_FOR_DELIVERY") return order.isAcceptedByDelivery;
+      if (!status || status === "allorders") return true;
+
+      if (status === "confirmed") {
+        return order.isPaid === true && order.orderStatus === "CONFIRMED";
+      }
+
+      if (status === "packed") return order.orderStatus === "PACKED";
+
+      if (status === "outForDelivery")
+        return order.orderStatus === "OUT_FOR_DELIVERY";
+
       return true;
     })
     .filter((order) =>
@@ -145,9 +152,9 @@ const OrdersScreen = () => {
                         <Th textAlign="center">Paid</Th>
                         <Th textAlign="center">Payment Method</Th>
                         <Th textAlign="center">Status</Th>
-                        <Th textAlign="center">Tracking No</Th>
+                        {/* <Th textAlign="center">Tracking No</Th> */}
                         <Th textAlign="center">Product Image</Th>
-                        <Th textAlign="center">size</Th>
+                        {/* <Th textAlign="center">size</Th> */}
                         <Th textAlign="center">Actions</Th>
                       </Tr>
                     </Thead>
@@ -174,34 +181,40 @@ const OrdersScreen = () => {
                           {order.paymentMethod || "N/A"}
                         </Td>
                         <Td textAlign="center">
-                          <Select
-                            value={
-                              statusUpdates[order._id] ||
-                              getOrderStatus(order).label
-                            }
-                            onChange={(e) => {
-                              const newStatus = e.target.value;
-                              // update local state
-                              setStatusUpdates((prev) => ({
-                                ...prev,
-                                [order._id]: newStatus,
-                              }));
-                              // optional: send axios immediately if you want instant update
-                              // handleStatusChange(order._id, newStatus);
-                            }}
-                            minW="150px"
-                          >
-                            <option value="CONFIRMED">Confirmed</option>
-                            <option value="PACKED">Packed</option>
-                            <option value="OUT_FOR_DELIVERY">
-                              Out for Delivery
-                            </option>
-                          </Select>
+                          {!status || status === "allorders" ? (
+                            <Select
+                              minW="180px"
+                              value={
+                                statusUpdates[order._id] ||
+                                order.orderStatus ||
+                                "CONFIRMED"
+                              }
+                              onChange={(e) =>
+                                setStatusUpdates((prev) => ({
+                                  ...prev,
+                                  [order._id]: e.target.value,
+                                }))
+                              }
+                            >
+                              <option value="CONFIRMED">Confirmed</option>
+                              <option value="PACKED">Packed</option>
+                              <option value="OUT_FOR_DELIVERY">
+                                Dispatched
+                              </option>
+                            </Select>
+                          ) : (
+                            <Badge colorScheme="blue">
+                              {order.orderStatus === "OUT_FOR_DELIVERY"
+                                ? "Dispatched"
+                                : order.orderStatus}
+                            </Badge>
+                          )}
                         </Td>
 
+                        {/* 
                         <Td textAlign="center">
                           {shipment.trackingNumber || "N/A"}
-                        </Td>
+                        </Td> */}
                         <Td textAlign="center">
                           <HStack spacing={2} justify="center">
                             {order.orderItems?.map((item, index) => (
@@ -223,7 +236,7 @@ const OrdersScreen = () => {
                             ))}
                           </HStack>
                         </Td>
-                        <Td textAlign="center">
+                        {/* <Td textAlign="center">
                           <VStack spacing={1}>
                             {order.orderItems.map((item) => (
                               <Text
@@ -235,17 +248,20 @@ const OrdersScreen = () => {
                               </Text>
                             ))}
                           </VStack>
-                        </Td>
+                        </Td> */}
 
                         <Td textAlign="center">
                           <Stack spacing={2}>
-                            <Button
-                              size="xs"
-                              colorScheme="green"
-                              onClick={() => handleStatusUpdate(order._id)}
-                            >
-                              Update
-                            </Button>
+                            {(!status || status === "allorders") && (
+                              <Button
+                                size="xs"
+                                colorScheme="green"
+                                onClick={() => handleStatusUpdate(order._id)}
+                              >
+                                Update
+                              </Button>
+                            )}
+
                             <Button size="xs" colorScheme="blue">
                               <Link to={`/order/${order._id}`}>
                                 <AiOutlineEdit size={14} /> Details

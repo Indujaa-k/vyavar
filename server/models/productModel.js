@@ -4,33 +4,31 @@ const reviewSchema = mongoose.Schema(
   {
     productId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Product", // Reference the Product model
-      required: false,
+      ref: "Product",
     },
     name: { type: String, required: true },
     profilePicture: { type: String, default: "" },
     rating: { type: Number, required: true },
     comment: { type: String, required: true },
 
+    photos: [
+      {
+        type: String, // Cloudinary / upload path
+      },
+    ],
+
     user: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
-      ref: "User", //relation betwen the review and the user
+      ref: "User",
     },
     approved: { type: Boolean, default: false },
-    helpful: {
-      type: Number,
-      default: 0,
-    },
-    notHelpful: {
-      type: Number,
-      default: 0,
-    },
+    helpful: { type: Number, default: 0 },
+    notHelpful: { type: Number, default: 0 },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
+
 
 const bannerSchema = mongoose.Schema(
   {
