@@ -60,14 +60,13 @@ import {
   INCOME_BY_PINCODE_SUCCESS,
   INCOME_BY_PINCODE_FAIL,
 } from "../constants/orderConstants";
+import { useState } from "react";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
 export const CreateOrder = (order) => async (dispatch, getState) => {
   try {
-    dispatch({
-      type: ORDER_CREATE_REQUEST,
-    });
+    dispatch({ type: ORDER_CREATE_REQUEST });
 
     const {
       userLogin: { userInfo },
@@ -81,21 +80,26 @@ export const CreateOrder = (order) => async (dispatch, getState) => {
     };
 
     const { data } = await axios.post(`${API_URL}/api/orders`, order, config);
+
     dispatch({
       type: ORDER_CREATE_SUCCESS,
       payload: data,
     });
+
+    // ❌ DO NOT CLEAR CART HERE
   } catch (error) {
     console.error("❌ Order API Error:", error.response?.data || error.message);
+
     dispatch({
       type: ORDER_CREATE_FAIL,
       payload:
-        error.response && error.response.data.message
-          ? error.response.data.message
-          : error.message,
+        error.response?.data?.message ||
+        error.message ||
+        "Order creation failed",
     });
   }
 };
+
 export const getOrderDetails = (id) => async (dispatch, getState) => {
   try {
     dispatch({
@@ -565,8 +569,10 @@ export const listTransactions = (filters) => async (dispatch, getState) => {
   }
 };
 // Action to process Razorpay payment
+
 export const processRazorpayPayment =
-  (amount) => async (dispatch, getState) => {
+  (cartItems, couponCode = null) =>
+  async (dispatch, getState) => {
     try {
       dispatch({ type: RAZORPAY_PAYMENT_REQUEST });
 
@@ -574,30 +580,43 @@ export const processRazorpayPayment =
         userLogin: { userInfo },
       } = getState();
 
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      };
-
       const { data } = await axios.post(
         `${API_URL}/api/orders/razorpay`,
-        { amount },
-        config
+        {
+          cartItems: cartItems.map((item) => ({
+            product: item.product._id,
+            qty: item.qty,
+            size: item.size,
+          })),
+          couponCode,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${userInfo.token}`,
+          },
+        }
       );
 
       dispatch({
         type: RAZORPAY_PAYMENT_SUCCESS,
         payload: data, // { id, amount, currency, keyId }
       });
+
+      // 🔥 VERY IMPORTANT
+      return data; // so component can open Razorpay
     } catch (error) {
       dispatch({
         type: RAZORPAY_PAYMENT_FAIL,
-        payload: error.response?.data?.message || "Razorpay payment failed",
+        payload:
+          error.response?.data?.message ||
+          error.message ||
+          "Razorpay payment failed",
       });
+
+      throw error; // allow component to catch
     }
   };
+
 export const updateOrderStatus =
   (orderId, status) => async (dispatch, getState) => {
     try {

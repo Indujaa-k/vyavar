@@ -9,6 +9,7 @@ import {
   Divider,
   Grid,
   useDisclosure,
+  Input,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -17,11 +18,10 @@ import {
   savepaymentmethod,
   fetchCart,
 } from "../../actions/cartActions";
-import Payment from "./PaypalPayment";
+import { getOfferByCouponCode } from "../../actions/offerActions";
 import { fetchShippingRates } from "../../actions/deliveryActions";
 import { saveShippingCost } from "../../actions/cartActions";
 import { saveShippingRates } from "../../actions/cartActions";
-import StripePayment from "./Stripepayment";
 import { createShipment } from "../../actions/deliveryActions";
 import { CreateOrder } from "../../actions/orderActions";
 import { getUserDetails } from "../../actions/userActions";
@@ -40,6 +40,9 @@ const Checkout = () => {
   }, 0);
 
   const { shippingAddress } = cart;
+  const [couponCode, setCouponCode] = useState("");
+  const [discountAmount, setDiscountAmount] = useState(0);
+
   const { rates, loading, error } = useSelector((state) => state.shipping);
   const [doorNo, setDoorNo] = useState(shippingAddress?.doorNo || "");
   const [street, setStreet] = useState(shippingAddress?.street || "");
@@ -62,9 +65,15 @@ const Checkout = () => {
     (acc, item) => acc + item.qty * item.product.price,
     0
   );
+  const offerValidate = useSelector((state) => state.offerValidate);
+  const { loading: couponLoading, offer, error: couponError } = offerValidate;
+
   const taxAmount = (subtotal * taxPercentage) / 100;
   const [shippingCost, setShippingCost] = useState(0);
-  const totalPrice = subtotal + taxAmount + shippingCost;
+  const rawTotal = subtotal + taxAmount + shippingCost - discountAmount;
+
+  const totalPrice = Number(rawTotal.toFixed(2));
+
   const userLogin = useSelector((state) => state.userLogin);
   const { userInfo } = userLogin;
   const orderCreate = useSelector((state) => state.orderCreate);
@@ -106,7 +115,52 @@ const Checkout = () => {
       currency: rate.currency || "USD",
     });
   };
+  const applyCouponHandler = () => {
+    if (!couponCode.trim()) {
+      toast({
+        title: "Enter coupon code",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
 
+    dispatch(getOfferByCouponCode(couponCode));
+  };
+
+  useEffect(() => {
+    if (offer) {
+      const discount = (subtotal * offer.offerPercentage) / 100;
+      setDiscountAmount(discount);
+
+      toast({
+        title: "Coupon applied",
+        description: `${offer.offerPercentage}% discount applied`,
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+
+    if (couponError) {
+      setDiscountAmount(0);
+
+      toast({
+        title: "Coupon Error",
+        description: couponError,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  }, [offer, couponError, subtotal, toast]);
+
+  // Reset coupon after cart clears or order success
+  useEffect(() => {
+    setDiscountAmount(0);
+    setCouponCode("");
+  }, [cart.cartItems.length, success]);
   const handleFetchRates = () => {
     if (cart.cartItems.length > 0) {
       const firstProduct = cart.cartItems[0].product;
@@ -169,28 +223,12 @@ const Checkout = () => {
   };
 
   const handleOrder = async (e) => {
-    if (e && e.preventDefault) {
-      e.preventDefault();
-    }
-
-    dispatch(
-      saveAddressshipping({
-        doorNo,
-        street,
-        nearestLandmark,
-        city,
-        state,
-        pin,
-        country,
-        phoneNumber,
-      })
-    );
-
-    const selectedPaymentMethod = cart.paymentMethod;
+    if (e?.preventDefault) e.preventDefault();
 
     try {
       const orderData = {
         user: userInfo._id,
+
         orderItems: cart.cartItems.map((item) => {
           if (!item.size) {
             throw new Error(`Size not selected for ${item.product.brandname}`);
@@ -198,27 +236,31 @@ const Checkout = () => {
 
           return {
             product: item.product._id,
-            name: item.product.brandname,
-            price: item.product.price,
+            name: item.product.brandname, // ✅ REQUIRED
+            price: item.product.price, // ✅ REQUIRED
             qty: item.qty,
-            size: item.size, // ✅ CRITICAL
+            size: item.size,
           };
         }),
+
         shippingAddress: recipientAddress,
-        shippingRates,
-        paymentMethod,
-        itemsPrice,
-        shippingPrice: shippingCost,
-        taxPrice: taxAmount,
-        totalPrice,
+
+        paymentMethod: "Razorpay",
+
+        taxPrice: taxAmount, // ✅ REQUIRED
+        shippingPrice: shippingCost, // ✅ REQUIRED
+        itemsPrice: subtotal, // optional but good
+        totalPrice: totalPrice, // ✅ REQUIRED
+
+        couponCode: couponCode || null,
       };
 
-      console.log("Final Order Payload:", orderData);
       dispatch(CreateOrder(orderData));
-    } catch (error) {
-      console.error("❌ Error creating order:", error);
+    } catch (err) {
+      console.error("❌ Order creation error:", err.message);
     }
   };
+
   useEffect(() => {
     dispatch(fetchCart());
   }, [dispatch]);
@@ -231,10 +273,15 @@ const Checkout = () => {
 
   useEffect(() => {
     if (success) {
-      console.log(order._id);
       navigate(`/order/${order._id}`);
+
+      dispatch({ type: "ORDER_CREATE_RESET" });
+      dispatch({ type: "CART_CLEAR_ITEMS" });
+      dispatch({ type: "OFFER_VALIDATE_RESET" });
+      setDiscountAmount(0);
+      setCouponCode("");
     }
-  }, [navigate, success, order]);
+  }, [success, navigate, order, dispatch]);
 
   return (
     <Box p={6} maxW="container.xl" mx="auto">
@@ -344,6 +391,31 @@ const Checkout = () => {
               <Text>Taxes (5%):</Text>
               <Text color={"grey"}>Rs. {taxAmount.toFixed(2)}</Text>
             </HStack>
+            <Divider my={3} />
+
+            <HStack w="full">
+              <Input
+                placeholder="Enter coupon code"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+              />
+              <Button
+                onClick={applyCouponHandler}
+                isLoading={couponLoading}
+                bg="black"
+                color="white"
+              >
+                Apply
+              </Button>
+            </HStack>
+
+            {discountAmount > 0 && (
+              <HStack justify="space-between" w="full" p="3">
+                <Text color="green.600">Coupon Discount</Text>
+                <Text color="green.600">- Rs. {discountAmount.toFixed(2)}</Text>
+              </HStack>
+            )}
+
             <HStack justify="space-between" w="full" p="3">
               <Text fontSize="lg" fontWeight="bold">
                 Final Total:
@@ -368,6 +440,8 @@ const Checkout = () => {
         isOpen={isOpen}
         onClose={onClose}
         handleOrder={handleOrder}
+        cartItems={cart.cartItems}
+        couponCode={couponCode}
         totalPrice={totalPrice}
       />
     </Box>

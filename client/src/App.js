@@ -61,6 +61,7 @@ import Subscriptions from "./pages/screens/Subscriptions";
 import CreateSubscriptionModal from "./pages/screens/CreateSubscriptionModal";
 import SubscriptionPayment from "./components/SubscriptionPayment";
 import AdminOfferBannerScreen from "./pages/AdminBanner/AdminOfferBannerScreen";
+import CreateOfferpage from "./pages/OffersPage/CreateOfferpage";
 // import ProtectedRoute from "./pages/ProtectedRoutes";
 const App = () => {
   const { userInfo } = useSelector((state) => state.userLogin);
@@ -130,6 +131,10 @@ const App = () => {
                   <Route
                     path="/admin/subscription"
                     element={<Subscriptions />}
+                  ></Route>
+                  <Route
+                    path="/admin/coupon"
+                    element={<CreateOfferpage />}
                   ></Route>
                   <Route
                     path="/deliverydetails"

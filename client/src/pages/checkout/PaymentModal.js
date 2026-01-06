@@ -18,94 +18,95 @@ import axios from "axios";
 import { FaMoneyBillWave, FaCreditCard } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { savepaymentmethod } from "../../actions/cartActions";
+
+import { savepaymentmethod, fetchCart } from "../../actions/cartActions";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-const PaymentModal = ({ isOpen, onClose, handleOrder, totalPrice }) => {
+const PaymentModal = ({
+  isOpen,
+  onClose,
+  handleOrder,
+  cartItems,
+  couponCode,
+}) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // ✅ Hooks INSIDE component
-  const userLogin = useSelector((state) => state.userLogin);
-  const { userInfo } = userLogin;
-
-  const [selectedPayment, setSelectedPayment] = useState("Online Payment");
+  const { userInfo } = useSelector((state) => state.userLogin);
 
   const handleCheckout = async () => {
-    if (selectedPayment === "Cash on Delivery") {
-      dispatch(savepaymentmethod("COD"));
-      await handleOrder({ paymentMethod: "COD" });
-      onClose();
-      navigate("/placeorder");
-    } else {
-      dispatch(savepaymentmethod("Razorpay"));
+    dispatch(savepaymentmethod("Razorpay"));
 
-      try {
-        const { data } = await axios.post(
-          `${API_URL}/api/orders/razorpay`,
-          { amount: Number(totalPrice) },
-          {
+    try {
+      const { data } = await axios.post(
+        `${API_URL}/api/orders/razorpay`,
+        {
+          cartItems: cartItems.map((item) => ({
+            product: item.product._id,
+            qty: item.qty,
+            size: item.size,
+          })),
+          couponCode: couponCode || null,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${userInfo.token}`,
+          },
+        }
+      );
+
+      if (!window.Razorpay) {
+        alert("Razorpay SDK not loaded");
+        return;
+      }
+
+      const options = {
+        key: data.keyId,
+        amount: data.amount, // backend calculated (paise)
+        currency: "INR",
+        name: "Your Store",
+        description: "Order Payment",
+        order_id: data.id,
+
+        handler: async function (response) {
+          await axios.post(`${API_URL}/api/orders/razorpay/verify`, response, {
             headers: {
               Authorization: `Bearer ${userInfo.token}`,
             },
-          }
-        );
+          });
 
-        if (!window.Razorpay) {
-          alert("Razorpay SDK not loaded");
-          return;
-        }
+          await handleOrder({
+            paymentMethod: "Razorpay",
+            paymentResult: response,
+          });
 
-        const options = {
-          key: data.keyId,
-          amount: data.amount,
-          currency: "INR",
-          name: "Your Store",
-          description: "Order Payment",
-          order_id: data.id,
+          // 🔥 REFRESH CART FROM DB
+          dispatch(fetchCart());
 
-          handler: async function (response) {
-            // ✅ VERIFY
-            await axios.post(
-              `${API_URL}/api/orders/razorpay/verify`,
-              response,
-              {
-                headers: {
-                  Authorization: `Bearer ${userInfo.token}`,
-                },
-              }
-            );
+          onClose();
+        },
 
-            // ✅ CREATE ORDER
-            await handleOrder({
-              paymentMethod: "Razorpay",
-              paymentResult: response,
-            });
+        prefill: {
+          name: userInfo.name,
+          email: userInfo.email,
+        },
 
-            onClose();
-            navigate("/placeorder");
-          },
+        theme: { color: "#000" },
+      };
 
-          prefill: {
-            name: userInfo.name,
-            email: userInfo.email,
-            contact: "9999999999",
-          },
+      const rzp = new window.Razorpay(options);
 
-          theme: { color: "#000" },
-        };
+      rzp.on("payment.failed", function (response) {
+        alert(response.error.description);
+      });
 
-        const rzp = new window.Razorpay(options);
-
-        rzp.on("payment.failed", function (response) {
-          alert(response.error.description);
-        });
-
-        rzp.open();
-      } catch (error) {
-        console.error("Razorpay Error:", error.response?.data || error.message);
-      }
+      rzp.open();
+    } catch (error) {
+      console.error(
+        "❌ Razorpay Error:",
+        error.response?.data || error.message
+      );
     }
   };
 
@@ -142,7 +143,6 @@ const PaymentModal = ({ isOpen, onClose, handleOrder, totalPrice }) => {
               // borderColor={
               //   selectedPayment === "Online Payment" ? "black" : "gray.300"
               // }
-              onClick={() => setSelectedPayment("Online Payment")}
             >
               <Icon as={FaCreditCard} />
               <Text>Online Payment (Razorpay)</Text>
@@ -152,9 +152,7 @@ const PaymentModal = ({ isOpen, onClose, handleOrder, totalPrice }) => {
 
         <ModalFooter>
           <Button w="100%" bg="black" color="white" onClick={handleCheckout}>
-            {selectedPayment === "Cash on Delivery"
-              ? "Place Order"
-              : "Continue Online Payment"}
+            Continue Online Payment
           </Button>
         </ModalFooter>
       </ModalContent>
