@@ -70,7 +70,7 @@ const AdminLayout = ({ children }) => {
       color: "orange.500",
     },
     {
-      label: "Out for delivery",
+      label: "Dispatched",
       key: "outForDelivery",
       icon: MdLocalShipping,
       color: "green.500",

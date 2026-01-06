@@ -63,6 +63,8 @@ const upload = multer({
 });
 
 //  Export Upload Functions
+// 🔹 Review Images Upload (Max 3 photos)
+export const uploadReviewImages = upload.array("photos", 3);
 export const uploadProfileImage = upload.single("profilePicture");
 export const uploadSingleImage = upload.single("image");
 export const uploadMultipleImages = upload.array("images", 5);

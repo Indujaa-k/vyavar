@@ -16,6 +16,8 @@ import { AiFillShop } from "react-icons/ai";
 import ShareButton from "./ShareButton";
 import { MdDoNotDisturb } from "react-icons/md";
 import { MdVerified } from "react-icons/md";
+import axios from "axios";
+
 // import { FaCheckCircle } from "react-icons/fa";
 import { FaThumbsUp, FaThumbsDown, FaCheckCircle } from "react-icons/fa";
 
@@ -35,6 +37,13 @@ import {
   Divider,
   Box,
   Tooltip,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalBody,
+  ModalCloseButton,
+  useDisclosure,
+  ModalHeader,
 } from "@chakra-ui/react";
 import HashLoader from "react-spinners/HashLoader";
 import { useParams } from "react-router-dom";
@@ -89,6 +98,21 @@ const Productpage = () => {
   const [selectedSize, setSelectedSize] = useState("");
   const [sizeStock, setSizeStock] = useState({});
   const [showPDF, setShowPDF] = useState(false);
+  const [reviewPhotos, setReviewPhotos] = useState([]);
+  const [photoPreviews, setPhotoPreviews] = useState([]);
+  const [photos, setPhotos] = useState([]);
+  const [previewImages, setPreviewImages] = useState([]);
+  const [activeTab, setActiveTab] = useState("All Reviews"); // default tab
+  const [showCreateReview, setShowCreateReview] = useState(false);
+  const carouselRef = useRef();
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [modalImage, setModalImage] = useState(null);
+  const [images, setImages] = useState([]);
+  const openImageModal = (img) => {
+    setModalImage(img);
+    onOpen();
+  };
+
   const [showAllReviews, setShowAllReviews] = useState(false);
   // const [reviewStats, setReviewStats] = useState([]);
   // const handleHelpful = (reviewId) => {
@@ -135,6 +159,25 @@ const Productpage = () => {
     }
 
     dispatch(markReviewHelpful(product._id, reviewId));
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (photos.length >= 3) {
+      alert("You can upload only 3 images");
+      return;
+    }
+
+    // store file
+    setPhotos((prev) => [...prev, file]);
+
+    // preview
+    const previewUrl = URL.createObjectURL(file);
+    setPreviewImages((prev) => [...prev, previewUrl]);
+
+    e.target.value = "";
   };
 
   const handleNotHelpful = (reviewId) => {
@@ -186,6 +229,9 @@ const Productpage = () => {
 
       setrating(0);
       setcomment("");
+      setPreviewImages([]);
+      setImages([]);
+      setShowCreateReview(false);
       dispatch({ type: PRODUCT_CREATE_REVIEW_RESET });
     }
 
@@ -238,20 +284,33 @@ const Productpage = () => {
       dispatch(listProductsByGroupId(product.productGroupId));
     }
   }, [dispatch, product?.productGroupId, userInfo]);
+  const submitHandler = (e) => {
+    e.preventDefault();
 
-  const submitHandler = () => {
-    if (rating === 0 || comment.trim() === "") {
-      toast({
-        title: "Missing fields",
-        description: "Please provide rating and comment",
-        status: "warning",
-        duration: 3000,
-        isClosable: true,
-      });
+    if (rating === 0) {
+      alert("Please select rating");
       return;
     }
 
-    dispatch(createproductReview(id, { rating, comment }));
+    if (!comment.trim()) {
+      alert("Please enter comment");
+      return;
+    }
+
+    if (photos.length !== 3) {
+      alert("Please upload exactly 3 images");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("rating", rating);
+    formData.append("comment", comment);
+
+    photos.forEach((photo) => {
+      formData.append("photos", photo);
+    });
+
+    dispatch(createproductReview(id, formData));
   };
 
   //Handler of button add to cart
@@ -323,6 +382,20 @@ const Productpage = () => {
   const isAllSizesOutOfStock =
     Object.values(sizeStock).length > 0 &&
     Object.values(sizeStock).every((stock) => stock === 0);
+
+  const mrp = product?.oldPrice ?? 0; // Old / MRP
+  const sellingPrice = product?.price ?? 0; // Normal price
+
+  const hasSubscriptionDiscount =
+    product?.subscriptionDiscountPercent > 0 &&
+    product?.subscriptionPrice < sellingPrice;
+
+  const finalPrice = hasSubscriptionDiscount
+    ? product.subscriptionPrice
+    : sellingPrice;
+
+  // Show strike for BOTH subscribed & non-subscribed
+  const showMrpStrike = mrp > finalPrice;
 
   return (
     <>
@@ -401,21 +474,32 @@ const Productpage = () => {
                 <p style={{ fontSize: "20px", fontWeight: "bold" }}>
                   {product.description}
                 </p>
-                <Text fontSize="20px" fontWeight="bold" mb={1} mt={3}>
-                  ₹{product.price}
-                  <Text
-                    as="span"
-                    fontSize="20px"
-                    fontWeight="normal"
-                    color="#039cc3ff"
-                    marginLeft={2}
-                    textDecoration="line-through"
-                  >
-                    MRP: ₹{product.oldPrice}
-                  </Text>
-                  <Text fontSize="13px" color="#ffb700" mb={3}>
-                    (Inclusive of all taxes)
-                  </Text>
+                <Text fontSize="24px" fontWeight="bold" mt={3}>
+                  ₹{finalPrice}
+                  {showMrpStrike && (
+                    <Text
+                      as="span"
+                      fontSize="16px"
+                      fontWeight="normal"
+                      color="gray.500"
+                      marginLeft={3}
+                      textDecoration="line-through"
+                    >
+                      MRP: ₹{mrp}
+                    </Text>
+                  )}
+                </Text>
+                {hasSubscriptionDiscount && (
+                  <Flex align="center" gap={2} mt={1}>
+                    <Text fontSize="14px" color="green.600" fontWeight="bold">
+                      {product.subscriptionDiscountPercent}% OFF with
+                      Subscription
+                    </Text>
+                    <MdVerified color="green" />
+                  </Flex>
+                )}
+                <Text fontSize="13px" color="#ffb700" mb={3}>
+                  (Inclusive of all taxes)
                 </Text>
                 <p
                   style={{
@@ -601,195 +685,365 @@ const Productpage = () => {
         )}
 
         {/* === REVIEW SECTION === */}
-        <div className="REVIEWS">
-          <h1>Reviews :</h1>
-
-          {/* No Reviews */}
-          {product?.reviews?.length === 0 && <h2>NO REVIEWS</h2>}
-
-          {/* Show Approved Reviews */}
-          {/* <div>
-            {product.reviews &&
-              product.reviews
-                .filter((review) => review.approved)
-                .map((review) => (
-                  <div key={review._id} className="review">
-                    <h4>{review.name}</h4>
-
-                    <div className="Ratingreview">
-                      <Rating value={review.rating} />
-                    </div>
-
-                    <p className="commentreview">{review.comment}</p>
-
-                    <p className="datereview">
-                      {review.createdAt.substring(0, 10)}
-                    </p>
-                  </div>
-                ))}
-          </div> */}
-          {product.reviews?.map((review) => {
-            return (
-              <Box
-                key={review._id}
-                border="1px solid #e2e8f0"
-                borderRadius="xl"
-                p={4}
-                mb={4}
-                bg="white"
-                boxShadow="sm"
-                w="full"
-                _hover={{ boxShadow: "md" }}
-                transition="all 0.3s"
-              >
-                <Flex gap={6} w="full">
-                  {/* LEFT COLUMN: Avatar + Name + Verified */}
-                  <Flex flex="1" align="flex-start" gap={3}>
-                    <Box
-                      bgGradient="linear(to-r, blue.400, blue.600)"
-                      color="white"
-                      borderRadius="full"
-                      w="60px"
-                      h="60px"
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                      fontWeight="bold"
-                      fontSize="2xl"
-                      boxShadow="sm"
-                    >
-                      {review.user?.name
-                        ? review.user.name.charAt(0).toUpperCase()
-                        : "U"}
-                    </Box>
-
-                    <Box>
-                      <Text fontWeight="bold" fontSize="md">
-                        {review.user?.name || "Verified User"}
-                      </Text>
-                      <Flex
-                        align="center"
-                        gap={1}
-                        fontSize="sm"
-                        color="green.500"
-                      >
-                        <MdVerified />
-                        Verified Buyer
-                      </Flex>
-                    </Box>
-                  </Flex>
-
-                  {/* RIGHT COLUMN: Comment + Stats */}
-                  <Flex flex="3" direction="column" gap={2} w="full">
-                    {/* Comment */}
-                    <Text
-                      fontSize="sm"
-                      color="gray.700"
-                      pl={2}
-                      borderLeft="3px solid #3182ce"
-                    >
-                      “{review.comment}”
-                    </Text>
-
-                    {/* Recommended + Star Rating + Date */}
-                    <Flex
-                      align="center"
-                      gap={4}
-                      justify="space-between"
-                      flexWrap="wrap"
-                    >
-                      <Flex align="center" gap={2}>
-                        <FaCheckCircle color="green" />
-                        <Text fontSize="sm" color="green.600">
-                          Recommended
-                        </Text>
-                        <Rating value={review.rating} />
-                      </Flex>
-
-                      {/* Date */}
-                      <Text fontSize="xs" color="gray.500">
-                        {review.createdAt?.substring(0, 10)}
-                      </Text>
-                    </Flex>
-
-                    {/* Helpful / Not Helpful */}
-                    <Flex gap={4} mt={2}>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        leftIcon={<FaThumbsUp />}
-                        onClick={() => handleHelpful(review._id)}
-                      >
-                        Helpful ({review.helpful ?? 0})
-                      </Button>
-
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        leftIcon={<FaThumbsDown />}
-                        onClick={() => handleNotHelpful(review._id)}
-                      >
-                        Not Helpful ({review.notHelpful ?? 0})
-                      </Button>
-                    </Flex>
-                  </Flex>
-                </Flex>
-              </Box>
-            );
-          })}
-
-          <div className="createreview">
-            <h1>Create New Review :</h1>
-
-            {errorProductReview && <h2>{errorProductReview}</h2>}
-
-            {/* Not logged in */}
-            {!userInfo && (
-              <p>
-                Please <Link to="/login">Sign In</Link> to write a review.
-              </p>
-            )}
-
-            {/* Already reviewed */}
-            {userInfo && hasUserReviewed && (
-              <Text color="green.600" fontWeight="bold">
-                ✅ You have already reviewed this product
-              </Text>
-            )}
-
-            {/* Logged in & NOT reviewed yet */}
-            {userInfo && !hasUserReviewed && (
-              <FormControl>
-                <FormLabel>Rating :</FormLabel>
-                <HStack spacing={1} mb={3}>
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Box
-                      key={star}
-                      cursor="pointer"
-                      onClick={() => setrating(star)}
-                    >
-                      {rating >= star ? (
-                        <AiFillStar size={28} color="#FFD700" />
-                      ) : (
-                        <AiOutlineStar size={28} color="#CBD5E0" />
-                      )}
-                    </Box>
-                  ))}
-                </HStack>
-
-                <FormLabel>Comment :</FormLabel>
-                <Textarea
-                  onChange={(e) => setcomment(e.target.value)}
-                  placeholder="Leave Comment here :"
-                />
-
-                <Button colorScheme="blue" onClick={submitHandler} mt={3}>
-                  Submit
+        <Box className="REVIEWS" mt={8}>
+          {/* Top Nav / Tabs */}
+          <Flex
+            mb={4}
+            direction={{ base: "column", md: "row" }} // column on mobile, row on desktop
+            align={{ base: "stretch", md: "center" }} // stretch full width on mobile
+            justify="space-between"
+            gap={2}
+          >
+            {/* Tabs */}
+            <Flex
+              direction={{ base: "column", md: "row" }} // stack on mobile
+              gap={2}
+              w={{ base: "100%", md: "auto" }}
+            >
+              {["All Reviews", "Overall Rating"].map((tab) => (
+                <Button
+                  key={tab}
+                  size="sm"
+                  variant={activeTab === tab ? "solid" : "outline"}
+                  colorScheme="blue"
+                  w={{ base: "100%", md: "auto" }} // full width on mobile
+                >
+                  {tab} {tab === "All Reviews" && `(${product.numReviews})`}
                 </Button>
-              </FormControl>
+              ))}
+            </Flex>
+
+            {/* Write Review Button */}
+            <Button
+              mt={{ base: 2, md: 0 }} // spacing on mobile
+              w={{ base: "100%", md: "auto" }} // full width on mobile
+              colorScheme="blue"
+              onClick={() => setShowCreateReview((prev) => !prev)}
+            >
+              Write a Review
+            </Button>
+          </Flex>
+
+          {/* === OVERALL RATING SECTION === */}
+          <Flex
+            direction={{ base: "column", md: "row" }} // column on mobile, row on desktop
+            justify="space-between"
+            align={{ base: "flex-start", md: "center" }}
+            p={4}
+            bg="gray.50"
+            borderRadius="md"
+            mb={6}
+            gap={3} // spacing between stacked items on mobile
+          >
+            <Box>
+              <Text fontSize="lg" fontWeight="bold">
+                Overall Rating
+              </Text>
+
+              <Flex
+                direction={{ base: "column", md: "row" }} // stack vertically on mobile
+                align={{ base: "flex-start", md: "center" }}
+                gap={2} // spacing between number, stars, and review count
+                mt={1}
+              >
+                {/* Rating number */}
+                <Text fontSize={{ base: "xl", md: "2xl" }} fontWeight="bold">
+                  {product.rating?.toFixed(1)}
+                </Text>
+
+                {/* Stars */}
+                <Rating value={product.rating} />
+
+                {/* Total reviews */}
+                <Text color="gray.500" fontSize={{ base: "sm", md: "md" }}>
+                  ({product.numReviews} reviews)
+                </Text>
+              </Flex>
+
+              {/* Product image + rating (optional) */}
+              {product.images?.length > 0 && (
+                <Flex
+                  mt={2}
+                  align="center"
+                  gap={2}
+                  direction={{ base: "column", md: "row" }} // stack on mobile
+                >
+                  <Image
+                    src={product.images[0]}
+                    alt="Product"
+                    boxSize={{ base: "30px", md: "40px" }}
+                    objectFit="cover"
+                    borderRadius="md"
+                  />
+                  <Text fontSize={{ base: "xs", md: "sm" }} color="gray.600">
+                    Product Rating: {product.rating?.toFixed(1)}
+                  </Text>
+                </Flex>
+              )}
+            </Box>
+          </Flex>
+
+          {/* Reviews Carousel */}
+          <Box position="relative">
+            {activeTab === "Overall Rating" ? (
+              <Flex align="center" gap={4} p={4} bg="gray.50" borderRadius="md">
+                <Text fontSize="2xl" fontWeight="bold">
+                  {product.rating?.toFixed(1)}
+                </Text>
+                <Rating value={product.rating} />
+                <Text>({product.numReviews} reviews)</Text>
+              </Flex>
+            ) : (
+              <>
+                {/* Left Arrow */}
+                {product.reviews.length >= 5 && (
+                  <Button
+                    display="flex" // always visible
+                    position="absolute"
+                    left={-2}
+                    top="50%"
+                    transform="translateY(-50%)"
+                    zIndex={10}
+                    size="lg"
+                    fontSize="2xl"
+                    fontWeight="bold"
+                    borderRadius="full"
+                    bg="whiteAlpha.800"
+                    _hover={{ bg: "blue.200" }}
+                    onClick={() =>
+                      carouselRef.current.scrollBy({
+                        left: -320,
+                        behavior: "smooth",
+                      })
+                    }
+                  >
+                    &lt;
+                  </Button>
+                )}
+                {/* Carousel */}
+                <Box
+                  ref={carouselRef}
+                  display="flex"
+                  overflowX="hidden"
+                  gap={4}
+                  py={2}
+                  px={1}
+                >
+                  {product.reviews
+                    .filter((r) => {
+                      if (!r.approved) return false;
+                      if (activeTab === "All Reviews") return true;
+                      if (activeTab === "Images") return r.photos?.length > 0;
+                      return true;
+                    })
+                    .map((review) => (
+                      <Box
+                        key={review._id}
+                        flex="0 0 300px"
+                        p={4}
+                        bg="white"
+                        borderRadius="md"
+                        boxShadow="sm"
+                      >
+                        <Flex gap={3} align="center" mb={2}>
+                          <Image
+                            src={review.user?.profilePicture || ""}
+                            alt={review.user?.name || "User"}
+                            boxSize="40px"
+                            borderRadius="full"
+                            fallbackSrc="https://via.placeholder.com/40?text=U"
+                          />
+                          <Box>
+                            <Text fontWeight="bold">
+                              {review.user?.name || "User"}
+                            </Text>
+                            <Flex
+                              align="center"
+                              gap={1}
+                              fontSize="xs"
+                              color="gray.500"
+                            >
+                              <MdVerified /> Verified Buyer
+                            </Flex>
+                          </Box>
+                        </Flex>
+
+                        <Rating value={review.rating} />
+                        <Text mt={2} fontSize="sm" noOfLines={3}>
+                          {review.comment}
+                        </Text>
+
+                        {review.photos?.length > 0 && (
+                          <Flex mt={2} gap={2}>
+                            {review.photos?.map((photo, idx) => (
+                              <Image
+                                key={idx}
+                                src={photo}
+                                boxSize="60px"
+                                objectFit="cover"
+                                borderRadius="md"
+                                cursor="pointer"
+                                onClick={() => openImageModal(photo)} // <-- open modal now
+                              />
+                            ))}
+                          </Flex>
+                        )}
+
+                        <Text fontSize="xs" color="gray.400" mt={2}>
+                          {review.createdAt?.substring(0, 10)}
+                        </Text>
+
+                        <Flex gap={3} mt={2} align="center">
+                          <Button
+                            size="xs"
+                            leftIcon={<FaThumbsUp />}
+                            variant="ghost"
+                            onClick={() => handleHelpful(review._id)}
+                          >
+                            Helpful {review.helpful ?? 0}
+                          </Button>
+
+                          <Button
+                            size="xs"
+                            leftIcon={<FaThumbsDown />}
+                            variant="ghost"
+                            onClick={() => handleNotHelpful(review._id)}
+                          >
+                            Not Helpful {review.notHelpful ?? 0}
+                          </Button>
+                        </Flex>
+                      </Box>
+                    ))}
+                </Box>
+
+                {/* Right Arrow */}
+                {product.reviews.length >= 5 && (
+                  <Button
+                    display="flex" // always visible
+                    position="absolute"
+                    right={-2}
+                    top="50%"
+                    transform="translateY(-50%)"
+                    zIndex={10}
+                    size="lg"
+                    fontSize="2xl"
+                    fontWeight="bold"
+                    borderRadius="full"
+                    bg="whiteAlpha.800"
+                    _hover={{ bg: "blue.200" }}
+                    onClick={() =>
+                      carouselRef.current.scrollBy({
+                        left: 320,
+                        behavior: "smooth",
+                      })
+                    }
+                  >
+                    &gt;
+                  </Button>
+                )}
+              </>
             )}
-          </div>
-        </div>
+          </Box>
+          <Modal isOpen={isOpen} onClose={onClose} isCentered size="xl">
+            <ModalOverlay />
+            <ModalContent bg="transparent" boxShadow="none">
+              <ModalCloseButton color="white" />
+              <ModalBody p={0}>
+                <Image
+                  src={modalImage}
+                  alt="Preview"
+                  w="100%"
+                  h="auto"
+                  borderRadius="md"
+                />
+              </ModalBody>
+            </ModalContent>
+          </Modal>
+
+          {/* === WRITE REVIEW MODAL === */}
+          <Modal
+            isOpen={showCreateReview}
+            onClose={() => setShowCreateReview(false)}
+            isCentered
+            size="lg"
+          >
+            <ModalOverlay />
+            <ModalContent>
+              <ModalHeader>Write a Review</ModalHeader>
+              <ModalCloseButton />
+
+              <ModalBody pb={6}>
+                {!userInfo ? (
+                  <Text>
+                    Please <Link to="/login">Sign In</Link> to write a review.
+                  </Text>
+                ) : hasUserReviewed ? (
+                  <Text color="green.600" fontWeight="bold">
+                    ✅ You have already reviewed this product
+                  </Text>
+                ) : (
+                  <FormControl>
+                    <FormLabel>Rating</FormLabel>
+
+                    <HStack spacing={1} mb={3}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Box
+                          key={star}
+                          cursor="pointer"
+                          onClick={() => setrating(star)}
+                        >
+                          {rating >= star ? (
+                            <AiFillStar size={28} color="#FFD700" />
+                          ) : (
+                            <AiOutlineStar size={28} color="#CBD5E0" />
+                          )}
+                        </Box>
+                      ))}
+                    </HStack>
+
+                    <FormLabel>Comment</FormLabel>
+                    <Textarea
+                      value={comment}
+                      onChange={(e) => setcomment(e.target.value)}
+                      placeholder="Share your experience"
+                    />
+
+                    <FormLabel mt={3}>Upload Photos (max 3)</FormLabel>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      multiple
+                    />
+
+                    {previewImages.length > 0 && (
+                      <Flex mt={3} gap={3}>
+                        {previewImages.map((img, index) => (
+                          <Image
+                            key={index}
+                            src={img}
+                            boxSize="80px"
+                            borderRadius="md"
+                            objectFit="cover"
+                          />
+                        ))}
+                      </Flex>
+                    )}
+
+                    <Button
+                      mt={4}
+                      w="100%"
+                      colorScheme="blue"
+                      onClick={submitHandler}
+                    >
+                      Submit Review
+                    </Button>
+                  </FormControl>
+                )}
+              </ModalBody>
+            </ModalContent>
+          </Modal>
+        </Box>
 
         {/* Related Products Section */}
         <div

@@ -83,6 +83,12 @@ const orderSchema = mongoose.Schema(
       type: String,
       required: true,
     },
+    orderStatus: {
+      type: String,
+      enum: ["CREATED", "CONFIRMED", "PACKED", "OUT_FOR_DELIVERY"],
+      default: "CREATED",
+    },
+
     size: { type: String, required: false },
     paymentResult: {
       id: { type: String },
@@ -112,30 +118,26 @@ const orderSchema = mongoose.Schema(
       type: Date,
     },
 
-    isDelivered: {
-      type: Boolean,
-      required: true,
-      default: false,
-    },
+    // // isDelivered: {
+    // //   type: Boolean,
+    // //   required: true,
+    // //   default: false,
+    // },
     deliveredAt: {
       type: Date,
     },
-    isPacked: {
-      type: Boolean,
-      required: true,
-      default: false,
-    },
-    isAcceptedByDelivery: {
-      type: Boolean,
-      default: false,
-    },
-    isReturned: {
-      type: Boolean,
-      default: false,
-    },
-    returnReason: {
-      type: String,
-    },
+
+    // isAcceptedByDelivery: {
+    //   type: Boolean,
+    //   default: false,
+    // },
+    // isReturned: {
+    //   type: Boolean,
+    //   default: false,
+    // },
+    // returnReason: {
+    //   type: String,
+    // },
     invoiceDetails: {
       type: Object,
       default: null,
