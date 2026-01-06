@@ -262,8 +262,38 @@ export { deleteProfilePicture };
 // @desc Get user profile
 // @route GET /api/users/profile
 // @access Private
+// const getUserProfile = asyncHandler(async (req, res) => {
+//   const user = await User.findById(req.user._id);
+
+//   if (user) {
+//     res.json({
+//       _id: user._id,
+//       name: user.name,
+//       email: user.email,
+//       lastName: user.lastName,
+//       gender: user.gender,
+//       dateOfBirth: user.dateOfBirth,
+//       isAdmin: user.isAdmin,
+//       profilePicture: user.profilePicture,
+//       isDelivery: user.isDelivery,
+//       addresses: user.addresses,
+//       subscription: user.subscription,
+//       isSubscribed: user.isSubscribed,
+//     });
+//   } else {
+//     res.status(404);
+//     throw new Error("User not found");
+//   }
+// });
+ 
+// @desc Get user profile with full subscription details
+// @route GET /api/users/profile
+// @access Private
 const getUserProfile = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id);
+  // Find user and populate subscription details
+  const user = await User.findById(req.user._id)
+    .populate("subscription.subscriptionId", "title description offers price discountPercent startDate endDate")
+    .select("-password");
 
   if (user) {
     res.json({
@@ -277,7 +307,20 @@ const getUserProfile = asyncHandler(async (req, res) => {
       profilePicture: user.profilePicture,
       isDelivery: user.isDelivery,
       addresses: user.addresses,
-      subscription: user.subscription,
+      subscription: user.subscription
+        ? {
+            subscriptionId: user.subscription.subscriptionId?._id,
+            title: user.subscription.subscriptionId?.title,
+            description: user.subscription.subscriptionId?.description,
+            offers: user.subscription.subscriptionId?.offers,
+            planName: user.subscription.planName,
+            price: user.subscription.price,
+            discountPercent: user.subscription.discountPercent,
+            isActive: user.subscription.isActive,
+            startDate: user.subscription.startDate,
+            endDate: user.subscription.endDate,
+          }
+        : null,
       isSubscribed: user.isSubscribed,
     });
   } else {

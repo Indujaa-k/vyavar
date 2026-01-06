@@ -59,15 +59,17 @@ const CartPage = () => {
       <Box
         color="black"
         bg="white"
-    
-        mt={{ base: "80px",md: "120px",}}
+        mt={{ base: "80px", md: "120px" }}
         ml={{ base: "7px", md: "50px" }}
         mr={{ base: "7px" }}
       >
         {cartItems.length === 0 ? (
           <Empty />
         ) : (
-          <Grid templateColumns={{ base: "1fr", md: "1fr 1fr   ",lg: "2fr 1fr"  }}   gap={{ base: 1, lg: 3 }}>
+          <Grid
+            templateColumns={{ base: "1fr", md: "1fr 1fr   ", lg: "2fr 1fr" }}
+            gap={{ base: 1, lg: 3 }}
+          >
             {/* Left Side - Cart Items */}
             <GridItem>
               <VStack spacing={4} mt={5}>
@@ -189,7 +191,7 @@ const CartPage = () => {
                         </Select>
                       </Flex>
                       {/* PRICE */}
-                      <Flex gap={2} mt={2}>
+                      {/* <Flex gap={2} mt={2}>
                         <Text fontWeight="bold">₹{item.product.price}</Text>
                         <Text as="s" color="gray.400">
                           ₹{item.product.oldPrice}
@@ -197,6 +199,34 @@ const CartPage = () => {
                         <Text color="yellow.500" fontWeight="bold">
                           {item.product.discount}% Off
                         </Text>
+                      </Flex> */}
+                      <Flex gap={2} mt={2} align="center">
+                        {/* FINAL PRICE */}
+                        <Text fontWeight="bold" fontSize="lg">
+                          ₹
+                          {item.product.isSubscriptionApplied
+                            ? item.product.subscriptionPrice
+                            : item.product.price}
+                        </Text>
+
+                        {/* STRIKE ORIGINAL PRICE */}
+                        {item.product.isSubscriptionApplied && (
+                          <Text as="s" color="gray.400">
+                            ₹{item.product.originalPrice}
+                          </Text>
+                        )}
+
+                        {/* SUBSCRIPTION BADGE */}
+                        {item.product.isSubscriptionApplied && (
+                          <Text
+                            color="green.500"
+                            fontWeight="bold"
+                            fontSize="sm"
+                          >
+                            {item.product.subscriptionDiscountPercent}%
+                            Subscriber OFF
+                          </Text>
+                        )}
                       </Flex>
                     </Box>
 
