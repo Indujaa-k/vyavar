@@ -117,6 +117,11 @@ const orderSchema = mongoose.Schema(
     paidAt: {
       type: Date,
     },
+    coupon: {
+      code: { type: String },
+      percentage: { type: Number },
+      discountAmount: { type: Number },
+    },
 
     // // isDelivered: {
     // //   type: Boolean,

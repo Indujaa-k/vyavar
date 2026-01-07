@@ -46,6 +46,7 @@ const Order = () => {
   const userLogin = useSelector((state) => state.userLogin);
   const { userInfo } = userLogin;
   const invoiceDetails = useSelector((state) => state.invoiceDetails);
+  const couponCode = order?.couponCode;
   const {
     loading: invoiceLoading,
     error: invoiceError,
@@ -60,6 +61,17 @@ const Order = () => {
       order.orderItems.reduce((acc, item) => acc + item.price * item.qty, 0)
     );
   }
+  let discountAmount = 0;
+
+  if (couponCode) {
+    const subtotal =
+      Number(order.itemsPrice) +
+      Number(order.shippingPrice) +
+      Number(order.taxPrice);
+
+    discountAmount = addDecimals(subtotal - order.totalPrice);
+  }
+
   useEffect(() => {
     if (!userInfo) {
       navigate("/login");
@@ -257,6 +269,17 @@ const Order = () => {
                 <Text>Tax:</Text>
                 <Text color={"grey"}>Rs. {order.taxPrice}</Text>
               </HStack>
+              {couponCode && (
+                <HStack justify="space-between" w="full">
+                  <Text>
+                    Coupon Applied{" "}
+                    <Badge ml={2} colorScheme="green">
+                      {couponCode}
+                    </Badge>
+                  </Text>
+                  <Text color="green">- Rs. {discountAmount}</Text>
+                </HStack>
+              )}
               <HStack justify="space-between" w="full">
                 <Text fontSize="xl" fontWeight="bold">
                   Total:

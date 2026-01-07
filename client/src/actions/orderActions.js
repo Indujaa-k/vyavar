@@ -599,11 +599,11 @@ export const processRazorpayPayment =
 
       dispatch({
         type: RAZORPAY_PAYMENT_SUCCESS,
-        payload: data, // { id, amount, currency, keyId }
+        payload: data, // ✅ contains coupon + priceBreakdown
       });
 
-      // 🔥 VERY IMPORTANT
-      return data; // so component can open Razorpay
+      // 🔥 this return is IMPORTANT
+      return data;
     } catch (error) {
       dispatch({
         type: RAZORPAY_PAYMENT_FAIL,
@@ -613,7 +613,7 @@ export const processRazorpayPayment =
           "Razorpay payment failed",
       });
 
-      throw error; // allow component to catch
+      throw error;
     }
   };
 

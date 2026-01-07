@@ -20,6 +20,7 @@ const addorderitems = asyncHandler(async (req, res) => {
     shippingPrice,
     totalPrice,
     couponCode,
+    paymentResult,
   } = req.body;
 
   if (!orderItems || orderItems.length === 0) {
@@ -27,7 +28,8 @@ const addorderitems = asyncHandler(async (req, res) => {
     throw new Error("No order items");
   }
 
-  // ✅ Create order
+  const isCOD = paymentMethod === "COD";
+
   const order = new Order({
     user: req.user._id,
     orderItems,
@@ -36,11 +38,12 @@ const addorderitems = asyncHandler(async (req, res) => {
     taxPrice,
     shippingPrice,
     totalPrice,
-    shippingRates,
     couponCode,
-    isPaid: !isCOD, // false for COD, true for online
+
+    isPaid: !isCOD,
     paidAt: !isCOD ? Date.now() : null,
-    orderStatus: !isCOD ? "CONFIRMED" : "ORDERED",
+    orderStatus: isCOD ? "ORDERED" : "CONFIRMED",
+
     paymentResult: isCOD
       ? {
           id: "COD-" + Date.now(),
@@ -48,26 +51,23 @@ const addorderitems = asyncHandler(async (req, res) => {
           update_time: new Date().toISOString(),
           email_address: req.user.email,
         }
-      : req.body.paymentResult || {},
-    couponCode,
-    isPaid: true,
-    paidAt: Date.now(),
+      : paymentResult,
   });
 
   const createdOrder = await order.save();
 
-  // ✅ Clear user's cart
-  await User.findByIdAndUpdate(req.user._id, { $set: { cartItems: [] } });
+  // Clear user's cart
+  await User.findByIdAndUpdate(req.user._id, {
+    $set: { cartItems: [] },
+  });
 
-  // ✅ Update coupon usage if couponCode exists
+  // Update coupon usage
   if (couponCode) {
     const offer = await Offer.findOne({ code: couponCode.toUpperCase() });
 
     if (offer) {
-      // Increment used count
       offer.usedCount = (offer.usedCount || 0) + 1;
 
-      // Add user to usedBy if not already there
       if (!offer.usedBy.includes(req.user._id)) {
         offer.usedBy.push(req.user._id);
       }
@@ -78,6 +78,7 @@ const addorderitems = asyncHandler(async (req, res) => {
 
   res.status(201).json(createdOrder);
 });
+
 // @desc get order by id
 // @route GET /api/orders/:id
 // @access Private
@@ -430,7 +431,6 @@ const createRazorpayOrder = async (req, res) => {
   try {
     const { couponCode, shippingPrice } = req.body;
 
-    // 🔐 Get user from auth middleware
     const user = await User.findById(req.user._id);
 
     if (!user || user.cartItems.length === 0) {
@@ -439,7 +439,6 @@ const createRazorpayOrder = async (req, res) => {
 
     let subtotal = 0;
 
-    // 🔐 Calculate subtotal ONLY from DB
     for (const item of user.cartItems) {
       const product = await Product.findById(item.product);
 
@@ -450,18 +449,17 @@ const createRazorpayOrder = async (req, res) => {
       subtotal += product.price * item.qty;
     }
 
-    // 🧮 Tax (5%)
     const taxAmount = (subtotal * 5) / 100;
-
-    // 🚚 Shipping
     const shippingAmount = Number(shippingPrice || 0);
 
-    // 🎟️ Coupon discount
+    // 🎟️ Coupon snapshot
+    let couponSnapshot = null;
     let discountAmount = 0;
 
     if (couponCode) {
       const offer = await Offer.findOne({
         code: couponCode.toUpperCase(),
+        isActive: true,
       });
 
       if (!offer) {
@@ -472,30 +470,26 @@ const createRazorpayOrder = async (req, res) => {
         return res.status(400).json({ message: "Coupon expired" });
       }
 
-      discountAmount = (subtotal * offer.offerPercentage) / 100;
+      discountAmount = Math.round((subtotal * offer.offerPercentage) / 100);
+
+      couponSnapshot = {
+        code: offer.code,
+        percentage: offer.offerPercentage,
+        discountAmount,
+      };
     }
 
-    // 💰 Final amount
     const finalAmount = subtotal + taxAmount + shippingAmount - discountAmount;
 
     if (finalAmount < 1) {
       return res.status(400).json({ message: "Final amount too low" });
     }
 
-    // 🔢 Round properly
     const roundedFinalAmount = Math.round(finalAmount * 100) / 100;
 
-    console.log("💰 Razorpay Amount Breakdown:", {
-      subtotal,
-      taxAmount,
-      shippingAmount,
-      discountAmount,
-      roundedFinalAmount,
-    });
-
-    // 💳 Create Razorpay Order
+    // 💳 Razorpay order
     const razorpayOrder = await razorpay.orders.create({
-      amount: Math.round(roundedFinalAmount * 100), // paise
+      amount: Math.round(roundedFinalAmount * 100),
       currency: "INR",
       receipt: `order_${Date.now()}`,
     });
@@ -505,6 +499,18 @@ const createRazorpayOrder = async (req, res) => {
       amount: razorpayOrder.amount,
       currency: razorpayOrder.currency,
       keyId: process.env.RAZORPAY_KEY_ID,
+
+      // ✅ send breakdown to frontend
+      priceBreakdown: {
+        subtotal,
+        taxAmount,
+        shippingAmount,
+        discountAmount,
+        total: roundedFinalAmount,
+      },
+
+      // ✅ coupon snapshot
+      coupon: couponSnapshot,
     });
   } catch (err) {
     console.error("❌ Razorpay error:", err);
