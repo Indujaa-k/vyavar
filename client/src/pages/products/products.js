@@ -50,6 +50,7 @@ const Products = () => {
   const { groupId } = useParams();
 
   const navigate = useNavigate();
+
   const [file, setFile] = useState(null);
   const dispatch = useDispatch();
   const productList = useSelector((state) => state.productList);
@@ -148,13 +149,6 @@ const Products = () => {
     navigate("/admin/product/create");
   };
 
-  const bulkUploadHandler = (e) => {
-    e.preventDefault();
-    if (file) {
-      dispatch(uploadBulkProducts(file));
-    }
-  };
-
   return (
     <>
       <Box bg="white" p={4}>
@@ -186,14 +180,13 @@ const Products = () => {
             </Button>
 
             {/* Bulk Upload */}
-            <Button colorScheme="blue" as="label" cursor="pointer">
+            <Button
+              colorScheme="blue"
+              as="label"
+              cursor="pointer"
+              onClick={() => navigate("/admin/bulkupload")}
+            >
               Bulk Upload
-              <Input
-                type="file"
-                accept=".xlsx,.xls"
-                hidden
-                onChange={(e) => setFile(e.target.files[0])}
-              />
             </Button>
           </Flex>
         </Flex>
