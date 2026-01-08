@@ -204,40 +204,47 @@ const Nav = () => {
                     src={
                       user.profilePicture.startsWith("http")
                         ? user.profilePicture
-                        : `http://localhost:5000${user.profilePicture}`
+                        : `${process.env.REACT_APP_API_URL}${user.profilePicture}`
                     }
                     alt="Profile"
                     className="profile-img"
-                    onError={(e) => (e.target.style.display = "none")}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.style.display = "none";
+                    }}
                   />
                 ) : (
-                  <CgProfile size="25" className="settingIcon" />
+                  <CgProfile size={25} className="settingIcon" />
                 )}
+
                 <span className="user-name">{user?.name}</span>
               </Link>
+
               <IoLogOutOutline
-                size="30"
+                size={30}
                 className="displayIcon"
                 onClick={onOpen}
+                title="Logout"
               />
             </div>
           ) : (
             <Link to="/login">
               <div
                 className="signin"
-                onMouseOver={() => setSignin(!signin)}
-                onMouseOut={() => setSignin(!signin)}
+                onMouseEnter={() => setSignin(true)}
+                onMouseLeave={() => setSignin(false)}
               >
                 Sign in
                 {!signin ? (
-                  <BsArrowRightShort size="25" />
+                  <BsArrowRightShort size={25} />
                 ) : (
-                  <MdKeyboardArrowRight size="25" />
+                  <MdKeyboardArrowRight size={25} />
                 )}
               </div>
             </Link>
           )}
         </div>
+
         <AlertDialog
           isOpen={isOpen}
           leastDestructiveRef={cancelRef}
@@ -371,8 +378,8 @@ const Nav = () => {
             whiteSpace: "nowrap",
             padding: "12px 0",
             position: "sticky",
+            zIndex: "999",
             top: "70px",
-            zIndex: 999,
             fontWeight: "700",
           }}
         >

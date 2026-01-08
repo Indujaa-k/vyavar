@@ -226,6 +226,7 @@ const AdminNavbar = () => {
             top: "70px",
             zIndex: 999,
             fontWeight: "700",
+            marginTop: "8px",
           }}
         >
           <div
