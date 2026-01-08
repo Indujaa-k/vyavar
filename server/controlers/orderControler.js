@@ -613,7 +613,7 @@ const getOrderStatusCounts = asyncHandler(async (req, res) => {
     orderStatus: "OUT_FOR_DELIVERY",
   });
 
-  const allOrders = await Order.countDocuments();
+  const allOrders = confirmed + packed + outForDelivery;
 
   res.json({
     allOrders,

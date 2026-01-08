@@ -640,6 +640,9 @@ export const updateOrderStatus =
       );
 
       dispatch({ type: ORDER_STATUS_UPDATE_SUCCESS, payload: data });
+
+      // 🔥 ADD THIS LINE
+      dispatch(getOrderStatusCounts());
     } catch (error) {
       dispatch({
         type: ORDER_STATUS_UPDATE_FAIL,

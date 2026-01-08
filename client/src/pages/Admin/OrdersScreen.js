@@ -32,6 +32,9 @@ const OrdersScreen = () => {
   const [selectedDate, setSelectedDate] = useState("");
   const [statusUpdates, setStatusUpdates] = useState({}); // For storing dropdown selections
   const { status } = useParams();
+  const statusLower = status?.toLowerCase();
+  // ✅ HERE (THIS LINE)
+  console.log("STATUS FROM URL:", status);
   const dispatch = useDispatch();
   // const [activeTab, setActiveTab] = useState("ALL");
 
@@ -69,19 +72,18 @@ const OrdersScreen = () => {
 
   const filteredOrders = orders
     ?.filter((order) => {
-      if (!status || status === "allorders") return true;
+      if (!statusLower || statusLower === "allorders") return true;
 
-      if (status === "confirmed") {
-        return order.isPaid === true && order.orderStatus === "CONFIRMED";
-      }
+      if (statusLower === "confirmed") return order.orderStatus === "CONFIRMED";
 
-      if (status === "packed") return order.orderStatus === "PACKED";
+      if (statusLower === "packed") return order.orderStatus === "PACKED";
 
-      if (status === "outForDelivery")
+      if (statusLower === "dispatched" || statusLower === "outfordelivery")
         return order.orderStatus === "OUT_FOR_DELIVERY";
 
       return true;
     })
+
     .filter((order) =>
       selectedDate ? order.createdAt.substring(0, 10) === selectedDate : true
     );
@@ -106,7 +108,7 @@ const OrdersScreen = () => {
         w="100%"
       >
         <Heading fontSize="lg">
-          {status ? `${status.toUpperCase()} Orders` : "All Orders"}
+          {statusLower ? `${statusLower.toUpperCase()} Orders` : "All Orders"}
         </Heading>
 
         <Box maxW="200px" flexShrink={0}>
@@ -181,7 +183,7 @@ const OrdersScreen = () => {
                           {order.paymentMethod || "N/A"}
                         </Td>
                         <Td textAlign="center">
-                          {!status || status === "allorders" ? (
+                          {!statusLower || statusLower === "allorders" ? (
                             <Select
                               minW="180px"
                               value={
@@ -252,7 +254,7 @@ const OrdersScreen = () => {
 
                         <Td textAlign="center">
                           <Stack spacing={2}>
-                            {(!status || status === "allorders") && (
+                            {(!statusLower || statusLower === "allorders") && (
                               <Button
                                 size="xs"
                                 colorScheme="green"
@@ -261,7 +263,6 @@ const OrdersScreen = () => {
                                 Update
                               </Button>
                             )}
-
                             <Button size="xs" colorScheme="blue">
                               <Link to={`/order/${order._id}`}>
                                 <AiOutlineEdit size={14} /> Details

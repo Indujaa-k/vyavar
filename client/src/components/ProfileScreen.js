@@ -425,7 +425,12 @@ const ProfileScreen = () => {
 
   const menuOptions = [
     { id: "profile", label: "Profile", image: profileimg, icon: FaUser },
-    { id: "subscription", label: "Subscriptions",path:"/subscription",icon: FaBoxOpen },
+    {
+      id: "subscription",
+      label: "Subscriptions",
+      path: "/subscription",
+      icon: FaBoxOpen,
+    },
     {
       id: "addresses",
       label: "Address",
@@ -763,21 +768,22 @@ const ProfileScreen = () => {
           </VStack>
         </RadioGroup>
 
-      
-
         {/* FORM */}
         {showForm && (
           <Box p={4} border="1px solid" borderRadius="md" position="relative">
-            {/* ❌ CLOSE ICON */}
             <IconButton
-             type="button"   
+              type="button"
               icon={<CloseIcon />}
               size="sm"
               position="absolute"
               top="10px"
               right="10px"
+              zIndex={10} // ✅ IMPORTANT
+              bg="white" // ✅ clickable surface
+              _hover={{ bg: "gray.100" }}
               aria-label="Close"
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation(); // ✅ prevent parent interference
                 setShowForm(false);
                 setEditingAddress(null);
                 setNewAddress({
@@ -847,12 +853,42 @@ const ProfileScreen = () => {
       </Box>
     );
   };
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case "DELIVERED":
+        return "Delivered";
+      case "OUT_FOR_DELIVERY":
+        return "Dispatched";
+      case "CONFIRMED":
+      case "PACKED":
+        return "Active";
+      default:
+        return "Active";
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "DELIVERED":
+        return "green.500";
+      case "OUT_FOR_DELIVERY":
+        return "blue.500";
+      default:
+        return "orange.500";
+    }
+  };
 
   const renderOrders = () => {
     const filteredOrders = (orders || []).filter((order) => {
       if (orderTab === "all") return true;
-      if (orderTab === "active") return !order.isDelivered;
-      if (orderTab === "delivered") return order.isDelivered;
+
+      if (orderTab === "active")
+        return (
+          order.orderStatus === "CONFIRMED" || order.orderStatus === "PACKED"
+        );
+
+      if (orderTab === "dispatched")
+        return order.orderStatus === "OUT_FOR_DELIVERY";
 
       return true;
     });
@@ -880,12 +916,11 @@ const ProfileScreen = () => {
           </Button>
 
           <Button
-            w={{ base: "100%", md: "auto" }}
-            variant={orderTab === "delivered" ? "solid" : "outline"}
+            variant={orderTab === "dispatched" ? "solid" : "outline"}
             colorScheme="blue"
-            onClick={() => setOrderTab("delivered")}
+            onClick={() => setOrderTab("dispatched")}
           >
-            Delivered Orders
+            Dispatched
           </Button>
         </Flex>
 
@@ -960,9 +995,9 @@ const ProfileScreen = () => {
                   <Text
                     fontSize="sm"
                     fontWeight="600"
-                    color={order.isDelivered ? "green.500" : "orange.500"}
+                    color={getStatusColor(order.orderStatus)}
                   >
-                    {order.isDelivered ? "Delivered" : "Active"}
+                    {getStatusLabel(order.orderStatus)}
                   </Text>
 
                   <Link to={`/order/${order._id}`}>
@@ -1016,11 +1051,9 @@ const ProfileScreen = () => {
                           <Text
                             fontSize="sm"
                             fontWeight="600"
-                            color={
-                              order.isDelivered ? "green.500" : "orange.500"
-                            }
+                            color={getStatusColor(order.orderStatus)}
                           >
-                            {order.isDelivered ? "Delivered" : "Active"}
+                            {getStatusLabel(order.orderStatus)}
                           </Text>
                         </Box>
                       </Flex>

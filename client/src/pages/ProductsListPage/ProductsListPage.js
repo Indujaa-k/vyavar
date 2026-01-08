@@ -131,7 +131,7 @@ const ProductsListPage = () => {
                   </Box>
                 ))}
             </Flex>
-            <Select
+            {/* <Select
               value={sortBy}
               onChange={handleSortChange}
               width="200px"
@@ -145,7 +145,7 @@ const ProductsListPage = () => {
               <option value="date">Newest</option>
               <option value="highprice">Price: High to Low</option>
               <option value="lowprice">Price: Low to High</option>
-            </Select>
+            </Select> */}
           </Flex>
 
           {loading ? (

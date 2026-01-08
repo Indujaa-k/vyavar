@@ -29,13 +29,7 @@ const Footer = () => {
           <h1>TopCategories</h1>
           <ul>
             <li><Link to="/?gender">TopWear</Link></li>
-            <li><Link to="/?gender">Bottom wear</Link></li>
-            <li><Link to="/?gender">Athleisure</Link></li>
-            <li><Link to="/?gender">Co-ords</Link></li>
-            <li><Link to="/?gender">Dresses</Link></li>
-            <li><Link to="/?gender">Sleep Wear</Link></li>
-            <li><Link to="/?gender">Inner wear</Link></li>
-            <li><Link to="/?gender">Jumpsuits</Link></li>
+            <li><Link to="/?gender">Hoodies</Link></li>
           </ul>
         </div>
 

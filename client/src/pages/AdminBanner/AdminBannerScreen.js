@@ -186,9 +186,6 @@ const AdminBannerScreen = () => {
               ))}
           </VStack>
 
-          <Heading size="md" mt={8} mb={4}>
-            Female Banners
-          </Heading>
           <VStack spacing={6} align="stretch">
             {banners
               .filter((banner) => banner.gender === "female")
