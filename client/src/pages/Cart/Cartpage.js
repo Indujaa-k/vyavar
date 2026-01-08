@@ -134,11 +134,12 @@ const CartPage = () => {
                           value={item.size || ""}
                           onChange={(e) =>
                             dispatch(
-                              addToCart(
-                                item.product._id,
-                                item.qty,
-                                e.target.value
-                              )
+                              addToCart(item.product._id, {
+                                cartItemId: item._id,
+                                qty: item.qty, // ✅ keep same quantity
+                                size: e.target.value, // ✅ change size
+                                action: "set",
+                              })
                             )
                           }
                           w="80px"
@@ -164,14 +165,14 @@ const CartPage = () => {
 
                         {/* QTY */}
                         <Select
-                          value={item.qty || 1}
+                          value={item.qty}
                           onChange={(e) =>
                             dispatch(
-                              addToCart(
-                                item.product._id,
-                                Number(e.target.value),
-                                item.size
-                              )
+                              addToCart(item.product._id, {
+                                qty: Number(e.target.value), // ✅ absolute quantity
+                                size: item.size,
+                                action: "set",
+                              })
                             )
                           }
                           w="80px"
@@ -191,32 +192,25 @@ const CartPage = () => {
                         </Select>
                       </Flex>
                       {/* PRICE */}
-                      {/* <Flex gap={2} mt={2}>
-                        <Text fontWeight="bold">₹{item.product.price}</Text>
-                        <Text as="s" color="gray.400">
-                          ₹{item.product.oldPrice}
-                        </Text>
-                        <Text color="yellow.500" fontWeight="bold">
-                          {item.product.discount}% Off
-                        </Text>
-                      </Flex> */}
-                      <Flex gap={2} mt={2} align="center">
-                        {/* FINAL PRICE */}
+                      <Flex mt={2} align="center" gap={2}>
+                        {/* FINAL CART PRICE */}
                         <Text fontWeight="bold" fontSize="lg">
-                          ₹
-                          {item.product.isSubscriptionApplied
-                            ? item.product.subscriptionPrice
-                            : item.product.price}
+                          ₹{item.price}
                         </Text>
 
-                        {/* STRIKE ORIGINAL PRICE */}
-                        {item.product.isSubscriptionApplied && (
-                          <Text as="s" color="gray.400">
-                            ₹{item.product.originalPrice}
+                        {/* STRIKE MRP */}
+                        {item.product?.oldPrice && (
+                          <Text
+                            as="span"
+                            fontSize="sm"
+                            color="gray.500"
+                            textDecoration="line-through"
+                          >
+                            MRP: ₹{item.product.oldPrice * item.qty}
                           </Text>
                         )}
 
-                        {/* SUBSCRIPTION BADGE */}
+                        {/* SUBSCRIPTION DISCOUNT TEXT */}
                         {item.product.isSubscriptionApplied && (
                           <Text
                             color="green.500"
@@ -227,7 +221,7 @@ const CartPage = () => {
                             Subscriber OFF
                           </Text>
                         )}
-                      </Flex>
+                      </Flex> 
                     </Box>
 
                     {/* REMOVE */}

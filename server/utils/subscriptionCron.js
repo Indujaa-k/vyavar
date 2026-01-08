@@ -46,13 +46,13 @@ import User from "../models/userModel.js";
  * - Expire user subscriptions AFTER endDate
  * - Do NOT delete subscription plans
  */
-cron.schedule("5 0 * * *", async () => {
+cron.schedule("0 10 * * *", async () => {
   try {
     console.log("Running subscription expiry cron...");
 
     const now = new Date();
 
-    // Find users whose subscription has ended
+    // Find users whose subscription has ended 
     const expiredUsers = await User.find({
       "subscription.endDate": { $lt: now },
       isSubscribed: true,

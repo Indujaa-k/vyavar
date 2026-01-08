@@ -348,7 +348,7 @@ const generateInvoice = asyncHandler(async (req, res) => {
       paidAt: order.paidAt,
       isDelivered: order.isDelivered,
       deliveredAt: order.deliveredAt,
-      createdAt: order.createdAt,
+      createdAt: order.createdAt, 
     };
     order.invoiceDetails = invoice;
     await order.save();

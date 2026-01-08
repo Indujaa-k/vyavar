@@ -352,7 +352,14 @@ const Productpage = () => {
       return;
     }
 
-    dispatch(addToCart(product._id, qty, selectedSize));
+    // dispatch(addToCart(product._id, qty, selectedSize));
+    dispatch(
+      addToCart(product._id, {
+        qty: 1,
+        size: selectedSize,
+        action: "add",
+      })
+    );
 
     navigate("/cart");
 
