@@ -47,7 +47,7 @@ const AdminLayout = ({ children }) => {
   const orderStatusList = [
     {
       label: "AllOrders",
-      key: "allorders",
+      key:  "allOrders",
       icon: FaListAlt,
       color: "purple.500",
     },
@@ -222,7 +222,7 @@ const AdminLayout = ({ children }) => {
                     >
                       Order Status
                     </Button>
-                    <Button
+                    {/* <Button
                       as={RouterLink}
                       to="/admin/assignorders"
                       bg="transparent"
@@ -233,7 +233,7 @@ const AdminLayout = ({ children }) => {
                       fontSize="md"
                     >
                       Assign Orders
-                    </Button>
+                    </Button> */}
                     {loadingOrderStatuses ? (
                       <Spinner size="lg" />
                     ) : (
@@ -341,7 +341,7 @@ const AdminLayout = ({ children }) => {
                   </VStack>
                 </Collapse>
                 {/* Delivery Dropdown */}
-                <Button
+                {/* <Button
                   onClick={() => setIsDeliveryOpen(!isDeliveryOpen)}
                   bg="transparent"
                   color="white"
@@ -352,8 +352,8 @@ const AdminLayout = ({ children }) => {
                   variant="ghost"
                 >
                   🛵 Delivery
-                </Button>
-                <Collapse in={isDeliveryOpen} animateOpacity>
+                </Button> */}
+                {/* <Collapse in={isDeliveryOpen} animateOpacity>
                   <VStack pl={4} align="stretch" spacing={2} fontSize="md">
                     <Button
                       onClick={() => setActiveTab("deliverydetails")}
@@ -366,8 +366,8 @@ const AdminLayout = ({ children }) => {
                       fontSize="md"
                     >
                       📦Delivery Details
-                    </Button>
-                    <Button
+                    </Button> */}
+                    {/* <Button
                       onClick={() => setActiveTab("deliverytransactions")}
                       as={RouterLink}
                       to="/admin/delivery/transactions"
@@ -378,9 +378,9 @@ const AdminLayout = ({ children }) => {
                       fontSize="md"
                     >
                       📊 Delivery Transactions
-                    </Button>
-                  </VStack>
-                </Collapse>
+                    </Button> */}
+                  {/* </VStack>
+                </Collapse> */}
 
                 <Button
                   onClick={() => setActiveTab("incomestats")}
@@ -485,7 +485,7 @@ const AdminLayout = ({ children }) => {
                 >
                   🧾 Billing
                 </Button>
-                <Button
+                {/* <Button
                   onClick={() => setActiveTab("settings")}
                   as={RouterLink}
                   to="/profile"
@@ -496,7 +496,7 @@ const AdminLayout = ({ children }) => {
                   fontSize="md"
                 >
                   🔧 Settings
-                </Button>
+                </Button> */}
               </>
             )}
           </VStack>

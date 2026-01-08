@@ -1,10 +1,29 @@
 import React from "react";
-import { Box, Text, Stack, Icon, Divider } from "@chakra-ui/react";
+import { Box, Text, Stack, Icon, Divider, HStack } from "@chakra-ui/react";
 import { FaCheckCircle } from "react-icons/fa";
 
 const OrderTracking = ({ order }) => {
-  const getStatusIcon = (status) => (
-    <Icon as={FaCheckCircle} color={status ? "green.500" : "gray.500"} />
+  const isCompleted = (currentStatus, stepStatus) => {
+    const statusOrder = [
+      "CONFIRMED",
+      "PACKED",
+      "OUT_FOR_DELIVERY",
+    ];
+
+    return (
+      statusOrder.indexOf(currentStatus) >=
+      statusOrder.indexOf(stepStatus)
+    );
+  };
+
+  const StatusRow = ({ label, active }) => (
+    <HStack spacing={2}>
+      <Icon
+        as={FaCheckCircle}
+        color={active ? "green.500" : "gray.400"}
+      />
+      <Text fontWeight={active ? "bold" : "normal"}>{label}</Text>
+    </HStack>
   );
 
   return (
@@ -13,20 +32,31 @@ const OrderTracking = ({ order }) => {
       borderRadius="md"
       p={5}
       boxShadow="lg"
-      
-      bg={"white"}
+      bg="white"
     >
       <Text fontSize="lg" fontWeight="bold" mb={3}>
         Tracking Details
       </Text>
+
       <Stack spacing={3}>
-        <Text>{getStatusIcon(true)} Ordered</Text>
+        <StatusRow
+          label="Confirmed"
+          active={isCompleted(order.orderStatus, "CONFIRMED")}
+        />
         <Divider />
-        <Text>{getStatusIcon(order.isPacked)} Packed</Text>
+
+        <StatusRow
+          label="Packed"
+          active={isCompleted(order.orderStatus, "PACKED")}
+        />
         <Divider />
-        <Text>{getStatusIcon(order.isAcceptedByDelivery)} Shipped</Text>
+
+        <StatusRow
+          label="Dispatched"
+          active={isCompleted(order.orderStatus, "OUT_FOR_DELIVERY")}
+        />
         <Divider />
-        <Text>{getStatusIcon(order.isDelivered)} Delivered</Text>
+
       </Stack>
     </Box>
   );

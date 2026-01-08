@@ -144,7 +144,16 @@ const AdminNavbar = () => {
             Preview
           </button>
 
-          <button onClick={handleBack}>Back</button>
+          <Button
+            colorScheme="teal" 
+            variant="solid" 
+            size="md" 
+            borderRadius="md" 
+            onClick={handleBack} 
+            _hover={{ bg: "teal.600" }} 
+          >
+            Back
+          </Button>
 
           <Button bg="violet" onClick={onOpen}>
             Logout

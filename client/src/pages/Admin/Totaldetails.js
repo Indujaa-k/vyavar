@@ -45,12 +45,18 @@ const StatusCard = ({ label, count, icon, color, onClick }) => (
   <Flex
     bg="white"
     p={4}
-    borderRadius="md"
+    borderRadius="lg"
     boxShadow="sm"
     alignItems="center"
     justifyContent="space-between"
     cursor="pointer"
-    _hover={{ bg: "green.200" }}
+    w="100%"
+    maxW="300px"
+    _hover={{
+      bg: "green.200",
+      transform: "translateY(-4px)",
+      transition: "0.3s",
+    }}
     onClick={onClick}
   >
     <Flex alignItems="center">
@@ -59,7 +65,8 @@ const StatusCard = ({ label, count, icon, color, onClick }) => (
         {label}
       </Text>
     </Flex>
-    <Text fontSize="md" fontWeight="bold" color={color}>
+
+    <Text fontSize="lg" fontWeight="bold" color={color}>
       {count !== undefined ? count : <Spinner size="xs" />}
     </Text>
   </Flex>
@@ -90,12 +97,12 @@ const TotalDetails = () => {
   }, [dispatch, filter]);
 
   const orderStatusList = [
-    {
-      label: "Pending",
-      key: "pending",
-      icon: MdPendingActions,
-      color: "blue.500",
-    },
+    // {
+    //   label: "Pending",
+    //   key: "pending",
+    //   icon: MdPendingActions,
+    //   color: "blue.500",
+    // },
     {
       label: "Confirmed",
       key: "confirmed",
@@ -103,36 +110,36 @@ const TotalDetails = () => {
       color: "green.500",
     },
     {
-      label: "Packaging",
-      key: "packaging",
+      label: "Packed",
+      key: "packed",
       icon: GiCardboardBox,
       color: "orange.500",
     },
     {
-      label: "Out for delivery",
+      label: "Dispatched",
       key: "outForDelivery",
       icon: MdLocalShipping,
       color: "green.500",
     },
-    {
-      label: "Delivered",
-      key: "delivered",
-      icon: AiOutlineDeliveredProcedure,
-      color: "blue.500",
-    },
-    { label: "Canceled", key: "canceled", icon: MdCancel, color: "red.500" },
-    {
-      label: "Returned",
-      key: "returned",
-      icon: AiOutlineRollback,
-      color: "blue.500",
-    },
-    {
-      label: "Failed to deliver",
-      key: "failed",
-      icon: ImCross,
-      color: "red.500",
-    },
+    // {
+    //   label: "Delivered",
+    //   key: "delivered",
+    //   icon: AiOutlineDeliveredProcedure,
+    //   color: "blue.500",
+    // },
+    // { label: "Canceled", key: "canceled", icon: MdCancel, color: "red.500" },
+    // {
+    //   label: "Returned",
+    //   key: "returned",
+    //   icon: AiOutlineRollback,
+    //   color: "blue.500",
+    // },
+    // {
+    //   label: "Failed to deliver",
+    //   key: "failed",
+    //   icon: ImCross,
+    //   color: "red.500",
+    // },
   ];
 
   return (
@@ -176,7 +183,11 @@ const TotalDetails = () => {
         />
       </SimpleGrid>
 
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={4}>
+      <SimpleGrid
+        columns={{ base: 1, md: 3 }}
+        spacing={5}
+        justifyItems="center"
+      >
         {loadingOrderStatuses ? (
           <Spinner size="lg" />
         ) : (

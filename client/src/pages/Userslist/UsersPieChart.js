@@ -37,7 +37,7 @@ const UsersPieChart = () => {
     { name: "Users with Orders", value: usersWithOrders },
     { name: "Users without Orders", value: usersWithoutOrders },
     { name: "Admin Users", value: adminUsers },
-    { name: "Delivery Agents", value: deliveryAgents },
+    // { name: "Delivery Agents", value: deliveryAgents },
   ];
 
   const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
@@ -72,7 +72,11 @@ const UsersPieChart = () => {
       </Flex>
       {/* User Data on Right Side */}
       <Box mt="5">
-        <SimpleGrid columns={{ base: 2, md: 3 }} spacing={4}>
+        <SimpleGrid
+          columns={{ base: 1, sm: 2, md: 4 }}
+          spacing={5}
+          justifyItems="center"
+        >
           {[
             {
               label: "Total Users",
@@ -98,12 +102,12 @@ const UsersPieChart = () => {
               icon: FaCrown,
               color: "purple.500",
             },
-            {
-              label: "Delivery Agents",
-              value: deliveryAgents,
-              icon: FaTruck,
-              color: "orange.500",
-            },
+            // {
+            //   label: "Delivery Agents",
+            //   value: deliveryAgents,
+            //   icon: FaTruck,
+            //   color: "orange.500",
+            // },
           ].map((item, index) => (
             <Box
               key={index}
@@ -111,8 +115,8 @@ const UsersPieChart = () => {
               shadow="md"
               borderRadius="md"
               bg="white"
-              maxW="300px" 
               w="100%"
+              minH="80px"
             >
               <Flex align="center" justify="center">
                 <Icon as={item.icon} color={item.color} mr={3} boxSize={6} />

@@ -35,20 +35,20 @@ const FilterPage = () => {
     category === "Men" ? "Men" : category === "Women" ? "Women" : "";
 
   const [filters, setFilters] = useState({
-    brandname: getQueryParams().get("brandname") || "",
-    gender: forcedGender || getQueryParams().get("gender") || "",
-    category: getQueryParams().get("category") || "",
-    subcategory: getQueryParams().get("subcategory") || "",
-    type: getQueryParams().get("type") || "",
-    color: getQueryParams().get("color") || "",
-    fabric: getQueryParams().get("fabric") || "",
+    // brandname: getQueryParams().get("brandname") || "",
+    // gender: forcedGender || getQueryParams().get("gender") || "",
+    // category: getQueryParams().get("category") || "",
+    // subcategory: getQueryParams().get("subcategory") || "",
+    // type: getQueryParams().get("type") || "",
+    // color: getQueryParams().get("color") || "",
+    // fabric: getQueryParams().get("fabric") || "",
     sizes: getQueryParams().get("sizes") || "",
-    from: getQueryParams().get("from") || "",
-    to: getQueryParams().get("to") || "",
+    // from: getQueryParams().get("from") || "",
+    // to: getQueryParams().get("to") || "",
     discount: getQueryParams().get("discount") || "",
     rating: getQueryParams().get("rating") || "",
-    sortBy: getQueryParams().get("sortBy") || "",
-    keyword: getQueryParams().get("keyword") || "",
+    // sortBy: getQueryParams().get("sortBy") || "",
+    // keyword: getQueryParams().get("keyword") || "",
   });
   useEffect(() => {
     if (forcedGender && filters.gender !== forcedGender) {
@@ -75,17 +75,15 @@ const FilterPage = () => {
   };
 
   const updateURL = () => {
-    const currentParams = new URLSearchParams();
+    const params = new URLSearchParams();
 
     Object.keys(filters).forEach((key) => {
-      if (Array.isArray(filters[key]) && filters[key].length > 0) {
-        currentParams.set(key, filters[key].join(","));
-      } else if (filters[key]) {
-        currentParams.set(key, filters[key]);
+      if (filters[key].length > 0) {
+        params.set(key, filters[key].join(","));
       }
     });
 
-    navigate({ search: `?${currentParams.toString()}` });
+    navigate({ search: `?${params.toString()}` });
   };
 
   const handleSubmit = () => {
@@ -175,7 +173,7 @@ const FilterPage = () => {
           </Text>
         </Flex>
         <Stack spacing={3}>
-          {renderCheckboxList("Brand", "brandname", [
+          {/* {renderCheckboxList("Brand", "brandname", [
             "Puma",
             "Nike",
             "TommyHilfigher",
@@ -184,17 +182,17 @@ const FilterPage = () => {
 
           <FilterCategory title="Gender">
             <Text fontWeight="bold">{filters.gender}</Text>
-          </FilterCategory>
+          </FilterCategory> */}
 
-          {renderCheckboxList("Category", "category", ["Shirts", "Pants"])}
+          {/* {renderCheckboxList("Category", "category", ["Shirts", "Pants"])}
           {renderCheckboxList("Subcategory", "subcategory", [
             "Shirts",
             "Jeans",
             "Pants",
             "Shorts",
             "SweatPants",
-          ])}
-          {renderCheckboxList("Type", "type", ["T-Shirts", "Jeans", "Jackets"])}
+          ])} */}
+          {/* {renderCheckboxList("Type", "type", ["T-Shirts", "Jeans", "Jackets"])}
           {renderCheckboxList("Color", "color", [
             "Red",
             "Blue",
@@ -205,7 +203,7 @@ const FilterPage = () => {
             "Cotton",
             "Polyester",
             "Leather",
-          ])}
+          ])} */}
           {renderCheckboxList("Size", "sizes", ["S", "M", "L", "XL"])}
           {renderCheckboxList("Minimum Discount", "discount", [
             "10%",

@@ -13,17 +13,21 @@ import {
   Alert,
   AlertIcon,
   Radio,
+  useToast,
 } from "@chakra-ui/react";
 import axios from "axios";
 import { useSelector } from "react-redux";
 
 const AdminOfferBannerScreen = () => {
+  const toast = useToast();
   const [offerText, setOfferText] = useState("");
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const userLogin = useSelector((state) => state.userLogin);
   const { userInfo } = userLogin;
+  const [editingId, setEditingId] = useState(null);
+  const [editingText, setEditingText] = useState("");
 
   const config = {
     headers: {
@@ -52,34 +56,108 @@ const AdminOfferBannerScreen = () => {
 
   /* ADD OFFER */
   const addOfferHandler = async () => {
-    if (!offerText) return alert("Enter offer text");
+    if (!offerText) {
+      toast({
+        title: "Enter offer text",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+        position: "bottom-right",
+      });
+      return;
+    }
 
-    await axios.post("/api/banners/offerbanner", { offerText }, config);
+    try {
+      await axios.post("/api/banners/offerbanner", { offerText }, config);
+
+      toast({
+        title: "Offer added successfully",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+        position: "bottom-right",
+      });
+
+      // setOfferText("");
+      // fetchOffers();
+    } catch (err) {
+      toast({
+        title: "Failed to add offer",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "bottom-right",
+      });
+    }
 
     setOfferText("");
     fetchOffers();
   };
 
   /* UPDATE OFFER */
-  const editOfferHandler = async (id, oldText) => {
-    const newText = prompt("Edit offer text", oldText);
-    if (!newText) return;
+  const editOfferHandler = async () => {
+    if (!editingText.trim()) {
+      toast({
+        title: "Offer text cannot be empty",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+        position: "bottom-right",
+      });
+      return;
+    }
 
-    await axios.put(
-      `/api/banners/offerbanner/${id}`,
-      { offerText: newText }, // ✅ ONLY TEXT
-      config
-    );
+    try {
+      await axios.put(
+        `/api/banners/offerbanner/${editingId}`,
+        { offerText: editingText },
+        config
+      );
 
-    fetchOffers();
+      toast({
+        title: "Offer updated successfully",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+        position: "bottom-right",
+      });
+
+      setEditingId(null);
+      setEditingText("");
+      fetchOffers();
+    } catch (err) {
+      toast({
+        title: "Failed to update offer",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "bottom-right",
+      });
+    }
   };
 
   /* DELETE OFFER */
   const deleteOfferHandler = async (id) => {
-    if (window.confirm("Delete this offer?")) {
+    try {
       await axios.delete(`/api/banners/offerbanner/${id}`, config);
 
+      toast({
+        title: "Offer deleted successfully",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+        position: "bottom-right",
+      });
+
       fetchOffers();
+    } catch (err) {
+      toast({
+        title: "Failed to delete offer",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "bottom-right",
+      });
     }
   };
 
@@ -139,19 +217,39 @@ const AdminOfferBannerScreen = () => {
                           {}, // PUT body can be empty
                           config
                         );
-                        console.log("Activate offer response:", data); // 🔹 Step 2: Debug log
+                        toast({
+                          title: "Offer activated",
+                          status: "success",
+                          duration: 2000,
+                          isClosable: true,
+                          position: "bottom-right",
+                        });
+
                         fetchOffers();
                       } catch (err) {
                         console.error(
                           "Activate offer error:",
                           err.response?.data || err.message
                         ); // 🔹 Step 3: More info
-                        alert("Failed to activate offer");
+                        toast({
+                          title: "Failed to activate offer",
+                          status: "error",
+                          duration: 3000,
+                          isClosable: true,
+                          position: "bottom-right",
+                        });
                       }
                     }}
                   />
-
-                  <Text fontWeight="bold">{offer.offerText}</Text>
+                  {editingId === offer._id ? (
+                    <Input
+                      value={editingText}
+                      size="sm"
+                      onChange={(e) => setEditingText(e.target.value)}
+                    />
+                  ) : (
+                    <Text fontWeight="bold">{offer.offerText}</Text>
+                  )}
                 </HStack>
 
                 {/* Right side: Buttons */}
@@ -159,10 +257,23 @@ const AdminOfferBannerScreen = () => {
                   <Button
                     colorScheme="yellow"
                     size="sm"
-                    onClick={() => editOfferHandler(offer._id, offer.offerText)}
+                    onClick={() => {
+                      setEditingId(offer._id);
+                      setEditingText(offer.offerText);
+                    }}
                   >
                     Edit
                   </Button>
+                  {editingId === offer._id && (
+  <Button
+    size="sm"
+    colorScheme="green"
+    onClick={editOfferHandler}
+  >
+    Update
+  </Button>
+)}
+
                   <Button
                     colorScheme="red"
                     size="sm"

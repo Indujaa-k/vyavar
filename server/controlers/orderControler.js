@@ -20,6 +20,7 @@ const addorderitems = asyncHandler(async (req, res) => {
     shippingPrice,
     totalPrice,
     couponCode,
+    paymentResult,
   } = req.body;
 
   if (!orderItems || orderItems.length === 0) {
@@ -27,7 +28,8 @@ const addorderitems = asyncHandler(async (req, res) => {
     throw new Error("No order items");
   }
 
-  // ✅ Create order
+  const isCOD = paymentMethod === "COD";
+
   const order = new Order({
     user: req.user._id,
     orderItems,
@@ -36,11 +38,12 @@ const addorderitems = asyncHandler(async (req, res) => {
     taxPrice,
     shippingPrice,
     totalPrice,
-    shippingRates,
     couponCode,
-    isPaid: !isCOD, // false for COD, true for online
+
+    isPaid: !isCOD,
     paidAt: !isCOD ? Date.now() : null,
-    orderStatus: !isCOD ? "CONFIRMED" : "ORDERED",
+    orderStatus: isCOD ? "ORDERED" : "CONFIRMED",
+
     paymentResult: isCOD
       ? {
           id: "COD-" + Date.now(),
@@ -48,26 +51,23 @@ const addorderitems = asyncHandler(async (req, res) => {
           update_time: new Date().toISOString(),
           email_address: req.user.email,
         }
-      : req.body.paymentResult || {},
-    couponCode,
-    isPaid: true,
-    paidAt: Date.now(),
+      : paymentResult,
   });
 
   const createdOrder = await order.save();
 
-  // ✅ Clear user's cart
-  await User.findByIdAndUpdate(req.user._id, { $set: { cartItems: [] } });
+  // Clear user's cart
+  await User.findByIdAndUpdate(req.user._id, {
+    $set: { cartItems: [] },
+  });
 
-  // ✅ Update coupon usage if couponCode exists
+  // Update coupon usage
   if (couponCode) {
     const offer = await Offer.findOne({ code: couponCode.toUpperCase() });
 
     if (offer) {
-      // Increment used count
       offer.usedCount = (offer.usedCount || 0) + 1;
 
-      // Add user to usedBy if not already there
       if (!offer.usedBy.includes(req.user._id)) {
         offer.usedBy.push(req.user._id);
       }
@@ -607,7 +607,7 @@ const getOrderStatusCounts = asyncHandler(async (req, res) => {
     orderStatus: "OUT_FOR_DELIVERY",
   });
 
-  const allOrders = await Order.countDocuments();
+  const allOrders = confirmed + packed + outForDelivery;
 
   res.json({
     allOrders,
