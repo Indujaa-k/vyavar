@@ -6,12 +6,11 @@ const Categorylist = () => {
   const menCategories = [
     {
       name: "Topwear",
-      subcategories: ["T-Shirts", "Shirts", "Sweatshirts", "Jackets"],
+      subcategories: ["T-Shirts","Regular","Oversized","Full Sleeve"],
     },
-    { name: "Bottomwear", subcategories: ["Jeans", "Pants", "Shorts"] },
     { name: "Hoodies", subcategories: ["Hooded Sweatshirts", "Zip Hoodies"] },
-    { name: "Innerwear", subcategories: ["Boxers", "Briefs", "Vests"] },
-    { name: "Shirts", subcategories: ["Shirts", "Briefs", "Vests"] },
+
+    
   ];
 
   const womenCategories = [
