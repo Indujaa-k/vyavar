@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
-import { Form, Image } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
 import { BsArrowRight } from "react-icons/bs";
 import login from "../../actions/userActions";
@@ -142,7 +141,10 @@ const LoginScreen = () => {
           </div>
         </div>
       </div>
-      <Trust />
+
+      <div className="trust-wrapper">
+        <Trust />
+      </div>
     </>
   );
 };

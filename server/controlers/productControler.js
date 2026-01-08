@@ -247,9 +247,98 @@ const getProductBySku = asyncHandler(async (req, res) => {
 // @desc Add product to cart
 // @route POST /api/products/:id/addtocart
 // @access Private
+// const addToCart = asyncHandler(async (req, res) => {
+//   const userId = req.user._id;
+//   const { qty = 1, size, action = "add", cartItemId } = req.body; // default qty=1
+
+//   if (cartItemId && !existingCartItem) {
+//     return res.status(404).json({ message: "Cart item not found" });
+//   }
+
+//   if (!size) return res.status(400).json({ message: "Size is required" });
+//   if (qty < 0) return res.status(400).json({ message: "Invalid quantity" });
+
+//   const product = await Product.findById(req.params.id);
+//   if (!product) return res.status(404).json({ message: "Product not found" });
+
+//   const user = await User.findById(userId);
+//   if (!user) return res.status(404).json({ message: "User not found" });
+
+//   user.cartItems = user.cartItems || [];
+
+//   const sizeStock = product.productdetails?.stockBySize?.find(
+//     (s) => s.size === size
+//   );
+
+//   if (!sizeStock)
+//     return res.status(400).json({ message: "Size not available" });
+
+//   let existingCartItem = null;
+
+//   // 1️⃣ If cartItemId exists → update THAT item (size change case)
+//   if (cartItemId) {
+//     existingCartItem = user.cartItems.id(cartItemId);
+//   }
+
+//   // 2️⃣ Else → normal add/find by product + size
+//   if (!existingCartItem) {
+//     existingCartItem = user.cartItems.find(
+//       (item) =>
+//         item.product.toString() === product._id.toString() && item.size === size
+//     );
+//   }
+
+//   if (existingCartItem && qty === 0) {
+//     user.cartItems = user.cartItems.filter(
+//       (item) => item._id.toString() !== existingCartItem._id.toString()
+//     );
+//   } else if (existingCartItem) {
+//     const pricedProduct = applySubscriptionPrice(product.toObject(), user);
+
+//     // update size & qty safely
+//     existingCartItem.size = size;
+
+//     if (action === "set") {
+//       existingCartItem.qty = qty;
+//     } else {
+//       existingCartItem.qty += 1;
+//     }
+
+//     // stock check
+//     if (existingCartItem.qty > sizeStock.stock) {
+//       return res.status(400).json({ message: "Not enough stock available" });
+//     }
+
+//     // recalc price
+//     existingCartItem.price =
+//       existingCartItem.qty * pricedProduct.subscriptionPrice;
+//   } else {
+//     const pricedProduct = applySubscriptionPrice(product.toObject(), user);
+
+//     user.cartItems.push({
+//       product: product._id,
+//       qty,
+//       size,
+//       price: qty * pricedProduct.subscriptionPrice, // ✅ CORRECT
+//     });
+//   }
+
+//   await user.save();
+
+//   // const updatedUser = await User.findById(userId).populate("cartItems.product");
+
+//   const updatedUser = await User.findById(userId).populate({
+//     path: "cartItems.product",
+//     select:
+//       "name brandname images oldPrice isSubscriptionApplied subscriptionDiscountPercent productdetails",
+//   });
+
+//   res.status(200).json({ cartItems: updatedUser.cartItems });
+// });
+
 const addToCart = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  const { qty = 1, size } = req.body; // default qty=1
+  const { qty = 1, size, action = "add", cartItemId } = req.body;
 
   if (!size) return res.status(400).json({ message: "Size is required" });
   if (qty < 0) return res.status(400).json({ message: "Invalid quantity" });
@@ -268,13 +357,26 @@ const addToCart = asyncHandler(async (req, res) => {
 
   if (!sizeStock)
     return res.status(400).json({ message: "Size not available" });
-  if (sizeStock.stock < qty)
-    return res.status(400).json({ message: "Not enough stock available" });
 
-  const existingCartItem = user.cartItems.find(
-    (item) =>
-      item.product.toString() === product._id.toString() && item.size === size
-  );
+  let existingCartItem = null;
+
+  // 1️⃣ If cartItemId exists → update THAT item
+  if (cartItemId) {
+    existingCartItem = user.cartItems.id(cartItemId);
+
+    if (!existingCartItem) {
+      return res.status(404).json({ message: "Cart item not found" });
+    }
+  }
+
+  // 2️⃣ Else → find by product + size
+  if (!existingCartItem) {
+    existingCartItem = user.cartItems.find(
+      (item) =>
+        item.product.toString() === product._id.toString() &&
+        item.size === size
+    );
+  }
 
   if (existingCartItem && qty === 0) {
     user.cartItems = user.cartItems.filter(
@@ -283,9 +385,20 @@ const addToCart = asyncHandler(async (req, res) => {
   } else if (existingCartItem) {
     const pricedProduct = applySubscriptionPrice(product.toObject(), user);
 
-    existingCartItem.qty = qty;
+    existingCartItem.size = size;
 
-    existingCartItem.price = qty * pricedProduct.subscriptionPrice;
+    if (action === "set") {
+      existingCartItem.qty = qty;
+    } else {
+      existingCartItem.qty += 1;
+    }
+
+    if (existingCartItem.qty > sizeStock.stock) {
+      return res.status(400).json({ message: "Not enough stock available" });
+    }
+
+    existingCartItem.price =
+      existingCartItem.qty * pricedProduct.subscriptionPrice;
   } else {
     const pricedProduct = applySubscriptionPrice(product.toObject(), user);
 
@@ -293,16 +406,21 @@ const addToCart = asyncHandler(async (req, res) => {
       product: product._id,
       qty,
       size,
-      price: qty * pricedProduct.subscriptionPrice, // ✅ CORRECT
+      price: qty * pricedProduct.subscriptionPrice,
     });
   }
 
   await user.save();
 
-  const updatedUser = await User.findById(userId).populate("cartItems.product");
+  const updatedUser = await User.findById(userId).populate({
+    path: "cartItems.product",
+    select:
+      "name brandname images oldPrice isSubscriptionApplied subscriptionDiscountPercent productdetails",
+  });
 
   res.status(200).json({ cartItems: updatedUser.cartItems });
 });
+
 
 // @desc get cart product
 // @route get /api/products/getcart

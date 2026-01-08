@@ -33,13 +33,13 @@ const API_URL = process.env.REACT_APP_API_URL;
 //   });
 // };
 
-export const addToCart = (id, qty, size) => async (dispatch, getState) => {
+export const addToCart = (id, payload) => async (dispatch, getState) => {
   try {
     const {
       userLogin: { userInfo },
     } = getState();
 
-    if (!size) {
+    if (!payload?.size) {
       console.error("❌ Size is required!");
       return;
     }
@@ -50,14 +50,16 @@ export const addToCart = (id, qty, size) => async (dispatch, getState) => {
 
     const { data } = await axios.post(
       `${API_URL}/api/products/${id}/addtocart`,
-      { qty, size }, // ✅ only qty & size
+      payload, // ✅ only qty & size
       config
     );
 
-    dispatch({
-      type: CART_ADD_ITEM,
-      payload: data.cartItems,
-    });
+    // dispatch({
+    //   type: CART_ADD_ITEM,
+    //   payload: data.cartItems,
+    // });
+
+    dispatch(fetchCart());
   } catch (error) {
     console.error(
       "❌ Add to cart failed:",
@@ -107,10 +109,12 @@ export const removeFromCart = (cartItemId) => async (dispatch, getState) => {
       config
     );
 
-    dispatch({
-      type: CART_REMOVE_ITEM,
-      payload: data.cartItems,
-    });
+    // dispatch({
+    //   type: CART_REMOVE_ITEM,
+    //   payload: data.cartItems,
+    // });
+
+    dispatch(fetchCart());
   } catch (error) {
     console.error(
       "❌ Remove cart failed:",

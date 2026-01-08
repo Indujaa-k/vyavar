@@ -103,6 +103,9 @@ const Nav = () => {
 
   const { banner } = useSelector((state) => state.activeOfferBanner || {});
 
+  const hideBannerRoutes = ["/login", "/register", "/forgetpassword"];
+  const shouldHideBanner = hideBannerRoutes.includes(location.pathname);
+
   return (
     <>
       <nav className={`nav ${nav ? "active" : ""}`}>
@@ -371,6 +374,7 @@ const Nav = () => {
         </Drawer>
       </nav>
       <>
+      {!shouldHideBanner && (
         <div
           style={{
             backgroundColor: "#fbd983", // your desired background
@@ -416,6 +420,7 @@ const Nav = () => {
     `}
           </style>
         </div>
+        )}
       </>
     </>
   );
