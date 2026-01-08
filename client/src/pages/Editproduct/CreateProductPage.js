@@ -22,6 +22,16 @@ import { FaEdit, FaTrash } from "react-icons/fa";
 import { Helmet } from "react-helmet";
 import "./CreateProduct.css";
 import { useNavigate } from "react-router-dom";
+const CATEGORY_DATA = [
+  {
+    name: "Topwear",
+    subcategories: ["T-Shirts", "Regular", "Oversized", "Full Sleeve"],
+  },
+  {
+    name: "Hoodies",
+    subcategories: ["Hooded Sweatshirts", "Zip Hoodies"],
+  },
+];
 
 const CreateProductPage = () => {
   const navigate = useNavigate();
@@ -58,25 +68,38 @@ const CreateProductPage = () => {
   };
 
   const dispatch = useDispatch();
+  // const options = {
+  //   gender: ["Men", "Women", "Unisex"],
+  // category: [
+  //   "Clothing",
+  //   "Topwear",
+  //   "Bottomwear",
+  //   "Shirts",
+  //   "Hoodies",
+  //   "Innerwear",
+  //   "Footwear",
+  //   "Accessories",
+  // ],
+  // subcategory: [
+  //   "Shirts",
+  //   "Jeans",
+  //   "Pants",
+  //   "Shorts",
+  //   "SweatPants",
+  //   "Sets",
+  //   "Regular",
+  //   "Oversized",
+  //   "Full Sleeve",
+  // ],
   const options = {
     gender: ["Men", "Women", "Unisex"],
-    category: [
-      "Clothing",
-      "Topwear",
-      "Bottomwear",
-      "Shirts",
-      "Hoodies",
-      "Innerwear",
-      "Footwear",
-      "Accessories",
-    ],
-    subcategory: ["Shirts", "Jeans", "Pants", "Shorts", "SweatPants", "Sets","Regular","Oversized","Full Sleeve"],
     type: ["Casual", "Formal", "Sports"],
     ageRange: ["Kids", "Teen", "Adult"],
     color: ["Red", "Blue", "Black", "White"],
     fabric: ["Cotton", "Polyester", "Leather"],
     sizes: ["S", "M", "L", "XL", "XXL"],
   };
+
   const validateImages = (variants) => {
     const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
     const maxSize = 2 * 1024 * 1024; // 2MB
@@ -381,13 +404,14 @@ const CreateProductPage = () => {
               setProductdetails({
                 ...productdetails,
                 category: e.target.value,
+                subcategory: "", // 🔥 reset subcategory
               })
             }
           >
             <option value="">Select Category</option>
-            {options.category.map((option) => (
-              <option key={option} value={option}>
-                {option}
+            {CATEGORY_DATA.map((cat) => (
+              <option key={cat.name} value={cat.name}>
+                {cat.name}
               </option>
             ))}
           </select>
@@ -402,11 +426,15 @@ const CreateProductPage = () => {
                 subcategory: e.target.value,
               })
             }
+            disabled={!productdetails.category}
           >
             <option value="">Select Subcategory</option>
-            {options.subcategory.map((option) => (
-              <option key={option} value={option}>
-                {option}
+
+            {CATEGORY_DATA.find(
+              (cat) => cat.name === productdetails.category
+            )?.subcategories.map((sub) => (
+              <option key={sub} value={sub}>
+                {sub}
               </option>
             ))}
           </select>

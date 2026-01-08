@@ -206,8 +206,8 @@ const Orders = () => {
                   <Th textAlign="center">User</Th>
                   <Th textAlign="center">Date</Th>
                   <Th textAlign="center">TOTAL</Th>
-                  <Th textAlign="center">PAID</Th>
-                  <Th textAlign="center">Status</Th>
+                  {/* <Th textAlign="center">PAID</Th>
+                  <Th textAlign="center">Status</Th> */}
                   <Th textAlign="center">ProductImage</Th>
                   <Th textAlign="center">Order Details</Th>
                 </Tr>
@@ -224,8 +224,9 @@ const Orders = () => {
                           ? order.createdAt.substring(0, 10)
                           : "N/A"}
                       </Td>
-                      <Td>${order.total}</Td>
-                      <Td>
+                     <Td>₹ {order.total}</Td>
+
+                      {/* <Td>
                         {order.isPaid ? (
                           <div className="paid">
                             {order.paidAt.substring(0, 10)}
@@ -233,8 +234,8 @@ const Orders = () => {
                         ) : (
                           <div className="notpaid">NO</div>
                         )}
-                      </Td>
-                      <Td textAlign="center">
+                      </Td> */}
+                      {/* <Td textAlign="center">
                         <Button
                           size="sm"
                           colorScheme={status.color}
@@ -246,7 +247,7 @@ const Orders = () => {
                         >
                           {status.label}
                         </Button>
-                      </Td>
+                      </Td> */}
                       <Td>
                         {order.orderItems.map((item) => (
                           <Stack
