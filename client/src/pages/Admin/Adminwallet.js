@@ -54,24 +54,9 @@ const AdminWallet = () => {
       icon: "📈",
     },
     {
-      title: "Commission Earned 📊",
-      amount: `₹${commissionEarned.toFixed(2)}`,
-      icon: "📉",
-    },
-    {
-      title: "Delivery Charge Earned 🚚",
-      amount: `₹${deliveryChargeEarned.toFixed(2)}`,
-      icon: "🚀",
-    },
-    {
       title: "Total Tax Collected 🏛",
       amount: `₹${totalTaxCollected.toFixed(2)}`,
       icon: "📋",
-    },
-    {
-      title: "Pending Amount ⏳",
-      amount: `₹${pendingAmount.toFixed(2)}`,
-      icon: "🕒",
     },
   ];
 

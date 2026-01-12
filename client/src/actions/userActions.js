@@ -267,7 +267,7 @@ export const updateUserProfile = (formData) => async (dispatch, getState) => {
     };
 
     const { data } = await axios.put(
-      `${process.env.REACT_APP_API_URL}/api/users/profile`,
+      `${API_URL}/api/users/profile`,
       formData,
       config
     );

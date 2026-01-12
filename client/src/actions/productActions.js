@@ -216,7 +216,7 @@ export const CreateProduct = (productData) => async (dispatch, getState) => {
     };
 
     const { data } = await axios.post(
-      `/api/products/create`,
+      `${API_URL}/api/products/create`,
       productData,
       config
     );
@@ -469,7 +469,7 @@ export const getProductsByGroupId = (groupId) => async (dispatch, getState) => {
     } = getState();
     const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
 
-    const { data } = await axios.get(`/api/products/group/${groupId}`, config);
+    const { data } = await axios.get(`${API_URL}/api/products/group/${groupId}`, config);
 
     dispatch({ type: PRODUCT_GROUP_DETAILS_SUCCESS, payload: data });
   } catch (error) {
@@ -492,7 +492,7 @@ export const updateGroupCommonFields =
       const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
 
       const { data } = await axios.put(
-        `/api/products/group/${groupId}/common`,
+        `${API_URL}/api/products/group/${groupId}/common`,
         updateData,
         config
       );
@@ -516,7 +516,7 @@ export const updateProductVariant =
         userLogin: { userInfo },
       } = getState();
 
-      await axios.put(`/api/products/group/variant/${variantId}`, formData, {
+      await axios.put(`${API_URL}/api/products/group/variant/${variantId}`, formData, {
         headers: {
           Authorization: `Bearer ${userInfo.token}`,
         },
@@ -543,7 +543,7 @@ export const addVariantToGroup =
       const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
 
       const { data } = await axios.post(
-        `/api/products/group/${groupId}/variant`,
+        `${API_URL}/api/products/group/${groupId}/variant`,
         formData,
         config
       );
@@ -560,7 +560,7 @@ export const getProductFull = (id) => async (dispatch) => {
   try {
     dispatch({ type: PRODUCT_EDIT_REQUEST });
 
-    const { data } = await axios.get(`/api/products/${id}/full`);
+    const { data } = await axios.get(`${API_URL}/api/products/${id}/full`);
 
     dispatch({
       type: PRODUCT_EDIT_SUCCESS,
@@ -591,7 +591,7 @@ export const updateProductGroup =
       };
 
       const { data } = await axios.put(
-        `/api/products/group/${groupId}`,
+        `${API_URL}/api/products/group/${groupId}`,
         updatedData,
         config
       );
@@ -620,7 +620,7 @@ export const markReviewHelpful =
     };
 
     await axios.put(
-      `/api/products/${productId}/reviews/${reviewId}/helpful`,
+      `${API_URL}/api/products/${productId}/reviews/${reviewId}/helpful`,
       {},
       config
     );
@@ -642,7 +642,7 @@ export const markReviewNotHelpful =
     };
 
     await axios.put(
-      `/api/products/${productId}/reviews/${reviewId}/not-helpful`,
+      `${API_URL}/api/products/${productId}/reviews/${reviewId}/not-helpful`,
       {},
       config
     );
@@ -660,7 +660,7 @@ export const listProductsByGroupId =
         userLogin: { userInfo },
       } = getState();
 
-      const { data } = await axios.get(`/api/products/group/${groupId}`);
+      const { data } = await axios.get(`${API_URL}/api/products/group/${groupId}`);
 
       dispatch({
         type: PRODUCT_LIST_BY_GROUP_SUCCESS,
@@ -684,7 +684,7 @@ export const getProductGroup = (groupId) => async (dispatch, getState) => {
       userLogin: { userInfo },
     } = getState();
 
-    const { data } = await axios.get(`/api/products/group/comman/${groupId}`, {
+    const { data } = await axios.get(`${API_URL}/api/products/group/comman/${groupId}`, {
       headers: {
         Authorization: `Bearer ${userInfo.token}`,
       },
@@ -710,7 +710,7 @@ export const updateProductGroupCommon =
         userLogin: { userInfo },
       } = getState();
 
-      await axios.put(`/api/products/group/${groupId}/common`, commonData, {
+      await axios.put(`${API_URL}/api/products/group/${groupId}/common`, commonData, {
         headers: {
           Authorization: `Bearer ${userInfo.token}`,
         },

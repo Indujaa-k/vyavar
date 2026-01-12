@@ -16,6 +16,7 @@ import {
   OFFER_VALIDATE_SUCCESS,
   OFFER_VALIDATE_FAIL,
 } from "../constants/offerConstants";
+const API_URL = process.env.REACT_APP_API_URL;
 
 export const createOffer = (offerData) => async (dispatch, getState) => {
   try {
@@ -32,7 +33,7 @@ export const createOffer = (offerData) => async (dispatch, getState) => {
       },
     };
 
-    const { data } = await axios.post("/api/offers", offerData, config);
+    const { data } = await axios.post(`${API_URL}/api/offers`, offerData, config);
 
     dispatch({
       type: OFFER_CREATE_SUCCESS,
@@ -60,7 +61,7 @@ export const listOffers = () => async (dispatch, getState) => {
       },
     };
 
-    const { data } = await axios.get("/api/offers", config);
+    const { data } = await axios.get(`${API_URL}/api/offers`, config);
 
     dispatch({
       type: OFFER_LIST_SUCCESS,
@@ -91,7 +92,7 @@ export const updateOffer =
       };
 
       const { data } = await axios.put(
-        `/api/offers/${offerId}`,
+        `${API_URL}/api/offers/${offerId}`,
         offerData,
         config
       );
@@ -122,7 +123,7 @@ export const deleteOffer = (offerId) => async (dispatch, getState) => {
       },
     };
 
-    await axios.delete(`/api/offers/${offerId}`, config);
+    await axios.delete(`${API_URL}/api/offers/${offerId}`, config);
 
     dispatch({
       type: OFFER_DELETE_SUCCESS,
@@ -152,7 +153,7 @@ export const getOfferByCouponCode =
       };
 
       const { data } = await axios.get(
-        `/api/offers/${couponCode}`,
+        `${API_URL}/api/offers/${couponCode}`,
         config
       );
 

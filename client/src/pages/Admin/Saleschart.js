@@ -31,7 +31,7 @@ import {
 
 const Saleschart = () => {
   const dispatch = useDispatch();
-
+  const { user } = useSelector((state) => state.userDetails);
   // Redux state
   const {
     loading: loadingSales,
@@ -94,15 +94,17 @@ const Saleschart = () => {
             <StatHelpText textAlign={"center"}>Across all time</StatHelpText>
           </Stat>
         </GridItem>
-        <GridItem>
-          <Stat p={5} bg="blue.50" borderRadius="md" shadow="sm">
-            <StatLabel textAlign={"center"}>💰 Total Revenue</StatLabel>
-            <StatNumber textAlign={"center"}>
-              Rs. {totalRevenue.toFixed(2)}
-            </StatNumber>
-            <StatHelpText textAlign={"center"}>Across all time</StatHelpText>
-          </Stat>
-        </GridItem>
+        {user?.isSeller !== true && (
+          <GridItem>
+            <Stat p={5} bg="blue.50" borderRadius="md" shadow="sm">
+              <StatLabel textAlign={"center"}>💰 Total Revenue</StatLabel>
+              <StatNumber textAlign={"center"}>
+                Rs. {totalRevenue.toFixed(2)}
+              </StatNumber>
+              <StatHelpText textAlign={"center"}>Across all time</StatHelpText>
+            </Stat>
+          </GridItem>
+        )}
       </Grid>
 
       {/* Filter Dropdown */}

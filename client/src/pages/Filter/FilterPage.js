@@ -34,22 +34,17 @@ const FilterPage = () => {
   const forcedGender =
     category === "Men" ? "Men" : category === "Women" ? "Women" : "";
 
+  const getArrayParam = (key) => {
+    const value = getQueryParams().get(key);
+    return value ? value.split(",") : [];
+  };
+
   const [filters, setFilters] = useState({
-    // brandname: getQueryParams().get("brandname") || "",
-    // gender: forcedGender || getQueryParams().get("gender") || "",
-    // category: getQueryParams().get("category") || "",
-    // subcategory: getQueryParams().get("subcategory") || "",
-    // type: getQueryParams().get("type") || "",
-    // color: getQueryParams().get("color") || "",
-    // fabric: getQueryParams().get("fabric") || "",
-    sizes: getQueryParams().get("sizes") || "",
-    // from: getQueryParams().get("from") || "",
-    // to: getQueryParams().get("to") || "",
-    discount: getQueryParams().get("discount") || "",
-    rating: getQueryParams().get("rating") || "",
-    // sortBy: getQueryParams().get("sortBy") || "",
-    // keyword: getQueryParams().get("keyword") || "",
+    sizes: getArrayParam("sizes"),
+    discount: getArrayParam("discount"),
+    rating: getArrayParam("rating"),
   });
+
   useEffect(() => {
     if (forcedGender && filters.gender !== forcedGender) {
       setFilters((prevFilters) => ({ ...prevFilters, gender: forcedGender }));
@@ -78,7 +73,7 @@ const FilterPage = () => {
     const params = new URLSearchParams();
 
     Object.keys(filters).forEach((key) => {
-      if (filters[key].length > 0) {
+      if (Array.isArray(filters[key]) && filters[key].length > 0) {
         params.set(key, filters[key].join(","));
       }
     });
