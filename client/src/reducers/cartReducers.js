@@ -84,6 +84,7 @@ export const cartReducer = (
         ...state,
         shippingRates: action.payload,
       };
+      
 
     default:
       return state;

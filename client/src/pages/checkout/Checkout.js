@@ -32,12 +32,12 @@ const Checkout = () => {
   const navigate = useNavigate();
   const toast = useToast();
   const cart = useSelector((state) => state.cart);
-  const itemsPrice = cart.cartItems.reduce((acc, item) => {
-    if (item.product && item.product.price) {
-      return acc + item.qty * item.product.price;
-    }
-    return acc;
-  }, 0);
+  // const itemsPrice = cart.cartItems.reduce((acc, item) => {
+  //   if (item.product && item.product.price) {
+  //     return acc + item.qty * item.product.price;
+  //   }
+  //   return acc;
+  // }, 0);
 
   const { shippingAddress } = cart;
   const [couponCode, setCouponCode] = useState("");
@@ -61,10 +61,17 @@ const Checkout = () => {
   const dispatch = useDispatch();
   const taxPercentage = 5;
   const shippingRates = cart.shippingRates;
+  // const subtotal = cart.cartItems.reduce(
+  //   (acc, item) => acc + item.qty * item.product.price,
+  //   0
+  // );
+
   const subtotal = cart.cartItems.reduce(
-    (acc, item) => acc + item.qty * item.product.price,
-    0
-  );
+  (acc, item) => acc + item.price,
+  0
+);
+
+
   const offerValidate = useSelector((state) => state.offerValidate);
   const { loading: couponLoading, offer, error: couponError } = offerValidate;
 
@@ -237,7 +244,8 @@ const Checkout = () => {
           return {
             product: item.product._id,
             name: item.product.brandname, // ✅ REQUIRED
-            price: item.product.price, // ✅ REQUIRED
+            // price: item.product.price, // ✅ REQUIRED
+            price: item.price,
             qty: item.qty,
             size: item.size,
           };

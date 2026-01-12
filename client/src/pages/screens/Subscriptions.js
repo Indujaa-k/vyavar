@@ -22,11 +22,13 @@ import {
 } from "../../actions/subscriptionActions";
 import CreateSubscriptionModal from "./CreateSubscriptionModal";
 import EditSubscriptionModal from "./EditSubscriptionModal";
+import { useToast } from "@chakra-ui/react";
 
 const Subscriptions = () => {
   const dispatch = useDispatch();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const editModal = useDisclosure();
+  const toast = useToast();
   const [selectedSubscription, setSelectedSubscription] = useState(null);
 
   const subscriptionCreate = useSelector((state) => state.subscriptionCreate);
@@ -39,11 +41,27 @@ const Subscriptions = () => {
   const { loading, subscriptions, error } = subscriptionList;
 
   const subscriptionToggle = useSelector((state) => state.subscriptionToggle);
-  const { loading: toggleLoading, success: toggleSuccess } = subscriptionToggle;
+  const {
+    loading: toggleLoading,
+    success: toggleSuccess,
+    error: toggleError,
+  } = subscriptionToggle;
 
   useEffect(() => {
     dispatch(listSubscriptions());
   }, [dispatch, toggleSuccess, createSuccess, updateSuccess]);
+  useEffect(() => {
+    if (toggleError) {
+      toast({
+        title: "Cannot Activate Subscription",
+        description: toggleError,
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+        position: "top",
+      });
+    }
+  }, [toggleError, toast]);
 
   const toggleHandler = (id) => {
     dispatch(toggleSubscription(id));
@@ -69,6 +87,10 @@ const Subscriptions = () => {
         <Spinner />
       ) : error ? (
         <Text color="red.500">{error}</Text>
+      ) : subscriptions?.length === 0 ? (
+        <Text textAlign="center" color="gray.500" fontSize="lg" mt={10}>
+          No subscriptions found
+        </Text>
       ) : (
         <Table variant="simple">
           <Thead bg="gray.100">
@@ -84,73 +106,80 @@ const Subscriptions = () => {
               <Th>Status</Th>
               <Th>Actions</Th>
             </Tr>
-
           </Thead>
-
           <Tbody>
-            {subscriptions?.map((sub) => (
-              <React.Fragment key={sub._id}>
-                {/* ROW 1 → Price row */}
-                <Tr bg="gray.50">
-                  <Td>₹{sub.price}</Td>
-                  <Td>{sub.discountPercent}%</Td>
-                  <Td>{new Date(sub.startDate).toLocaleDateString()}</Td>
-                  <Td>{new Date(sub.endDate).toLocaleDateString()}</Td>
-                  <Td>{sub.durationInDays}</Td>
-                  <Td>
-                    <Badge colorScheme={sub.isActive ? "green" : "red"}>
-                      {sub.isActive ? "Active" : "Inactive"}
-                    </Badge>
-                  </Td>
-                  <Td>
-                    <Flex gap={2}>
-                      <Button
-                        size="sm"
-                        colorScheme={sub.isActive ? "red" : "green"}
-                        onClick={() => toggleHandler(sub._id)}
-                      >
-                        {sub.isActive ? "Deactivate" : "Activate"}
-                      </Button>
-                      <Button
-                        size="sm"
-                        colorScheme="blue"
-                        onClick={() => editHandler(sub)}
-                      >
-                        Edit
-                      </Button>
-                    </Flex>
-                  </Td>
-                </Tr>
+            {subscriptions?.map((sub) => {
+              const isExpired = new Date(sub.endDate) < new Date();
 
-                {/* ROW 2 → Title */}
-                <Tr>
-                  <Td colSpan={10}>
-                    <Text fontWeight="bold">Title</Text>
-                    {sub.title}
-                  </Td>
-                </Tr>
+              return (
+                <React.Fragment key={sub._id}>
+                  {/* ROW 1 → Price row */}
+                  <Tr bg="gray.50">
+                    <Td>₹{sub.price}</Td>
+                    <Td>{sub.discountPercent}%</Td>
+                    <Td>{new Date(sub.startDate).toLocaleDateString()}</Td>
+                    <Td>{new Date(sub.endDate).toLocaleDateString()}</Td>
+                    <Td>{sub.durationInDays}</Td>
+                    <Td>
+                      {sub.isActive ? (
+                        <Badge colorScheme="green">Active</Badge>
+                      ) : isExpired ? (
+                        <Badge colorScheme="gray">Expired</Badge>
+                      ) : (
+                        <Badge colorScheme="red">Inactive</Badge>
+                      )}
+                    </Td>
+                    <Td>
+                      <Flex gap={2}>
+                        <Button
+                          size="sm"
+                          colorScheme={sub.isActive ? "red" : "green"}
+                          onClick={() => toggleHandler(sub._id)}
+                          isDisabled={!sub.isActive && isExpired}
+                        >
+                          {sub.isActive ? "Deactivate" : "Activate"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          colorScheme="blue"
+                          onClick={() => editHandler(sub)}
+                        >
+                          Edit
+                        </Button>
+                      </Flex>
+                    </Td>
+                  </Tr>
 
-                {/* ROW 3 → Description */}
-                <Tr>
-                  <Td colSpan={10}>
-                    <Text fontWeight="bold">Description</Text>
-                    {sub.description}
-                  </Td>
-                </Tr>
+                  {/* ROW 2 → Title */}
+                  <Tr>
+                    <Td colSpan={10}>
+                      <Text fontWeight="bold">Title</Text>
+                      {sub.title}
+                    </Td>
+                  </Tr>
 
-                {/* ROW 4 → Offers */}
-                <Tr>
-                  <Td colSpan={10}>
-                    <Text fontWeight="bold">Offers</Text>
-                    <VStack align="start">
-                      {sub.offers?.map((offer, i) => (
-                        <Text key={i}>• {offer}</Text>
-                      ))}
-                    </VStack>
-                  </Td>
-                </Tr>
-              </React.Fragment>
-            ))}
+                  {/* ROW 3 → Description */}
+                  <Tr>
+                    <Td colSpan={10}>
+                      <Text fontWeight="bold">Description</Text>
+                      {sub.description}
+                    </Td>
+                  </Tr>
+
+                  {/* ROW 4 → Offers */}
+                  <Tr>
+                    <Td colSpan={10}>
+                      <Text fontWeight="bold">Offers</Text>
+                      <VStack align="start">
+                        {sub.offers?.map((offer, i) => (
+                          <Text key={i}>• {offer}</Text>
+                        ))}
+                      </VStack>
+                    </Td>
+                  </Tr>
+                </React.Fragment>
+              );
+            })}
           </Tbody>
         </Table>
       )}

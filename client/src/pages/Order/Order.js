@@ -58,7 +58,7 @@ const Order = () => {
   };
   if (!loading) {
     order.itemsPrice = addDecimals(
-      order.orderItems.reduce((acc, item) => acc + item.price * item.qty, 0)
+      order.orderItems.reduce((acc, item) => acc + item.price, 0)
     );
   }
   let discountAmount = 0;
@@ -230,7 +230,7 @@ const Order = () => {
                     Size: <strong>{item.size}</strong>
                   </Text>
                   <Text>
-                    {item.qty} x Rs. {item.price} = Rs. {item.qty * item.price}
+                    {item.qty} x Rs. {item.price / item.qty} = Rs. {item.price }
                   </Text>
                 </HStack>
               ))}
