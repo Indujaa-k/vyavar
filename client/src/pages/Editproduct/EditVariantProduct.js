@@ -24,6 +24,7 @@ import {
   updateProductGroupCommon,
   updateProductVariant,
 } from "../../actions/productActions";
+import { AddIcon } from "@chakra-ui/icons";
 
 const EditVariantProduct = () => {
   const { groupId } = useParams();
@@ -42,6 +43,7 @@ const EditVariantProduct = () => {
   const variantUpdate = useSelector((state) => state.productVariantUpdate);
   const { success: variantUpdateSuccess, error: variantUpdateError } =
     variantUpdate;
+  const [savingVariantId, setSavingVariantId] = useState(null);
 
   // ================= LOCAL STATES =================
   const [commonState, setCommonState] = useState({
@@ -191,31 +193,21 @@ const EditVariantProduct = () => {
   // ================= TOAST HANDLERS =================
   useEffect(() => {
     if (groupUpdateSuccess) {
-      toast({
-        title: "Group updated successfully",
-        status: "success",
-      });
+      toast({ title: "Group updated successfully", status: "success" });
     }
 
     if (groupUpdateError) {
-      toast({
-        title: groupUpdateError,
-        status: "error",
-      });
+      toast({ title: groupUpdateError, status: "error" });
     }
 
     if (variantUpdateSuccess) {
-      toast({
-        title: "Variant updated successfully",
-        status: "success",
-      });
+      toast({ title: "Variant updated successfully", status: "success" });
+      setSavingVariantId(null); // ✅ HERE
     }
 
     if (variantUpdateError) {
-      toast({
-        title: variantUpdateError,
-        status: "error",
-      });
+      toast({ title: variantUpdateError, status: "error" });
+      setSavingVariantId(null);
     }
   }, [
     groupUpdateSuccess,
@@ -274,6 +266,8 @@ const EditVariantProduct = () => {
 
   // ================= SAVE VARIANT =================
   const saveVariantHandler = (variant) => {
+    setSavingVariantId(variant._id); // 👈 ADD THIS
+
     const formData = new FormData();
 
     formData.append("price", variant.price);
@@ -449,9 +443,22 @@ const EditVariantProduct = () => {
           </FormControl>
         </SimpleGrid>
 
-        <Button colorScheme="blue" onClick={updateGroupHandler}>
-          Save Group Details
-        </Button>
+        <Flex justify="space-between" align="center" mt={4}>
+          {/* Save Group Details */}
+          <Button colorScheme="blue" onClick={updateGroupHandler}>
+            Save Group Details
+          </Button>
+
+          {/* ➕ Add Variant Button */}
+          <Button
+            size="sm"
+            leftIcon={<AddIcon />}
+            colorScheme="green"
+            onClick={() => navigate(`/admin/product/${groupId}/add-variant`)}
+          >
+            Add Variant
+          </Button>
+        </Flex>
       </Box>
 
       {/* ================= VARIANTS ================= */}
@@ -687,7 +694,7 @@ const EditVariantProduct = () => {
                 <Button
                   size="sm"
                   colorScheme="green"
-                  isLoading={variantUpdate.loading}
+                  isLoading={savingVariantId === variant._id}
                   onClick={() => saveVariantHandler(variant)}
                 >
                   Save Variant

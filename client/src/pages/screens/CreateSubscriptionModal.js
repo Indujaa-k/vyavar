@@ -15,6 +15,7 @@ import {
   Text,
   Select,
   HStack,
+  SimpleGrid,
 } from "@chakra-ui/react";
 import { useDispatch, useSelector } from "react-redux";
 import { createSubscription } from "../../actions/subscriptionActions";
@@ -113,7 +114,6 @@ const CreateSubscriptionModal = ({ isOpen, onClose }) => {
       <ModalContent>
         <ModalHeader>Create Subscription</ModalHeader>
         <ModalCloseButton />
-
         <ModalBody>
           {error && (
             <Text color="red.500" mb={2}>
@@ -127,22 +127,28 @@ const CreateSubscriptionModal = ({ isOpen, onClose }) => {
             </Text>
           )}
 
-          <VStack spacing={4}>
-            <FormControl isRequired>
-              <FormLabel>Title</FormLabel>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} />
-            </FormControl>
+          <VStack spacing={6} align="stretch">
+            {/* ========= BASIC DETAILS ========= */}
+            <SimpleGrid columns={2} spacing={4}>
+              <FormControl isRequired>
+                <FormLabel>Title</FormLabel>
+                <Input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
+              </FormControl>
 
-            <FormControl isRequired>
-              <FormLabel>Description</FormLabel>
-              <Input
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </FormControl>
+              <FormControl isRequired>
+                <FormLabel>Description</FormLabel>
+                <Input
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+              </FormControl>
+            </SimpleGrid>
 
+            {/* ========= OFFERS ========= */}
             <FormControl isRequired>
-              <FormLabel>Offers</FormLabel>
               <VStack align="stretch">
                 {offers.map((offer, index) => (
                   <HStack key={index}>
@@ -163,51 +169,58 @@ const CreateSubscriptionModal = ({ isOpen, onClose }) => {
                   </HStack>
                 ))}
               </VStack>
-              <Button mt={2} size="sm" colorScheme="blue" onClick={addOffer}>
+
+              <Button mt={2} size="sm" onClick={addOffer}>
                 + Add Offer
               </Button>
             </FormControl>
 
-            <FormControl isRequired>
-              <FormLabel>Price</FormLabel>
-              <Input
-                type="number"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-              />
-            </FormControl>
+            {/* ========= PRICING ========= */}
+            <SimpleGrid columns={2} spacing={4}>
+              <FormControl isRequired>
+                <FormLabel>Price</FormLabel>
+                <Input
+                  type="number"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                />
+              </FormControl>
 
-            <FormControl>
-              <FormLabel>Discount (%)</FormLabel>
-              <Input
-                type="number"
-                value={discountPercent}
-                onChange={(e) => setDiscountPercent(e.target.value)}
-              />
-            </FormControl>
+              <FormControl>
+                <FormLabel>Discount (%)</FormLabel>
+                <Input
+                  type="number"
+                  value={discountPercent}
+                  onChange={(e) => setDiscountPercent(e.target.value)}
+                />
+              </FormControl>
+            </SimpleGrid>
 
-            <FormControl isRequired>
-              <FormLabel>Duration (Days)</FormLabel>
-              <Input
-                type="number"
-                value={durationInDays}
-                onChange={(e) => setDurationInDays(e.target.value)}
-              />
-            </FormControl>
+            {/* ========= DURATION ========= */}
+           <SimpleGrid columns={2} spacing={4}>
+              <FormControl isRequired>
+                <FormLabel>Duration (Days)</FormLabel>
+                <Input
+                  type="number"
+                  value={durationInDays}
+                  onChange={(e) => setDurationInDays(e.target.value)}
+                />
+              </FormControl>
 
-            <FormControl isRequired>
-              <FormLabel>Start Date</FormLabel>
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-            </FormControl>
+              <FormControl isRequired>
+                <FormLabel>Start Date</FormLabel>
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </FormControl>
 
-            <FormControl>
-              <FormLabel>End Date</FormLabel>
-              <Input value={endDate} isReadOnly />
-            </FormControl>
+              <FormControl>
+                <FormLabel>End Date</FormLabel>
+                <Input value={endDate} isReadOnly />
+              </FormControl>
+            </SimpleGrid>
           </VStack>
         </ModalBody>
 
