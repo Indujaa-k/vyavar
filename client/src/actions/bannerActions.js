@@ -245,7 +245,7 @@ export const listOfferBanners = () => async (dispatch, getState) => {
       },
     };
 
-    const { data } = await axios.get("/api/banners/offerbanners", config);
+    const { data } = await axios.get(`${API_URL}/api/banners/offerbanners`, config);
 
     dispatch({
       type: OFFER_BANNER_LIST_SUCCESS,
@@ -275,7 +275,7 @@ export const addOfferBanner = (bannerData) => async (dispatch, getState) => {
     };
 
     const { data } = await axios.post(
-      "/api/banners/offerbanner",
+      `${API_URL}/api/banners/offerbanner`,
       bannerData,
       config
     );
@@ -308,7 +308,7 @@ export const updateOfferBanner = (id, bannerData) => async (dispatch, getState) 
     };
 
     const { data } = await axios.put(
-      `/api/banners/offerbanner/${id}`,
+      `${API_URL}/api/banners/offerbanner/${id}`,
       bannerData,
       config
     );
@@ -339,7 +339,7 @@ export const deleteOfferBanner = (id) => async (dispatch, getState) => {
       },
     };
 
-    await axios.delete(`/api/banners/offerbanner/${id}`, config);
+    await axios.delete(`${API_URL}/api/banners/offerbanner/${id}`, config);
 
     dispatch({ type: OFFER_BANNER_DELETE_SUCCESS });
   } catch (error) {
@@ -354,7 +354,7 @@ export const getActiveOfferBanner = () => async (dispatch) => {
   try {
     dispatch({ type: OFFER_BANNER_ACTIVE_REQUEST });
 
-    const { data } = await axios.get("/api/banners/offerbanner");
+    const { data } = await axios.get(`${API_URL}/api/banners/offerbanner`);
 
     dispatch({
       type: OFFER_BANNER_ACTIVE_SUCCESS,

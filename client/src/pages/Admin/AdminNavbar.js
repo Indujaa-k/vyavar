@@ -145,12 +145,12 @@ const AdminNavbar = () => {
           </button>
 
           <Button
-            colorScheme="teal" 
-            variant="solid" 
-            size="md" 
-            borderRadius="md" 
-            onClick={handleBack} 
-            _hover={{ bg: "teal.600" }} 
+            colorScheme="teal"
+            variant="solid"
+            size="md"
+            borderRadius="md"
+            onClick={handleBack}
+            _hover={{ bg: "teal.600" }}
           >
             Back
           </Button>
@@ -215,7 +215,7 @@ const AdminNavbar = () => {
           </AlertDialog>
         </HStack>
       </Flex>
-      {banner && (
+      {banner && window.location.pathname === "/" && (
         <div
           style={{
             backgroundColor: "#fbd983",
