@@ -64,6 +64,7 @@ const Nav = () => {
   const { user } = userProfile;
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const btnRef = useRef();
+  const [showCategory, setShowCategory] = useState(false);
 
   const onSearchSubmit = (e) => {
     e.preventDefault();
@@ -154,12 +155,21 @@ const Nav = () => {
             </NavLink>
           </li>
 
-          <li className="dropdown nav-item">
-            <div className="nav-content">
-              <img src={CategoryImg} alt="Categories" className="nav-img" />
-              <span>Categories</span>
-            </div>
-            <Categorylist />
+          <li
+            className="dropdown nav-item"
+            onMouseEnter={() => setShowCategory(true)}
+            onMouseLeave={() => setShowCategory(false)}
+          >
+            {/* CLICK → /products */}
+            <NavLink to="/products?productMode=combo" className="nav-item">
+              <div className="nav-content">
+                <img src={CategoryImg} alt="Categories" className="nav-img" />
+                <span>Categories</span>
+              </div>
+            </NavLink>
+
+            {/* HOVER → dropdown */}
+            {showCategory && <Categorylist />}
           </li>
 
           <li>
@@ -374,40 +384,40 @@ const Nav = () => {
         </Drawer>
       </nav>
       <>
-      {!shouldHideBanner && (
-        <div
-          style={{
-            backgroundColor: "#fbd983", // your desired background
-            overflow: "hidden",
-            whiteSpace: "nowrap",
-            padding: "12px 0",
-            position: "sticky",
-            zIndex: "999",
-            top: "70px",
-            fontWeight: "700",
-          }}
-        >
+        {!shouldHideBanner && (
           <div
             style={{
-              display: "inline-block",
-              paddingLeft: "100%",
-              animation:
-                "marquee 15s linear infinite, shine 2s linear infinite",
-              fontSize: "16px",
-              background:
-                "linear-gradient(90deg, #000 40%, #fff 50%, #000 60%)",
-              backgroundSize: "200% auto",
-              color: "transparent",
-              WebkitBackgroundClip: "text",
+              backgroundColor: "#fbd983", // your desired background
+              overflow: "hidden",
+              whiteSpace: "nowrap",
+              padding: "12px 0",
+              position: "sticky",
+              zIndex: "999",
+              top: "70px",
+              fontWeight: "700",
             }}
           >
-            {banner
-              ? `${banner.offerText} • ${banner.offerText} • ${banner.offerText}`
-              : "Loading offers..."}
-          </div>
+            <div
+              style={{
+                display: "inline-block",
+                paddingLeft: "100%",
+                animation:
+                  "marquee 15s linear infinite, shine 2s linear infinite",
+                fontSize: "16px",
+                background:
+                  "linear-gradient(90deg, #000 40%, #fff 50%, #000 60%)",
+                backgroundSize: "200% auto",
+                color: "transparent",
+                WebkitBackgroundClip: "text",
+              }}
+            >
+              {banner
+                ? `${banner.offerText} • ${banner.offerText} • ${banner.offerText}`
+                : "Loading offers..."}
+            </div>
 
-          <style>
-            {`
+            <style>
+              {`
       @keyframes marquee {
         0% { transform: translateX(0%); }
         100% { transform: translateX(-100%); }
@@ -418,8 +428,8 @@ const Nav = () => {
         100% { background-position: 200% 0; }
       }
     `}
-          </style>
-        </div>
+            </style>
+          </div>
         )}
       </>
     </>

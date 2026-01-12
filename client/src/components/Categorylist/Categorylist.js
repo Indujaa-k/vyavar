@@ -1,16 +1,17 @@
 import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import "../Nav.css";
+
 const Categorylist = () => {
   // Define Men and Women categories
   const menCategories = [
+    
     {
       name: "Topwear",
-      subcategories: ["T-Shirts","Regular","Oversized","Full Sleeve"],
+      subcategories: ["T-Shirts", "Regular", "Oversized", "Full Sleeve"],
     },
     { name: "Hoodies", subcategories: ["Hooded Sweatshirts", "Zip Hoodies"] },
-
-    
+    { name: "Combo", subcategories: [] }, // Combo has no subcategories
   ];
 
   const womenCategories = [
@@ -18,18 +19,14 @@ const Categorylist = () => {
       name: "Clothing",
       subcategories: ["Tops", "Casual Shirts", "Formal Shirts"],
     },
-    { name: "Bottomwear", subcategories: ["Pants", "Pants", "Straight"] },
-    { name: "Pants", subcategories: ["Shorts", "Pants", "Cargo Pants"] },
-    { name: "Shorts", subcategories: ["Denim Shorts", "Cotton Shorts"] },
-    { name: "Innerwear", subcategories: ["Cotton", "Fleece"] },
+    { name: "Bottomwear", subcategories: ["Pants", "Straight"] },
+    { name: "Combo", subcategories: [] }, // Added Combo for women too
   ];
 
-  // Get the query parameters using the location hook
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
-  const gender = searchParams.get("gender") || "Men"; // Retrieve gender query param
+  const gender = searchParams.get("gender") || "Men";
 
-  // Show categories based on the gender value
   const categoriesToShow =
     gender === "Men"
       ? menCategories
@@ -45,17 +42,27 @@ const Categorylist = () => {
             <div key={index} className="category-column">
               <h4>{category.name}</h4>
               <ul>
-                {category.subcategories.map((sub, subIndex) => (
-                  <li key={subIndex}>
-                    <NavLink
-                      to={`/products?gender=${gender}&category=${encodeURIComponent(
-                        category.name
-                      )}&subcategory=${encodeURIComponent(sub)}`}
-                    >
-                      {sub}
+                {category.subcategories.length > 0 ? (
+                  category.subcategories.map((sub, subIndex) => (
+                    <li key={subIndex}>
+                      <NavLink
+                        to={`/products?gender=${gender}&category=${encodeURIComponent(
+                          category.name
+                        )}&subcategory=${encodeURIComponent(sub)}`}
+                      >
+                        {sub}
+                      </NavLink>
+                    </li>
+                  ))
+                ) : category.name.toLowerCase() === "combo" ? (
+                  <li>
+                    <NavLink to={`/products?gender=${gender}&category=Combo`}>
+                      View Combos
                     </NavLink>
                   </li>
-                ))}
+                ) : (
+                  <li>No subcategories</li>
+                )}
               </ul>
             </div>
           ))}

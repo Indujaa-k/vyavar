@@ -444,7 +444,7 @@ const AdminLayout = ({ children }) => {
                       leftIcon="•"
                       fontSize="md"
                     >
-                      Offer Banner
+                     Top PromoText
                     </Button>
                   </VStack>
                 </Collapse>

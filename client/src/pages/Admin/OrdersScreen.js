@@ -25,6 +25,7 @@ import {
   Select,
   Button,
   Stack,
+  Grid ,
 } from "@chakra-ui/react";
 import { AiOutlineEdit } from "react-icons/ai";
 
@@ -135,6 +136,145 @@ const OrdersScreen = () => {
               const currentStatus = statusUpdates[order._id] || statusObj.label;
 
               return (
+                // <Box
+                //   key={order._id}
+                //   borderWidth="1px"
+                //   borderRadius="lg"
+                //   p={4}
+                //   bg="white"
+                //   boxShadow="md"
+                //   _hover={{ shadow: "lg" }}
+                // >
+                //   <Table variant="simple">
+                //     <Thead>
+                //       <Tr>
+                //         <Th textAlign="center">Order ID</Th>
+                //         <Th textAlign="center">Customer</Th>
+                //         <Th textAlign="center">Date</Th>
+                //         <Th textAlign="center">Total</Th>
+                //         <Th textAlign="center">Paid</Th>
+                //         <Th textAlign="center">Payment Method</Th>
+                //         <Th textAlign="center">Status</Th>
+                //         {/* <Th textAlign="center">Tracking No</Th> */}
+                //         <Th textAlign="center">Product Image</Th>
+                //         {/* <Th textAlign="center">size</Th> */}
+                //         <Th textAlign="center">Actions</Th>
+                //       </Tr>
+                //     </Thead>
+                //     <Tbody>
+                //       <Tr>
+                //         <Td textAlign="center">{order._id}</Td>
+                //         <Td textAlign="center">{order.user?.name || "N/A"}</Td>
+                //         <Td textAlign="center">
+                //           {order.createdAt.substring(0, 10)}
+                //         </Td>
+                //         <Td textAlign="center">
+                //           Rs.{order.totalPrice.toFixed(2)}
+                //         </Td>
+                //         <Td textAlign="center">
+                //           {order.isPaid ? (
+                //             <Badge colorScheme="green">
+                //               {order.paidAt?.substring(0, 10)}
+                //             </Badge>
+                //           ) : (
+                //             <Badge colorScheme="red">Not Paid</Badge>
+                //           )}
+                //         </Td>
+                //         <Td textAlign="center">
+                //           {order.paymentMethod || "N/A"}
+                //         </Td>
+                //         <Td textAlign="center">
+                //           {!statusLower || statusLower === "allorders" ? (
+                //             <Select
+                //               minW="180px"
+                //               value={
+                //                 statusUpdates[order._id] ||
+                //                 order.orderStatus ||
+                //                 "CONFIRMED"
+                //               }
+                //               onChange={(e) =>
+                //                 setStatusUpdates((prev) => ({
+                //                   ...prev,
+                //                   [order._id]: e.target.value,
+                //                 }))
+                //               }
+                //             >
+                //               <option value="CONFIRMED">Confirmed</option>
+                //               <option value="PACKED">Packed</option>
+                //               <option value="OUT_FOR_DELIVERY">
+                //                 Dispatched
+                //               </option>
+                //             </Select>
+                //           ) : (
+                //             <Badge colorScheme="blue">
+                //               {order.orderStatus === "OUT_FOR_DELIVERY"
+                //                 ? "Dispatched"
+                //                 : order.orderStatus}
+                //             </Badge>
+                //           )}
+                //         </Td>
+
+                //         {/*
+                //         <Td textAlign="center">
+                //           {shipment.trackingNumber || "N/A"}
+                //         </Td> */}
+                //         <Td textAlign="center">
+                //           <HStack spacing={2} justify="center">
+                //             {order.orderItems?.map((item, index) => (
+                //               <Box key={index} textAlign="center">
+                //                 {item?.product?.images?.length > 0 ? (
+                //                   <Image
+                //                     src={item.product.images[0]}
+                //                     alt={item.product.brandname || "Product"}
+                //                     boxSize="50px"
+                //                     objectFit="cover"
+                //                     borderRadius="5px"
+                //                   />
+                //                 ) : (
+                //                   <Text fontSize="xs" color="gray.500">
+                //                     No Image
+                //                   </Text>
+                //                 )}
+                //               </Box>
+                //             ))}
+                //           </HStack>
+                //         </Td>
+                //         {/* <Td textAlign="center">
+                //           <VStack spacing={1}>
+                //             {order.orderItems.map((item) => (
+                //               <Text
+                //                 key={item._id}
+                //                 fontSize="sm"
+                //                 fontWeight="bold"
+                //               >
+                //                 {item.size || "N/A"}
+                //               </Text>
+                //             ))}
+                //           </VStack>
+                //         </Td> */}
+
+                //         <Td textAlign="center">
+                //           <Stack spacing={2}>
+                //             {(!statusLower || statusLower === "allorders") && (
+                //               <Button
+                //                 size="xs"
+                //                 colorScheme="green"
+                //                 onClick={() => handleStatusUpdate(order._id)}
+                //               >
+                //                 Update
+                //               </Button>
+                //             )}
+                //             <Button size="xs" colorScheme="blue">
+                //               <Link to={`/order/${order._id}`}>
+                //                 <AiOutlineEdit size={14} /> Details
+                //               </Link>
+                //             </Button>
+                //           </Stack>
+                //         </Td>
+                //       </Tr>
+                //     </Tbody>
+                //   </Table>
+                // </Box>
                 <Box
                   key={order._id}
                   borderWidth="1px"
@@ -142,137 +282,121 @@ const OrdersScreen = () => {
                   p={4}
                   bg="white"
                   boxShadow="md"
-                  _hover={{ shadow: "lg" }}
                 >
-                  <Table variant="simple">
-                    <Thead>
-                      <Tr>
-                        <Th textAlign="center">Order ID</Th>
-                        <Th textAlign="center">Customer</Th>
-                        <Th textAlign="center">Date</Th>
-                        <Th textAlign="center">Total</Th>
-                        <Th textAlign="center">Paid</Th>
-                        <Th textAlign="center">Payment Method</Th>
-                        <Th textAlign="center">Status</Th>
-                        {/* <Th textAlign="center">Tracking No</Th> */}
-                        <Th textAlign="center">Product Image</Th>
-                        {/* <Th textAlign="center">size</Th> */}
-                        <Th textAlign="center">Actions</Th>
-                      </Tr>
-                    </Thead>
-                    <Tbody>
-                      <Tr>
-                        <Td textAlign="center">{order._id}</Td>
-                        <Td textAlign="center">{order.user?.name || "N/A"}</Td>
-                        <Td textAlign="center">
-                          {order.createdAt.substring(0, 10)}
-                        </Td>
-                        <Td textAlign="center">
-                          Rs.{order.totalPrice.toFixed(2)}
-                        </Td>
-                        <Td textAlign="center">
-                          {order.isPaid ? (
-                            <Badge colorScheme="green">
-                              {order.paidAt?.substring(0, 10)}
-                            </Badge>
-                          ) : (
-                            <Badge colorScheme="red">Not Paid</Badge>
-                          )}
-                        </Td>
-                        <Td textAlign="center">
-                          {order.paymentMethod || "N/A"}
-                        </Td>
-                        <Td textAlign="center">
-                          {!statusLower || statusLower === "allorders" ? (
-                            <Select
-                              minW="180px"
-                              value={
-                                statusUpdates[order._id] ||
-                                order.orderStatus ||
-                                "CONFIRMED"
-                              }
-                              onChange={(e) =>
-                                setStatusUpdates((prev) => ({
-                                  ...prev,
-                                  [order._id]: e.target.value,
-                                }))
-                              }
-                            >
-                              <option value="CONFIRMED">Confirmed</option>
-                              <option value="PACKED">Packed</option>
-                              <option value="OUT_FOR_DELIVERY">
-                                Dispatched
-                              </option>
-                            </Select>
-                          ) : (
-                            <Badge colorScheme="blue">
-                              {order.orderStatus === "OUT_FOR_DELIVERY"
-                                ? "Dispatched"
-                                : order.orderStatus}
-                            </Badge>
-                          )}
-                        </Td>
+                  {/* 🔹 Order ID – Full Width */}
+                  <Box
+                    bg="gray.100"
+                    p={2}
+                    borderRadius="md"
+                    mb={3}
+                    fontWeight="bold"
+                    fontSize="sm"
+                  >
+                    Order ID : {order._id}
+                  </Box>
 
-                        {/* 
-                        <Td textAlign="center">
-                          {shipment.trackingNumber || "N/A"}
-                        </Td> */}
-                        <Td textAlign="center">
-                          <HStack spacing={2} justify="center">
-                            {order.orderItems?.map((item, index) => (
-                              <Box key={index} textAlign="center">
-                                {item?.product?.images?.length > 0 ? (
-                                  <Image
-                                    src={item.product.images[0]}
-                                    alt={item.product.brandname || "Product"}
-                                    boxSize="50px"
-                                    objectFit="cover"
-                                    borderRadius="5px"
-                                  />
-                                ) : (
-                                  <Text fontSize="xs" color="gray.500">
-                                    No Image
-                                  </Text>
-                                )}
-                              </Box>
-                            ))}
-                          </HStack>
-                        </Td>
-                        {/* <Td textAlign="center">
-                          <VStack spacing={1}>
-                            {order.orderItems.map((item) => (
-                              <Text
-                                key={item._id}
-                                fontSize="sm"
-                                fontWeight="bold"
-                              >
-                                {item.size || "N/A"}
-                              </Text>
-                            ))}
-                          </VStack>
-                        </Td> */}
+                  {/* 🔹 Header Row */}
+                  <Grid
+                    templateColumns="repeat(8, 1fr)"
+                    fontSize="sm"
+                    fontWeight="bold"
+                    color="gray.600"
+                    mb={2}
+                  >
+                    <Text>Customer</Text>
+                    <Text>Date</Text>
+                    <Text>Total</Text>
+                    <Text>Paid</Text>
+                    <Text>Payment</Text>
+                    <Text>Status</Text>
+                    <Text textAlign="center">Images</Text>
+                    <Text textAlign="center">Actions</Text>
+                  </Grid>
 
-                        <Td textAlign="center">
-                          <Stack spacing={2}>
-                            {(!statusLower || statusLower === "allorders") && (
-                              <Button
-                                size="xs"
-                                colorScheme="green"
-                                onClick={() => handleStatusUpdate(order._id)}
-                              >
-                                Update
-                              </Button>
-                            )}
-                            <Button size="xs" colorScheme="blue">
-                              <Link to={`/order/${order._id}`}>
-                                <AiOutlineEdit size={14} /> Details
-                              </Link>
-                            </Button>
-                          </Stack>
-                        </Td>
-                      </Tr>
-                    </Tbody>
-                  </Table>
+                  {/* 🔹 Data Row */}
+                  <Grid
+                    templateColumns="repeat(8, 1fr)"
+                    alignItems="center"
+                    fontSize="sm"
+                    gap={2}
+                  >
+                    <Text>{order.user?.name || "N/A"}</Text>
+
+                    <Text>{order.createdAt.substring(0, 10)}</Text>
+
+                    <Text>₹{order.totalPrice.toFixed(2)}</Text>
+
+                    <Box>
+                      {order.isPaid ? (
+                        <Badge colorScheme="green">
+                          {order.paidAt?.substring(0, 10)}
+                        </Badge>
+                      ) : (
+                        <Badge colorScheme="red">Not Paid</Badge>
+                      )}
+                    </Box>
+
+                    <Text>{order.paymentMethod || "N/A"}</Text>
+
+                    {/* Status */}
+                    <Box>
+                      {!statusLower || statusLower === "allorders" ? (
+                        <Select
+                          size="sm"
+                          value={
+                            statusUpdates[order._id] ||
+                            order.orderStatus ||
+                            "CONFIRMED"
+                          }
+                          onChange={(e) =>
+                            setStatusUpdates((prev) => ({
+                              ...prev,
+                              [order._id]: e.target.value,
+                            }))
+                          }
+                        >
+                          <option value="CONFIRMED">Confirmed</option>
+                          <option value="PACKED">Packed</option>
+                          <option value="OUT_FOR_DELIVERY">Dispatched</option>
+                        </Select>
+                      ) : (
+                        <Badge colorScheme="blue">
+                          {order.orderStatus === "OUT_FOR_DELIVERY"
+                            ? "Dispatched"
+                            : order.orderStatus}
+                        </Badge>
+                      )}
+                    </Box>
+
+                    {/* Images */}
+                    <HStack spacing={1} justify="center">
+                      {order.orderItems?.map((item, index) => (
+                        <Image
+                          key={index}
+                          src={item?.product?.images?.[0]}
+                          boxSize="35px"
+                          objectFit="cover"
+                          borderRadius="md"
+                        />
+                      ))}
+                    </HStack>
+
+                    {/* Actions */}
+                    <VStack spacing={1}>
+                      {(!statusLower || statusLower === "allorders") && (
+                        <Button
+                          size="xs"
+                          colorScheme="green"
+                          onClick={() => handleStatusUpdate(order._id)}
+                        >
+                          Update
+                        </Button>
+                      )}
+                      <Button size="xs" colorScheme="blue">
+                        <Link to={`/order/${order._id}`}>Details</Link>
+                      </Button>
+                    </VStack>
+                  </Grid>
                 </Box>
               );
             })
