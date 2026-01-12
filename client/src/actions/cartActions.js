@@ -145,3 +145,22 @@ export const saveShippingRates = (shippingRates) => ({
   type: SAVE_SHIPPING_RATES,
   payload: shippingRates,
 });
+
+// export const getCartTotal = () => async (dispatch, getState) => {
+//   const {
+//     cart: { cartItems },
+//   } = getState();
+
+//   const itemsPrice = cartItems.reduce(
+//     (acc, item) => acc + item.price,
+//     0
+//   );
+
+//   dispatch({
+//     type: "CART_TOTAL_SUCCESS",
+//     payload: {
+//       itemsPrice,
+//       totalPrice: itemsPrice, // shipping later if needed
+//     },
+//   });
+// };

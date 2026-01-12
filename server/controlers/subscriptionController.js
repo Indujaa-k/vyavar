@@ -89,9 +89,22 @@ const toggleSubscriptionStatus = asyncHandler(async (req, res) => {
     throw new Error("Subscription not found");
   }
 
-  // 🔴 If activating this plan
+  const today = new Date();
+
+  // 🚫 BLOCK if subscription period is over
+  if (
+    !subscription.isActive &&
+    subscription.endDate < today
+  ) {
+    res.status(400);
+    throw new Error(
+      "Subscription period is expired. Please create a new subscription."
+    );
+  }
+
+  // 🔴 If activating
   if (!subscription.isActive) {
-    // Deactivate all others
+    // Deactivate other active plans
     await Subscription.updateMany(
       { isActive: true },
       { $set: { isActive: false } }
@@ -99,7 +112,6 @@ const toggleSubscriptionStatus = asyncHandler(async (req, res) => {
 
     subscription.isActive = true;
   } else {
-    // Just deactivate
     subscription.isActive = false;
   }
 

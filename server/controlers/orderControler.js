@@ -348,7 +348,7 @@ const generateInvoice = asyncHandler(async (req, res) => {
       paidAt: order.paidAt,
       isDelivered: order.isDelivered,
       deliveredAt: order.deliveredAt,
-      createdAt: order.createdAt, 
+      createdAt: order.createdAt,
     };
     order.invoiceDetails = invoice;
     await order.save();
@@ -439,14 +439,24 @@ const createRazorpayOrder = async (req, res) => {
 
     let subtotal = 0;
 
-    for (const item of user.cartItems) {
-      const product = await Product.findById(item.product);
+    // for (const item of user.cartItems) {
+    //   const product = await Product.findById(item.product);
 
-      if (!product) {
-        return res.status(400).json({ message: "Product not found" });
+    //   if (!product) {
+    //     return res.status(400).json({ message: "Product not found" });
+    //   }
+
+    //   subtotal += product.price * item.qty;
+    // }
+
+    for (const item of user.cartItems) {
+      if (!item.price) {
+        return res.status(400).json({
+          message: "Cart item price missing",
+        });
       }
 
-      subtotal += product.price * item.qty;
+      subtotal += item.price ;
     }
 
     const taxAmount = (subtotal * 5) / 100;

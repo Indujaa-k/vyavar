@@ -65,11 +65,23 @@ const API_URL = process.env.REACT_APP_API_URL;
 
 export const listProducts =
   (keyword = "") =>
-  async (dispatch) => {
+  async (dispatch, getState) => {
     try {
       dispatch({ type: PRODUCT_LIST_REQUEST });
+
+      const {
+        userLogin: { userInfo },
+      } = getState();
+
+      const config = {
+        headers: userInfo?.token
+          ? { Authorization: `Bearer ${userInfo.token}` }
+          : {},
+      };
+
       const { data } = await axios.get(
-        `${API_URL}/api/products?keyword=${keyword}`
+        `${API_URL}/api/products?keyword=${keyword}`,
+        config
       );
 
       dispatch({ type: PRODUCT_LIST_SUCCESS, payload: data });
@@ -84,27 +96,55 @@ export const listProducts =
     }
   };
 
-export const Listproductbyfiters = (filters) => async (dispatch) => {
-  try {
-    dispatch({ type: PRODUCT_LIST_REQUEST });
-    let queryString = "?";
-    for (let key in filters) {
-      if (filters[key]) {
-        queryString += `&${key}=${filters[key]}`;
-      }
+// export const Listproductbyfiters = (filters) => async (dispatch) => {
+//   try {
+//     dispatch({ type: PRODUCT_LIST_REQUEST });
+//     let queryString = "?";
+//     for (let key in filters) {
+//       if (filters[key]) {
+//         queryString += `&${key}=${filters[key]}`;
+//       }
+//     }
+//     const { data } = await axios.get(`${API_URL}/api/products/${queryString}`);
+//     dispatch({ type: PRODUCT_LIST_SUCCESS, payload: data });
+//     console.log(data);
+//   } catch (error) {
+//     dispatch({
+//       type: PRODUCT_LIST_FAIL,
+//       payload:
+//         error.response && error.response.data.message
+//           ? error.response.data.message
+//           : error.message,
+//     });
+//   }
+// };
+
+export const Listproductbyfiters = (filters) => async (dispatch, getState) => {
+  dispatch({ type: PRODUCT_LIST_REQUEST });
+
+  const {
+    userLogin: { userInfo },
+  } = getState();
+
+  const config = {
+    headers: userInfo?.token
+      ? { Authorization: `Bearer ${userInfo.token}` }
+      : {},
+  };
+
+  let queryString = "?";
+  for (let key in filters) {
+    if (filters[key]) {
+      queryString += `&${key}=${filters[key]}`;
     }
-    const { data } = await axios.get(`${API_URL}/api/products/${queryString}`);
-    dispatch({ type: PRODUCT_LIST_SUCCESS, payload: data });
-    console.log(data);
-  } catch (error) {
-    dispatch({
-      type: PRODUCT_LIST_FAIL,
-      payload:
-        error.response && error.response.data.message
-          ? error.response.data.message
-          : error.message,
-    });
   }
+
+  const { data } = await axios.get(
+    `${API_URL}/api/products/${queryString}`,
+    config
+  );
+
+  dispatch({ type: PRODUCT_LIST_SUCCESS, payload: data });
 };
 
 export const listProductVariants = (sku) => async (dispatch) => {
@@ -469,7 +509,10 @@ export const getProductsByGroupId = (groupId) => async (dispatch, getState) => {
     } = getState();
     const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
 
-    const { data } = await axios.get(`${API_URL}/api/products/group/${groupId}`, config);
+    const { data } = await axios.get(
+      `${API_URL}/api/products/group/${groupId}`,
+      config
+    );
 
     dispatch({ type: PRODUCT_GROUP_DETAILS_SUCCESS, payload: data });
   } catch (error) {
@@ -516,11 +559,15 @@ export const updateProductVariant =
         userLogin: { userInfo },
       } = getState();
 
-      await axios.put(`${API_URL}/api/products/group/variant/${variantId}`, formData, {
-        headers: {
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      });
+      await axios.put(
+        `${API_URL}/api/products/group/variant/${variantId}`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${userInfo.token}`,
+          },
+        }
+      );
 
       dispatch({ type: PRODUCT_VARIANT_UPDATE_SUCCESS });
     } catch (error) {
@@ -660,7 +707,16 @@ export const listProductsByGroupId =
         userLogin: { userInfo },
       } = getState();
 
-      const { data } = await axios.get(`${API_URL}/api/products/group/${groupId}`);
+      const config = {
+        headers: userInfo?.token
+          ? { Authorization: `Bearer ${userInfo.token}` }
+          : {},
+      };
+
+      const { data } = await axios.get(
+        `${API_URL}/api/products/group/${groupId}`,
+        config
+      );
 
       dispatch({
         type: PRODUCT_LIST_BY_GROUP_SUCCESS,
@@ -684,11 +740,14 @@ export const getProductGroup = (groupId) => async (dispatch, getState) => {
       userLogin: { userInfo },
     } = getState();
 
-    const { data } = await axios.get(`${API_URL}/api/products/group/comman/${groupId}`, {
-      headers: {
-        Authorization: `Bearer ${userInfo.token}`,
-      },
-    });
+    const { data } = await axios.get(
+      `${API_URL}/api/products/group/comman/${groupId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      }
+    );
 
     dispatch({
       type: PRODUCT_GROUP_SUCCESS,
@@ -710,11 +769,15 @@ export const updateProductGroupCommon =
         userLogin: { userInfo },
       } = getState();
 
-      await axios.put(`${API_URL}/api/products/group/${groupId}/common`, commonData, {
-        headers: {
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      });
+      await axios.put(
+        `${API_URL}/api/products/group/${groupId}/common`,
+        commonData,
+        {
+          headers: {
+            Authorization: `Bearer ${userInfo.token}`,
+          },
+        }
+      );
 
       dispatch({ type: PRODUCT_GROUP_UPDATE_SUCCESS });
     } catch (error) {

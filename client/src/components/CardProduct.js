@@ -67,7 +67,7 @@ const CardProduct = ({ product }) => {
       description: `Click to view details.`,
       status: "success",
       duration: 5000,
-      position: "bottom",
+      position: "top",
       isClosable: true,
     });
     setIncart(true);
@@ -85,11 +85,36 @@ const CardProduct = ({ product }) => {
       prev < product.images.length - 1 ? prev + 1 : 0
     );
   };
+
+  const discountPercent = product.subscriptionDiscountPercent || 0;
+
+  console.log("discount percent:" ,discountPercent)
+
+  const displayPrice = product.isSubscriptionApplied
+    ? product.subscriptionPrice
+    : product.price;
+
+    console.log("CARD PRODUCT DEBUG", {
+  id: product._id,
+  name: product.description,
+  price: product.price,
+  oldPrice: product.oldPrice,
+  discount: product.discount,
+  subscriptionPrice: product.subscriptionPrice,
+  subscriptionDiscountPercent: product.subscriptionDiscountPercent,
+  isSubscriptionApplied: product.isSubscriptionApplied,
+  images: product.images,
+  cartStatus: Incart,
+  favoriteStatus: isFavorite,
+});
+
   return (
     <>
       <Link to={`/product/${product._id}`}>
         <div
-          className="cardProduct"
+          className={`cardProduct ${
+            product.isSubscriptionApplied ? "subscriptionApplied" : ""
+          }`}
           onMouseOver={() => setShowbtn(true)}
           onMouseLeave={() => setShowbtn(false)}
         >
@@ -157,7 +182,7 @@ const CardProduct = ({ product }) => {
                   Rs. {product.oldPrice}
                 </span>
               )}
-              <span
+              {/* <span
                 className="newPrice"
                 style={{
                   fontSize: "16px",
@@ -165,8 +190,17 @@ const CardProduct = ({ product }) => {
                   color: "#000",
                 }}
               >
-                Rs. {product.price}
-              </span>
+                Rs. {product.price} 
+              </span> */}
+              <span className="newPrice">Rs. {displayPrice}</span>
+
+              {product.isSubscriptionApplied && (
+                <div
+                  style={{ fontSize: "12px", color: "green", marginTop: "4px" }}
+                >
+                  {discountPercent}% OFF with subscriptions 
+                </div>
+              )}
             </div>
 
             {/* Rating Component */}

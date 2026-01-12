@@ -17,95 +17,158 @@ const About = () => {
   return (
     <div className="aboutcontainer">
       <Helmet>
-        <title>About | Never Fade Fashion</title>
+        <title>About | Viyavar</title>
       </Helmet>
 
-      {/* ============ HERO PARALLAX ============ */}
+      {/* ================= HERO ================= */}
       <div
         className="parallax-banner"
         style={{
           backgroundImage:
-            "url('https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=1600&q=80')",
+            "url('https://images.unsplash.com/photo-1601933470928-c45f3f7c5a4b?auto=format&fit=crop&w=1600&q=80')",
         }}
       >
         <div className="overlay" data-aos="zoom-in">
-          <h1 data-aos="fade-up" data-aos-delay="200">
-            Never Fade Fashion
-          </h1>
-          <p data-aos="fade-up" data-aos-delay="400">
-            Where elegance meets attitude — redefining fashion for the fearless.
+          <h1 data-aos="fade-up">VIYAVAR</h1>
+          <p data-aos="fade-up" data-aos-delay="300">
+            A tribute to the Head Soldier — leadership, courage, and honor in
+            every thread.
           </p>
         </div>
       </div>
 
-      {/* ============ OUR VISION ============ */}
+      {/* ================= WHO WE ARE ================= */}
       <div className="Content1">
         <div className="text" data-aos="fade-right">
-          <h1>Our Vision</h1>
+          <h1>Who We Are</h1>
           <p>
-            Never Fade Fashion is not just a clothing brand — it’s a statement
-            of confidence and creativity. Born from the desire to make
-            individuality timeless, our mission is to create designs that never
-            fade from memory.
+            Viyavar means <strong>Head Soldier</strong> — the one who leads from
+            the front, stands fearless, and protects without hesitation.
             <br />
             <br />
-            Every collection carries the heartbeat of bold expression,
-            celebrating people who dare to stand out. We combine premium
-            materials with a vision that’s fearless, stylish, and authentic —
-            because you deserve to wear confidence, not just clothes.
+            We are a clothing brand created to honor that spirit. Every printed
+            shirt is a mark of respect for leadership, discipline, and sacrifice.
           </p>
         </div>
 
         <div className="imagecontainer" data-aos="fade-left">
           <Image
-            className="mImage"
             boxSize="400px"
             objectFit="cover"
-            src="https://images.unsplash.com/photo-1614771637369-ed94441a651a?auto=format&fit=crop&w=600&q=80"
-            alt="Fashion Vision"
+            src="https://images.unsplash.com/photo-1593032465171-8b58b5bda4f3?auto=format&fit=crop&w=600&q=80"
+            alt="Viyavar Identity"
           />
         </div>
       </div>
 
-      {/* ============ OUR CRAFT ============ */}
+      {/* ================= VISION ================= */}
       <div className="Content2">
         <div className="imagecontainer" data-aos="fade-right">
           <Image
-            className="mImage"
             boxSize="400px"
             objectFit="cover"
-            src="https://images.unsplash.com/photo-1614038276039-667c23bc32fa?auto=format&fit=crop&w=600&q=80"
-            alt="Fashion Craft"
+            src="https://images.unsplash.com/photo-1601582589907-f92af5ed9db8?auto=format&fit=crop&w=600&q=80"
+            alt="Vision"
           />
         </div>
+
         <div className="text" data-aos="fade-left">
-          <h1>Our Craft</h1>
+          <h1>Our Vision</h1>
           <p>
-            Our process blends creativity and precision. From handpicked fabrics
-            to expert tailoring, every piece is built to endure. We design
-            garments that breathe, move, and last — made by artists who believe
-            in crafting stories, not just outfits.
-            <br />
-            <br />
-            Each design goes through layers of refinement, ensuring that when
-            you wear Never Fade, you wear excellence. Sustainability meets
-            modern design — because real style never fades.
+            To become a symbol of honor and strength, where every Viyavar shirt
+            represents the spirit of a head soldier — leading with courage,
+            standing firm, and inspiring generations through wearable pride.
           </p>
         </div>
       </div>
 
-      {/* ============ PARALLAX QUOTE ============ */}
+      {/* ================= MISSION ================= */}
+      <div className="Content1">
+        <div className="text" data-aos="fade-right">
+          <h1>Our Mission</h1>
+          <p>
+            Viyavar exists to pay tribute to the head soldier — the leader, the
+            protector, the one who stands first in every battle.
+            <br />
+            <br />
+            Through thoughtfully designed printed apparel, we transform stories
+            of courage, unity, and sacrifice into clothing that speaks louder
+            than words.
+            <br />
+            <br />
+            Our mission is to let people wear respect, leadership, and pride —
+            every single day.
+          </p>
+        </div>
+
+        <div className="imagecontainer" data-aos="fade-left">
+          <Image
+            boxSize="400px"
+            objectFit="cover"
+            src="https://images.unsplash.com/photo-1601582589748-6a1d1e99f9d6?auto=format&fit=crop&w=600&q=80"
+            alt="Mission"
+          />
+        </div>
+      </div>
+
+      {/* ================= CRAFT ================= */}
+      <div className="Content2">
+        <div className="imagecontainer" data-aos="fade-right">
+          <Image
+            boxSize="400px"
+            objectFit="cover"
+            src="https://images.unsplash.com/photo-1585386959984-a41552231692?auto=format&fit=crop&w=600&q=80"
+            alt="Craftsmanship"
+          />
+        </div>
+
+        <div className="text" data-aos="fade-left">
+          <h1>Our Craft</h1>
+          <p>
+            Every Viyavar shirt is built with purpose. From premium fabric
+            selection to bold, meaningful prints, our craftsmanship reflects
+            discipline, durability, and pride — just like a soldier’s mindset.
+            <br />
+            <br />
+            We don’t follow trends. We create statements that last.
+          </p>
+        </div>
+      </div>
+
+      {/* ================= VALUES ================= */}
+      <div className="values-section">
+        <h1 data-aos="fade-up">What We Stand For</h1>
+
+        <div className="values-grid">
+          <div className="value-card" data-aos="fade-up">
+            <h3>Leadership</h3>
+            <p>Designs inspired by those who lead by example.</p>
+          </div>
+
+          <div className="value-card" data-aos="fade-up" data-aos-delay="150">
+            <h3>Courage</h3>
+            <p>Fearless expression that honors strength and sacrifice.</p>
+          </div>
+
+          <div className="value-card" data-aos="fade-up" data-aos-delay="300">
+            <h3>Discipline</h3>
+            <p>Precision in fabric, print, and finish — no compromises.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ================= FINAL PARALLAX ================= */}
       <div
         className="parallax-banner2"
         style={{
           backgroundImage:
-            "url('https://images.unsplash.com/photo-1521334884684-d80222895322?auto=format&fit=crop&w=1600&q=80')",
+            "url('https://images.unsplash.com/photo-1590086782792-42dd2350140d?auto=format&fit=crop&w=1600&q=80')",
         }}
       >
         <div className="overlay" data-aos="zoom-in">
-          <h2 data-aos="fade-up">Timeless. Confident. You.</h2>
+          <h2 data-aos="fade-up">Wear the Leader Within</h2>
           <p data-aos="fade-up" data-aos-delay="200">
-            Confidence is the real trend — and it never fades.
+            Not just fashion. A tribute to courage.
           </p>
         </div>
       </div>

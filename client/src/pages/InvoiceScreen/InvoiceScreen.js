@@ -98,7 +98,7 @@ const InvoiceScreen = ({ match }) => {
       doc.text(String(item.qty), 20, y);
       doc.text(item.name, 40, y);
       doc.text(item.size || "-", 120, y);
-      doc.text(`Rs. ${item.qty * item.price}`, 160, y);
+      doc.text(`Rs. ${item.price}`, 160, y);
       y += 8;
     });
 
@@ -130,7 +130,7 @@ const InvoiceScreen = ({ match }) => {
   };
 
   return (
-    <Box p={5} bg={"white"}>
+    <Box p={5} mt={"50px"} bg={"white"}>
       <Text fontSize="2xl" fontWeight="bold" mb={5}>
         Invoice
       </Text>
@@ -185,7 +185,7 @@ const InvoiceScreen = ({ match }) => {
                       <Td>{item.qty}</Td>
                       <Td>{item.name}</Td>
                       <Td>{item.size}</Td>
-                      <Td>₹{item.price * item.qty}</Td>
+                      <Td>₹{item.price }</Td>
                     </Tr>
                   ))
                 ) : (
