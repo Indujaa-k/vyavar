@@ -1,0 +1,57 @@
+.privacy-policy {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 24px;
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+  color: #222;
+  background-color: #ffffff;
+}
+
+.privacy-policy h1 {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.privacy-policy h2 {
+  font-size: 22px;
+  font-weight: 600;
+  margin-top: 32px;
+  margin-bottom: 12px;
+  color: #111;
+}
+
+.privacy-policy p {
+  font-size: 15px;
+  line-height: 1.8;
+  margin-bottom: 14px;
+}
+
+.privacy-policy ul {
+  padding-left: 20px;
+  margin-bottom: 16px;
+}
+
+.privacy-policy li {
+  font-size: 15px;
+  line-height: 1.7;
+  margin-bottom: 6px;
+}
+
+.privacy-policy strong {
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .privacy-policy {
+    padding: 16px;
+  }
+
+  .privacy-policy h1 {
+    font-size: 26px;
+  }
+
+  .privacy-policy h2 {
+    font-size: 20px;
+  }
+}

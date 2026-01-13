@@ -32,3 +32,39 @@
   margin-top: 10px;
   margin-bottom: 20px;
 }
+/* =========================
+   MOBILE RESPONSIVE
+========================= */
+@media (max-width: 768px) {
+  .Trust-details {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 items per row */
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    height: auto;
+    padding: 12px 8px;
+  }
+
+  .trust-item {
+    align-items: center;
+  }
+
+  .trust-item span {
+    font-size: 13px;
+    line-height: 1.2;
+  }
+
+  .trust-image {
+    width: 30px;
+    height: 30px;
+    margin-bottom: 4px;
+  }
+
+  .insta-image {
+    width: 18px;
+    height: 18px;
+    margin-top: 6px;
+    margin-bottom: 6px;
+  }
+}

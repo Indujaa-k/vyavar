@@ -23,11 +23,11 @@ const Trust = () => {
       </div>
       <div className="trust-item">
         <img src={heartIcon} alt="Show Some Love" className="trust-image" />
-        <span>7 Day Return</span>
+        <span>10 Days Return</span>
       </div>
       <div className="trust-item">
         <img src={instaIcon} alt="Show Some Love" className="insta-image" />
-        <span>Show us some ❤️ on our social media</span>
+        <span>Catch us on Instagram</span>
       </div>
     </div>
   );

@@ -1,0 +1,96 @@
+.terms-container {
+  max-width: 900px;
+  margin: 60px auto;
+  padding: 30px 20px;
+  background: #ffffff;
+  color: #2c2c2c;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.8;
+}
+
+/* Main Title */
+.terms-container h1 {
+  font-size: 34px;
+  font-weight: 700;
+  margin-bottom: 30px;
+  text-align: center;
+  color: #111;
+}
+
+/* Section Headings */
+.terms-container h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-top: 35px;
+  margin-bottom: 12px;
+  color: #222;
+}
+
+/* Paragraphs */
+.terms-container p {
+  font-size: 15.5px;
+  margin-bottom: 14px;
+  color: #444;
+}
+
+/* Address block */
+.terms-container address {
+  font-style: normal;
+  font-size: 15px;
+  margin-bottom: 18px;
+  color: #555;
+}
+
+/* Links */
+.terms-container a {
+  color: #0066cc;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.terms-container a:hover {
+  text-decoration: underline;
+}
+
+/* Lists */
+.terms-container ul {
+  margin-top: 10px;
+  margin-left: 20px;
+}
+
+.terms-container li {
+  font-size: 15px;
+  margin-bottom: 8px;
+  color: #444;
+}
+
+/* Contact Section Highlight */
+.terms-container h2:last-of-type {
+  margin-top: 40px;
+}
+
+.terms-container p:last-child {
+  margin-bottom: 0;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .terms-container {
+    margin: 30px 10px;
+    padding: 20px 15px;
+  }
+
+  .terms-container h1 {
+    font-size: 26px;
+  }
+
+  .terms-container h2 {
+    font-size: 18px;
+  }
+
+  .terms-container p,
+  .terms-container li,
+  .terms-container address {
+    font-size: 14.5px;
+  }
+}
