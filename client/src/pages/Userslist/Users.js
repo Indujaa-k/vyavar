@@ -73,6 +73,10 @@ const Users = () => {
                 <Th textAlign="center" w="15%">
                   Name
                 </Th>
+                <Th>Subscription Status</Th>
+                <Th textAlign="center" w="20%">
+                  Subscription
+                </Th>
                 <Th textAlign="center" w="20%">
                   Email
                 </Th>
@@ -105,7 +109,50 @@ const Users = () => {
                       }
                     />
                   </Td>
-                  <Td>{user.name}</Td>
+                  <Td>
+                    <Text fontWeight="medium">{user.name}</Text>
+                  </Td>
+                  <Td>
+                    {user.subscription?.isActive ? (
+                      <Text
+                        fontSize="xs"
+                        color="green.600"
+                        fontWeight="semibold"
+                      >
+                        Subscribed with  {user.subscription.discountPercent}%
+                      </Text>
+                    ) : (
+                      <Text fontSize="xs" color="gray.500">
+                        Not Subscribed
+                      </Text>
+                    )}
+                  </Td>
+                  <Td>
+                    {user.subscription?.isActive ? (
+                      <Box fontSize="sm">
+                        <Text>
+                          <strong>Amount:</strong> ₹{user.subscription.price}
+                        </Text>
+                        <Text>
+                          <strong>Start:</strong>{" "}
+                          {new Date(
+                            user.subscription.startDate
+                          ).toLocaleDateString()}
+                        </Text>
+                        <Text>
+                          <strong>End:</strong>{" "}
+                          {new Date(
+                            user.subscription.endDate
+                          ).toLocaleDateString()}
+                        </Text>
+                      </Box>
+                    ) : (
+                      <Text fontSize="sm" color="gray.500">
+                        —
+                      </Text>
+                    )}
+                  </Td>
+
                   <Td>
                     <a href={`mailto:${user.email}`}></a>
                     {user.email}

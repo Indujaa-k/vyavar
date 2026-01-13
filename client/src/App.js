@@ -62,6 +62,8 @@ import CreateSubscriptionModal from "./pages/screens/CreateSubscriptionModal";
 import SubscriptionPayment from "./components/SubscriptionPayment";
 import AdminOfferBannerScreen from "./pages/AdminBanner/AdminOfferBannerScreen";
 import CreateOfferpage from "./pages/OffersPage/CreateOfferpage";
+import TermsandCondition from "./pages/Userslist/terms/TermsandCondition";
+import Privatepolicy from "./pages/Userslist/terms/Privatepolicy";
 // import ProtectedRoute from "./pages/ProtectedRoutes";
 const App = () => {
   const { userInfo } = useSelector((state) => state.userLogin);
@@ -214,6 +216,8 @@ const App = () => {
                   <Route path="/Favorites" element={<FavoritesPage />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/contactus" element={<Contactus />} />
+                  <Route path="/terms" element={<TermsandCondition/>}/>
+                  <Route path="/policy" element={<Privatepolicy/>}/>
                   <Route path="/product/:id" element={<Productpage />} />
                   <Route path="/cart/:id?" element={<Cartpage />} />
                   <Route path="/login/*" element={<Navigate to="/login" />} />

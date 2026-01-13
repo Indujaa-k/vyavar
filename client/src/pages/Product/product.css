@@ -30,14 +30,14 @@
   align-items: flex-start;
   box-sizing: border-box;
   padding: 0 20px 0 20px;
-  padding-top: 40px;
   overflow-x: hidden;
+  /* overflow-y: visible; */
 }
 
 /* image */
 .img-display {
   position: relative;
-  z-index: 1;
+  /* z-index: 1; */
   overflow: hidden;
   /* max-width: 100%; */
   /*  width: 450px; */
@@ -55,17 +55,41 @@
 .img-select {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 5px;
+  align-items: center;
 }
-.img-item img {
-  width: 400px; /* Adjust size of thumbnails */
-  height: 200px; /* Maintain aspect ratio */
+/* .img-item img {
+  width: 400px; 
+  height: 200px; 
   object-fit: cover;
+} */
+/* .img-item img {
+  width: 270px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 6px;
 }
+
 .img-item {
   margin: 0;
   cursor: pointer;
+} */
+
+.img-item {
+  width: 100px;
+  height: 130px;
+  flex-shrink: 0; /* prevents resizing */
+  overflow: hidden;
+  border-radius: 6px;
 }
+
+.img-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* forces same visual size */
+  display: block; /* removes inline gaps */
+}
+
 .img-item:nth-child(1),
 .img-item:nth-child(2),
 .img-item:nth-child(3) {
@@ -83,7 +107,7 @@
 .img-item a:hover {
   border: 2px solid #256eff;
 }
-.zoomed-image {
+/* .zoomed-image {
   width: 700px;
   height: 600px;
   border: 2px solid #ddd;
@@ -94,6 +118,17 @@
   display: block;
   pointer-events: none;
   z-index: 900;
+} */
+
+.zoomed-image {
+  position: absolute;
+  /* inset: 0; covers full image */
+  background-repeat: no-repeat;
+  background-size: 200%;
+  pointer-events: none;
+  z-index: 5;
+  width: 600px;
+  height: 700px;
 }
 
 /* product */
@@ -314,7 +349,7 @@
 }
 .card {
   display: grid;
-  grid-template-columns: 60% 40%;
+  grid-template-columns: 50% 50%;
   grid-gap: 1.5rem;
   box-sizing: border-box;
 }
@@ -335,9 +370,9 @@
     overflow-x: auto; /* Allow horizontal scrolling */
   }
 
-  .img-item img {
-    width: 80px; /* Smaller thumbnails for mobile */
-    height: 100px;
+  .img-item {
+    width: 90px; /* Smaller thumbnails for mobile */
+    height: 70px;
   }
 
   .product-title {
@@ -482,7 +517,7 @@
   font-size: 12px;
   color: #888;
   margin-top: 2px;
-  margin-left:20px;
+  margin-left: 20px;
 }
 
 /* Right Section */
