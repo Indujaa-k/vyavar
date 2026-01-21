@@ -11,6 +11,16 @@
   background-attachment: fixed;
   position: relative;
 }
+.password-toggle-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  z-index: 999; /* 👈 important */
+  font-size: 18px;
+  user-select: none;
+}
 .form-row {
   display: flex;
   align-items: center;
@@ -20,7 +30,7 @@
 }
 
 .form-row label {
-  width: 150px; /* adjust as needed */
+  width: 100px; /* adjust as needed */
   font-weight: bold;
 }
 
@@ -46,7 +56,7 @@
 /* Center the Form Container */
 .registerSc .containera {
   width: 450px;
-  height: 600px;
+  height: 500px;
   background: rgba(255, 255, 255, 0.9);
   padding: 40px 30px;
   box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);

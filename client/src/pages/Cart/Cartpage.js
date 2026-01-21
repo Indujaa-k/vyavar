@@ -59,7 +59,7 @@ const CartPage = () => {
       <Box
         color="black"
         bg="white"
-        mt={{ base: "80px", md: "120px" }}
+        mt={{ base: "80px", md: "70px" }}
         ml={{ base: "7px", md: "50px" }}
         mr={{ base: "7px" }}
       >

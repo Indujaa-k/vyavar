@@ -6,7 +6,7 @@ import { BsArrowRight } from "react-icons/bs";
 import login from "../../actions/userActions";
 import "./logincss.css";
 import { useLocation } from "react-router-dom";
-import Trust from "../../components/Trustdetails/Trust";
+// import Trust from "../../components/Trustdetails/Trust";
 
 const LoginScreen = () => {
   const location = useLocation();
@@ -95,7 +95,7 @@ const LoginScreen = () => {
                   />
                 </div>
               </div>
-              <div className="">
+             <div className="">
                 <div className="i">
                   <i className="fas fa-lock"></i>
                 </div>
@@ -110,18 +110,12 @@ const LoginScreen = () => {
                   />
                   <span
                     onClick={togglePasswordVisibility}
-                    style={{
-                      position: "absolute",
-                      right: "50px",
-                      top: "45%",
-                      transform: "translateY(-50%)",
-                      cursor: "pointer",
-                    }}
+                   className="password-toggle-icon"
                   >
                     {showPassword ? "🙈" : "👁️"}
                   </span>
                 </div>
-              </div>
+              </div> 
 
               <input type="submit" className="btna" value="Login" />
 
@@ -142,9 +136,9 @@ const LoginScreen = () => {
         </div>
       </div>
 
-      <div className="trust-wrapper">
+      {/* <div className="trust-wrapper">
         <Trust />
-      </div>
+      </div> */}
     </>
   );
 };
