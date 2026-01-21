@@ -927,9 +927,13 @@ const ProfileScreen = () => {
     });
 
     return (
-      <Box>
-        {/* Tabs */}
-        <Flex direction={{ base: "column", md: "row" }} gap={3} mb={4}>
+      <Box mb={4} flexShrink={0}>
+        {/* ✅ NEW WRAPPER */}
+        <Flex
+          direction={{ base: "column", md: "row" }}
+          gap={3}
+          mb={4} // 👈 THIS LINE (under space)
+        >
           <Button
             w={{ base: "100%", md: "auto" }}
             variant={orderTab === "all" ? "solid" : "outline"}
@@ -956,7 +960,6 @@ const ProfileScreen = () => {
             Dispatched
           </Button>
         </Flex>
-
         {/* Orders List */}
         {loadingOrders ? (
           <Flex justify="center" align="center" h="200px">
@@ -1129,6 +1132,7 @@ const ProfileScreen = () => {
         maxW="1000px"
         w="full"
         p={5}
+        minH="520px" // ✅ ADD THIS
       >
         {/* LEFT SIDE MENU */}
         <Box
@@ -1209,8 +1213,8 @@ const ProfileScreen = () => {
           borderColor="gray.300"
           flex="1"
           w="100%"
-          minW="unset"
-          minH={{ base: "auto", md: "502px" }}
+          h="760px" // ✅ ADD THIS
+          overflow="hidden" // ✅ ADD THIS
         >
           <Box
             h={{ base: "auto", md: "100%" }}

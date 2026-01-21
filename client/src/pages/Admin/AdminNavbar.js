@@ -17,7 +17,7 @@ import {
 } from "@chakra-ui/react";
 import { useDispatch } from "react-redux";
 import { logout } from "../../actions/userActions";
-import Logo from "../../assets/vyavarlogo-crop.png";
+import Logo from "../../assets/vyavarr.png";
 import "./Adminstyling.css";
 import { NavLink } from "react-router-dom";
 import { CgProfile } from "react-icons/cg";
@@ -57,22 +57,29 @@ const AdminNavbar = () => {
   return (
     <Box
       as="nav"
-      bg="white"
+      bg="#09254a" // ✅ background color
       px={4}
       py={3}
-      color="black"
+      color="white" // ✅ text color white
       position="fixed"
       top={0}
       width="100%"
       zIndex={1000}
-      border="1px solid #E2E8F0"
-      boxShadow="sm"
+      boxShadow="md"
     >
       <Flex align="center" justifyContent="space-between">
         {/* Navbar Logo */}
         <Box fontWeight="bold" fontSize="lg">
           <NavLink to="/adminDashboard" className="logoimg">
-            <img src={Logo} alt="logo" />
+            <img
+              src={Logo}
+              alt="logo"
+              style={{
+                height: "px", // 🔥 size increase
+                width: "auto",
+              }}
+            />
+
             <span className="logoimg-text">E-Commerce</span>
           </NavLink>
         </Box>
@@ -117,11 +124,11 @@ const AdminNavbar = () => {
                 size={25}
                 style={{
                   display: user?.profilePicture ? "none" : "flex",
-                  color: "#666",
+                  color: "white",
                 }}
               />
 
-              <span style={{ color: "black", fontWeight: "500" }}>
+              <span style={{ color: "white", fontWeight: "500" }}>
                 {user?.name || "Admin"}
               </span>
             </RouterLink>

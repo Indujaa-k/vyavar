@@ -54,7 +54,43 @@ const addorderitems = asyncHandler(async (req, res) => {
     paymentResult,
   });
 
-  const createdOrder = await order.save();
+  let createdOrder = await order.save();
+
+  createdOrder = await Order.findById(createdOrder._id).populate(
+    "orderItems.product",
+    "images brandname",
+  );
+
+  await sendEmail({
+    email: req.user.email,
+    status: "ORDERED",
+    order: createdOrder,
+  });
+
+  // 🔥 REDUCE STOCK AFTER ORDER CREATION
+  for (const item of orderItems) {
+    const product = await Product.findById(item.product);
+
+    if (!product) continue;
+
+    const sizeStock = product.productdetails.stockBySize.find(
+      (s) => s.size === item.size,
+    );
+
+    if (!sizeStock) continue;
+
+    // 🚨 Stock validation (extra safety)
+    if (sizeStock.stock < item.qty) {
+      return res.status(400).json({
+        message: `Not enough stock for ${product.brandname} size ${item.size}`,
+      });
+    }
+
+    // 🔻 Reduce stock
+    sizeStock.stock -= item.qty;
+
+    await product.save();
+  }
 
   // Clear user's cart
   await User.findByIdAndUpdate(req.user._id, {
@@ -72,7 +108,7 @@ const getOrderById = asyncHandler(async (req, res) => {
     .populate("user", "name email")
     .populate({
       path: "orderItems.product",
-      select: "name images", // Include the fields you need
+      select: "productType comboName productdetails images", // Include the fields you need
     });
   if (order) {
     res.json(order);
@@ -85,7 +121,8 @@ const getOrderById = asyncHandler(async (req, res) => {
 // @route update /api/orders/:id/pay
 // @access Private
 const updateOrderToPaid = asyncHandler(async (req, res) => {
-  const order = await Order.findById(req.params.id);
+  const order = await Order.findById(req.params.id).populate("user", "email");
+
   if (order) {
     order.isPaid = true;
     order.paidAt = Date.now();
@@ -169,20 +206,20 @@ const getOrdersForDeliveryPerson = asyncHandler(async (req, res) => {
 // @route PUT/api/orders/delivery/accept/:id
 // access Private Delivery
 const acceptOrder = asyncHandler(async (req, res) => {
-  const order = await Order.findById(req.params.id);
+  const order = await Order.findById(req.params.id)
+    .populate("user", "email")
+    .populate("orderItems.product", "images brandname");
+
   if (order && order.orderStatus === "PACKED") {
     order.orderStatus = "OUT_FOR_DELIVERY";
     await order.save();
-    try {
-      await sendEmail({
-        email: order.user.email,
-        status: "Shipped",
-        orderId: order._id,
-      });
-      console.log("✅ Shipment email sent");
-    } catch (error) {
-      console.error("❌ Error sending shipment email:", error.message);
-    }
+
+    await sendEmail({
+      email: order.user.email,
+      status: "DISPATCHED",
+      order,
+    });
+
     res.json({ message: "Order accepted" });
   } else {
     res.status(400);
@@ -209,7 +246,10 @@ const rejectOrder = asyncHandler(async (req, res) => {
 // @route PUT/api/orders/delivery/complete/:id
 // access Private Delivery
 const markOrderAsCompleted = asyncHandler(async (req, res) => {
-  const order = await Order.findById(req.params.id);
+  const order = await Order.findById(req.params.id)
+    .populate("user", "email")
+    .populate("orderItems.product", "images brandname");
+
   if (order && order.orderStatus === "OUT_FOR_DELIVERY") {
     order.orderStatus = "DELIVERED";
     order.deliveredAt = Date.now();
@@ -220,16 +260,12 @@ const markOrderAsCompleted = asyncHandler(async (req, res) => {
     }
 
     await order.save();
-    try {
-      await sendEmail({
-        email: order.user.email,
-        status: "Delivered",
-        orderId: order._id,
-      });
-      console.log("✅ Delivery email sent");
-    } catch (error) {
-      console.error("❌ Error sending delivery email:", error.message);
-    }
+
+    await sendEmail({
+      email: order.user.email,
+      status: "DELIVERED",
+      order,
+    });
 
     res.json({ message: "Order marked as completed" });
   } else {
@@ -644,24 +680,56 @@ const StripePayment = asyncHandler(async (req, res) => {
 // @route   put /api/orders/:id/updatestatus
 // @access  private/admin
 export const updateOrderStatus = async (req, res) => {
-  const { status } = req.body;
+  try {
+    const order = await Order.findById(req.params.id)
+      .populate("user", "email name")
+      .populate("orderItems.product");
 
-  const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
 
-  if (!order) {
-    return res.status(404).json({ message: "Order not found" });
+    const previousStatus = order.orderStatus;
+    const newStatus = req.body.status.toUpperCase();
+
+    order.orderStatus = newStatus;
+    await order.save();
+
+    if (
+      previousStatus !== newStatus &&
+      ["PACKED", "DISPATCHED"].includes(newStatus)
+    ) {
+      await sendEmail({
+        email: order.user.email,
+        status: newStatus,
+        order,
+      });
+    }
+
+    res.json({ message: "Order status updated successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
-
-  // 🔥 THIS IS THE KEY LINE
-  order.orderStatus = status;
-
-  await order.save();
-
-  res.json({
-    message: "Order status updated",
-    orderStatus: order.orderStatus,
-  });
 };
+
+//   const { status } = req.body;
+
+//   const order = await Order.findById(req.params.id);
+
+//   if (!order) {
+//     return res.status(404).json({ message: "Order not found" });
+//   }
+
+//   // 🔥 THIS IS THE KEY LINE
+//   order.orderStatus = status;
+
+//   await order.save();
+
+//   res.json({
+//     message: "Order status updated",
+//     orderStatus: order.orderStatus,
+//   });
+// };
 
 // @desc   Get order statuses count
 // @route  GET /api/orders/status-count

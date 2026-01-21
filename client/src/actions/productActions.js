@@ -59,6 +59,9 @@ import {
   PRODUCT_VARIANT_UPDATE_REQUEST,
   PRODUCT_VARIANT_UPDATE_SUCCESS,
   PRODUCT_VARIANT_UPDATE_FAIL,
+  PRODUCT_HAS_COMBO_REQUEST,
+  PRODUCT_HAS_COMBO_SUCCESS,
+  PRODUCT_HAS_COMBO_FAIL,
 } from "../constants/productConstants";
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -787,3 +790,20 @@ export const updateProductGroupCommon =
       });
     }
   };
+export const checkHasCombo = () => async (dispatch) => {
+  try {
+    dispatch({ type: PRODUCT_HAS_COMBO_REQUEST });
+
+    const { data } = await axios.get(`${API_URL}/api/products/has-combo`);
+
+    dispatch({
+      type: PRODUCT_HAS_COMBO_SUCCESS,
+      payload: data.hasCombo,
+    });
+  } catch (error) {
+    dispatch({
+      type: PRODUCT_HAS_COMBO_FAIL,
+      payload: error.message,
+    });
+  }
+};

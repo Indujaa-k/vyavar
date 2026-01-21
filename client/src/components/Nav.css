@@ -1,5 +1,5 @@
 .nav {
-  background-color: rgb(3, 156, 195);
+  background-color: #09254a;
   color: white;
   width: 100%;
   position: fixed;
@@ -56,7 +56,7 @@
 
   color: #fff;
   border-radius: 50%;
-  background-color: #0071dc;
+  background-color: #09254a;
 }
 
 .search {
@@ -82,7 +82,7 @@
   white-space: nowrap;
 }
 .search-button {
-  background-color: rgb(3, 156, 195) !important;
+  background-color: rgb(9, 37, 74) !important;
   color: white !important;
 }
 .search-input-group {
@@ -145,18 +145,18 @@
 .dropdown-toggle {
   cursor: pointer;
   color: white;
-  font-size: 16px;
+  font-size: 12px;
   /* padding: 10px 15px; */
 }
 .dropdown-menu {
   position: absolute;
   top: 100%;
-  left: 50%;
+  left: 110%;
   transform: translateX(-50%);
-  background: rgb(3, 156, 195);
-  width: auto;
+  background:rgb(9, 37, 74);
+  width: 642px; 
   display: flex;
-  padding: 15px;
+  padding:12px;
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(255, 255, 255, 0.1);
   display: none;
@@ -170,15 +170,16 @@
 .category-contain {
   display: flex;
   flex-direction: row;
-  gap: 10px;
+    gap: 9px; 
   width: 100%;
 }
 .category-column {
   flex: 1;
-  padding: 10px;
+   min-width: 100px;
+  padding: 8px 10px; 
 }
 .category-column h4 {
-  color: #000000; /* Green highlight */
+  color:#DBA751; /* Green highlight */
   font-size: 20px;
   margin-bottom: 10px;
 }
@@ -196,7 +197,7 @@
   transition: color 0.3s ease;
 }
 .category-column li a:hover {
-  color: black;
+  color: #DBA751;
 }
 
 .nav-img {
@@ -210,11 +211,14 @@
   font-weight: bold;
   color: white;
 }
+.user-profile .user-name {
+  color: white;
+}
 
 .user-profile {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   text-decoration: none;
   color: white;
 }

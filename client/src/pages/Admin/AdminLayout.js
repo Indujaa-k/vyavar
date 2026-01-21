@@ -47,7 +47,7 @@ const AdminLayout = ({ children }) => {
   const orderStatusList = [
     {
       label: "AllOrders",
-      key:  "allOrders",
+      key: "allOrders",
       icon: FaListAlt,
       color: "purple.500",
     },
@@ -103,13 +103,13 @@ const AdminLayout = ({ children }) => {
       <Box display="flex">
         {/* Sidebar */}
         <Box
-          bg="#073b74"
+          bg="#DBA751"
           p={4}
           color="white"
           width={isSidebarOpen ? "280px" : "60px"}
           height="calc(100vh - 56px)" // Adjust height to account for navbar
           position="fixed"
-          top="56px"
+          top="80px"
           transition="width 0.3s ease-in-out"
           overflowX="hidden"
           overflowY="auto"
@@ -136,7 +136,7 @@ const AdminLayout = ({ children }) => {
                 )
               }
               bg="transparent"
-              _hover={{ bg: "gray.700" }}
+              _hover={{ bg: "rgba(0,0,0,0.15)" }}
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               aria-label="Toggle Sidebar"
             />
@@ -180,18 +180,18 @@ const AdminLayout = ({ children }) => {
                 >
                   💳 Subscriptions
                 </Button>
-                
-                 <Button
-                      as={RouterLink}
-                      to="/admin/coupon"
-                      variant="ghost"
-                      color="white"
-                      justifyContent="flex-start"
-                      _hover={{ bg: "gray.700" }}
-                      fontSize="md"
-                    >
-                    🎟️ Coupon Code
-                    </Button>
+
+                <Button
+                  as={RouterLink}
+                  to="/admin/coupon"
+                  variant="ghost"
+                  color="white"
+                  justifyContent="flex-start"
+                  _hover={{ bg: "rgba(0,0,0,0.15)" }}
+                  fontSize="md"
+                >
+                  🎟️ Coupon Code
+                </Button>
 
                 {/* Orders Dropdown */}
 
@@ -238,37 +238,37 @@ const AdminLayout = ({ children }) => {
                       <Spinner size="lg" />
                     ) : (
                       orderStatusList.map((status) => (
-                          <Button
+                        <Button
                           key={status.label}
-                            as={RouterLink}
+                          as={RouterLink}
                           to={`/orders/${status.key}`}
-                            bg="transparent"
-                            color="white"
-                            justifyContent="flex-start"
+                          bg="transparent"
+                          color="white"
+                          justifyContent="flex-start"
                           variant="ghost"
-                            fontSize="md"
-                          >
-                            <Flex alignItems="center">
+                          fontSize="md"
+                        >
+                          <Flex alignItems="center">
                             <status.icon
-                                style={{ marginRight: 8, color: status.color }}
-                              />
-                              {status.label}
-                            </Flex>
-                            <Box
-                              ml="auto"
-                              bg={status.color}
-                              color="white"
-                              fontSize="sm"
-                              fontWeight="bold"
-                              px={2}
-                              py={1}
+                              style={{ marginRight: 8, color: status.color }}
+                            />
+                            {status.label}
+                          </Flex>
+                          <Box
+                            ml="auto"
+                            bg={status.color}
+                            color="white"
+                            fontSize="sm"
+                            fontWeight="bold"
+                            px={2}
+                            py={1}
                             borderRadius="full" // Ensures a rounded background
-                              minW="30px"
-                              textAlign="center"
-                            >
+                            minW="30px"
+                            textAlign="center"
+                          >
                             {orderStatuses[status.key] || 0}
-                            </Box>
-                          </Button>
+                          </Box>
+                        </Button>
                       ))
                     )}
                   </VStack>
@@ -294,7 +294,7 @@ const AdminLayout = ({ children }) => {
                       variant="ghost"
                       color="white"
                       justifyContent="flex-start"
-                      _hover={{ bg: "gray.700" }}
+                      _hover={{ bg: "rgba(0,0,0,0.15)" }}
                       leftIcon="•"
                       fontSize="md"
                     >
@@ -307,7 +307,7 @@ const AdminLayout = ({ children }) => {
                       variant="ghost"
                       color="white"
                       justifyContent="flex-start"
-                      _hover={{ bg: "gray.700" }}
+                      _hover={{ bg: "rgba(0,0,0,0.15)" }}
                       leftIcon="•"
                       fontSize="md"
                     >
@@ -320,7 +320,7 @@ const AdminLayout = ({ children }) => {
                       variant="ghost"
                       color="white"
                       justifyContent="flex-start"
-                      _hover={{ bg: "gray.700" }}
+                      _hover={{ bg: "rgba(0,0,0,0.15)" }}
                       leftIcon="•"
                       fontSize="md"
                     >
@@ -332,7 +332,7 @@ const AdminLayout = ({ children }) => {
                       variant="ghost"
                       color="white"
                       justifyContent="flex-start"
-                      _hover={{ bg: "gray.700" }}
+                      _hover={{ bg: "rgba(0,0,0,0.15)" }}
                       leftIcon="•"
                       fontSize="md"
                     >
@@ -367,7 +367,7 @@ const AdminLayout = ({ children }) => {
                     >
                       📦Delivery Details
                     </Button> */}
-                    {/* <Button
+                {/* <Button
                       onClick={() => setActiveTab("deliverytransactions")}
                       as={RouterLink}
                       to="/admin/delivery/transactions"
@@ -379,7 +379,7 @@ const AdminLayout = ({ children }) => {
                     >
                       📊 Delivery Transactions
                     </Button> */}
-                  {/* </VStack>
+                {/* </VStack>
                 </Collapse> */}
 
                 <Button
@@ -416,7 +416,7 @@ const AdminLayout = ({ children }) => {
                       variant="ghost"
                       color="white"
                       justifyContent="flex-start"
-                      _hover={{ bg: "gray.700" }}
+                      _hover={{ bg: "rgba(0,0,0,0.15)" }}
                       leftIcon="•"
                       fontSize="md"
                     >
@@ -428,7 +428,7 @@ const AdminLayout = ({ children }) => {
                       variant="ghost"
                       color="white"
                       justifyContent="flex-start"
-                      _hover={{ bg: "gray.700" }}
+                      _hover={{ bg: "rgba(0,0,0,0.15)" }}
                       leftIcon="•"
                       fontSize="md"
                     >
@@ -440,11 +440,11 @@ const AdminLayout = ({ children }) => {
                       variant="ghost"
                       color="white"
                       justifyContent="flex-start"
-                      _hover={{ bg: "gray.700" }}
+                      _hover={{ bg: "rgba(0,0,0,0.15)" }}
                       leftIcon="•"
                       fontSize="md"
                     >
-                     Top PromoText
+                      Top PromoText
                     </Button>
                   </VStack>
                 </Collapse>
@@ -516,9 +516,9 @@ const AdminLayout = ({ children }) => {
 
         {/* Right Side Content */}
         <Box
-          ml={isSidebarOpen ? "250px" : "60px"}
+          ml={isSidebarOpen ? "280px" : "60px"}
           p={6}
-          height="100vh"
+          height="calc(100vh - 80px)"
           width="full"
           bg={"white"}
           overflowY="auto"

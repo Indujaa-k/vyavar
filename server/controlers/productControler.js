@@ -373,8 +373,7 @@ const addToCart = asyncHandler(async (req, res) => {
   if (!existingCartItem) {
     existingCartItem = user.cartItems.find(
       (item) =>
-        item.product.toString() === product._id.toString() &&
-        item.size === size
+        item.product.toString() === product._id.toString() && item.size === size
     );
   }
 
@@ -420,7 +419,6 @@ const addToCart = asyncHandler(async (req, res) => {
 
   res.status(200).json({ cartItems: updatedUser.cartItems });
 });
-
 
 // @desc get cart product
 // @route get /api/products/getcart
@@ -511,6 +509,7 @@ const deleteCartItem = asyncHandler(async (req, res) => {
 
     if (sizeStock) {
       sizeStock.stock += cartItem.qty;
+
       await product.save();
     }
   }
@@ -559,6 +558,8 @@ const createProduct = asyncHandler(async (req, res) => {
       shippingDetails,
       isFeatured,
       products,
+      productType = "single",
+      comboName = "",
     } = req.body;
 
     if (!products) {
@@ -579,16 +580,16 @@ const createProduct = asyncHandler(async (req, res) => {
     const sizeChart = req.files?.sizeChart?.[0]?.path || "";
     const allImages = req.files?.images || [];
 
-    // ✅ TOTAL IMAGE VALIDATION
-    const minImages = parsedProducts.length * 3;
-    const maxImages = parsedProducts.length * 5;
+//     // ✅ TOTAL IMAGE VALIDATION
+//     const minImages = parsedProducts.length * 3;
+//     const maxImages = parsedProducts.length * 5;
 
-    if (allImages.length < minImages || allImages.length > maxImages) {
-      return res.status(400).json({
-        message: `Each variant must have 3–5 images.
-Expected ${minImages}–${maxImages}, got ${allImages.length}`,
-      });
-    }
+//     if (allImages.length < minImages || allImages.length > maxImages) {
+//       return res.status(400).json({
+//         message: `Each variant must have 3–5 images.
+// Expected ${minImages}–${maxImages}, got ${allImages.length}`,
+//       });
+//     }
 
     let imageIndex = 0;
     const createdProducts = [];
@@ -610,11 +611,16 @@ Expected ${minImages}–${maxImages}, got ${allImages.length}`,
         .map((file) => file.path);
 
       imageIndex += imageCount;
+      if (productType === "combo") {
+        variant.productdetails.subcategory = "Combo";
+      }
 
       const product = new Product({
         user: req.user._id,
         brandname,
         description,
+        productType,
+        comboName: productType === "combo" ? comboName : "",
 
         price: Number(variant.price),
         oldPrice: Number(variant.oldPrice),

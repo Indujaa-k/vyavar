@@ -8,37 +8,112 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const sendEmail = async ({ email, status, orderId }) => {
-  let subject = "";
-  let message = "";
+const sendEmail = async ({ email, status, order }) => {
+  console.log("📨 sendEmail entered");
+  console.log("📧 Email:", email);
+  console.log("📌 Status:", status);
+  if (!order || !order.orderItems || order.orderItems.length === 0) {
+    throw new Error("Invalid order data for email");
+  }
+  status = status.toUpperCase();
 
-  if (status === "Created") {
-    subject = "Order Confirmed Successfully!!";
-    message = `Your order ${orderId} has been placed successfully.`;
-  } 
-  else if (status === "Shipped") {
-    subject = "Your Order Has Been Shipped!!!!";
-    message = `Good news! Your order ${orderId} is on the way.`;
-  } 
-  else if (status === "Delivered") {
-    subject = "Order Delivered Successfully!! ";
-    message = `Your order ${orderId} has been delivered. Thank you for shopping with us!`;
-  } 
-  else {
-    subject = "Order Status Update";
-    message = `Your order ${orderId} status is ${status}.`;
+  let subject = "";
+
+  switch (status) {
+    case "ORDERED":
+      subject = "🛒 Order Placed Successfully";
+      break;
+
+    case "PACKED":
+      subject = "📦 Your Order is Packed";
+      break;
+
+    case "DISPATCHED":
+    case "SHIPPED":
+      console.log("🚚 DISPATCH mail triggered");
+      subject = "🚚 Order Dispatched";
+      break;
+
+    case "DELIVERED":
+      subject = "🎉 Order Delivered";
+      break;
+
+    default:
+      subject = "📢 Order Update";
   }
 
+  const productRows = order.orderItems
+    .map((item) => {
+      const imagePath = item.product.images?.[0];
+      const imageUrl = imagePath?.startsWith("http")
+        ? imagePath
+        : `${process.env.BACKEND_URL}${imagePath}`;
+
+      return `
+      <tr>
+        <td style="padding:10px">
+          <img src="${imageUrl}" width="80" style="border-radius:6px" />
+        </td>
+        <td style="padding:10px">
+          <strong>${item.name}</strong><br/>
+          Size: ${item.size}<br/>
+          Qty: ${item.qty}
+        </td>
+        <td style="padding:10px">
+          Rs. ${item.price}
+        </td>
+      </tr>
+    `;
+    })
+    .join("");
+  const itemsPrice = order.orderItems.reduce(
+    (acc, item) => acc + item.price * item.qty,
+    0,
+  );
+
   const mailOptions = {
-    from: process.env.EMAIL_USER,
+    from: `"Viyavar" <${process.env.EMAIL_USER}>`,
     to: email,
+    cc: process.env.ADMIN_EMAIL,
     subject,
-    text: message,
-    html: `<p>${message}</p>`,
+    html: `
+      <div style="font-family:Arial, sans-serif; max-width:600px; margin:auto;">
+        <h2 style="color:#d63384;">Order Status: ${status}</h2>
+        <p><b>Order ID:</b> ${order._id}</p>
+
+        <table width="100%" border="1" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+          <thead>
+            <tr style="background:#f8f8f8;">
+              <th align="left" style="padding:10px;">Product</th>
+              <th align="left" style="padding:10px;">Details</th>
+              <th align="left" style="padding:10px;">Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${productRows}
+          </tbody>
+        </table>
+
+        <h3 style="margin-top:20px;">Order Summary</h3>
+       <p>Items: Rs. ${itemsPrice}</p>
+
+        <p>Shipping: Rs. ${order.shippingPrice}</p>
+        <p>Tax: Rs. ${order.taxPrice}</p>
+        <h2>Total: Rs. ${order.totalPrice}</h2>
+
+        <p style="margin-top:20px;">
+          📦 Shipping to:<br/>
+          ${order.shippingAddress.city}, ${order.shippingAddress.state}
+        </p>
+
+        <p style="color:gray; font-size:12px;">
+          Thank you for shopping with us ❤️
+        </p>
+      </div>
+    `,
   };
 
   await transporter.sendMail(mailOptions);
 };
 
-
-export default sendEmail;
+export default sendEmail;

@@ -36,9 +36,9 @@ const AdminProduct = () => {
     .slice(0, 6);
 
   // Get top 8 best-selling products (sorted by sold count)
-  const topSellingProducts = [...(products || [])]
+ const topSellingProducts = [...(products || [])]
     .sort((a, b) => (b.soldCount || 0) - (a.soldCount || 0))
-    .slice(0, 5);
+  .slice(0, 5);
   // Calculate top 5 most popular brands
   const brandReviewCount = products?.reduce((acc, product) => {
     if (product.brandname) {
@@ -143,7 +143,7 @@ const AdminProduct = () => {
                         </Text>
                       </Box>
                       <Badge colorScheme="blue">
-                        Sold: {product.soldCount || 0}
+                        Sold: {product.sold || 0}
                       </Badge>
                     </Flex>
                   </Card>
