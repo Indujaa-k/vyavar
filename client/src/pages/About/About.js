@@ -5,12 +5,21 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import "./aboutcss.css";
 
+import img1 from "../../assets/about/DSC01964.JPG";
+import img2 from "../../assets/about/DSC01966.JPG";
+import img3 from "../../assets/about/DSC02055.JPG";
+import img4 from "../../assets/about/DSC02095.JPG";
+import img5 from "../../assets/about/DSC02575.JPG";
+import img6 from "../../assets/about/DSC02570.JPG";
+import img7 from "../../assets/about/DSC02581.JPG";
+
 const About = () => {
   useEffect(() => {
     AOS.init({
       duration: 1200,
       once: true,
-      offset: 100,
+      offset: 120,
+      easing: "ease-in-out",
     });
   }, []);
 
@@ -25,150 +34,150 @@ const About = () => {
         className="parallax-banner"
         style={{
           backgroundImage:
-            "url('https://images.unsplash.com/photo-1601933470928-c45f3f7c5a4b?auto=format&fit=crop&w=1600&q=80')",
+           `url(${img7})`
         }}
       >
-        <div className="overlay" data-aos="zoom-in">
+        <div className="overlay">
           <h1 data-aos="fade-up">VIYAVAR</h1>
-          <p data-aos="fade-up" data-aos-delay="300">
-            A tribute to the Head Soldier — leadership, courage, and honor in
-            every thread.
+          <p data-aos="fade-up" data-aos-delay="200">
+            A tribute to the Head Soldier — leadership, courage, and honor
+            stitched into every thread.
           </p>
         </div>
       </div>
 
       {/* ================= WHO WE ARE ================= */}
-      <div className="Content1">
+      <section className="Content1">
         <div className="text" data-aos="fade-right">
           <h1>Who We Are</h1>
           <p>
-            Viyavar means <strong>Head Soldier</strong> — the one who leads from
-            the front, stands fearless, and protects without hesitation.
+            <strong>Viyavar</strong> means <strong>Head Soldier</strong> — the
+            one who leads from the front, stands fearless, and protects without
+            hesitation.
             <br />
             <br />
-            We are a clothing brand created to honor that spirit. Every printed
-            shirt is a mark of respect for leadership, discipline, and sacrifice.
+            We are not just a clothing brand. We are a symbol of leadership,
+            discipline, and sacrifice — transformed into wearable identity.
+            <br/>
+            <br/>
+            Each piece carries the spirit of those who protect, inspire, and stand firm even when the weight of duty is heavy.
+            <br/>
+            Designed for those who carry strength quietly and command respect without speaking.
           </p>
         </div>
 
-        <div className="imagecontainer" data-aos="fade-left">
-          <Image
-            boxSize="400px"
-            objectFit="cover"
-            src="https://images.unsplash.com/photo-1593032465171-8b58b5bda4f3?auto=format&fit=crop&w=600&q=80"
-            alt="Viyavar Identity"
-          />
+        <div className="imagecontainer" data-aos="zoom-in">
+          <Image src={img1} boxSize="420px" objectFit="cover" />
         </div>
-      </div>
+      </section>
 
       {/* ================= VISION ================= */}
-      <div className="Content2">
-        <div className="imagecontainer" data-aos="fade-right">
-          <Image
-            boxSize="400px"
-            objectFit="cover"
-            src="https://images.unsplash.com/photo-1601582589907-f92af5ed9db8?auto=format&fit=crop&w=600&q=80"
-            alt="Vision"
-          />
-        </div>
-
+      <section className="Content2">
         <div className="text" data-aos="fade-left">
           <h1>Our Vision</h1>
           <p>
-            To become a symbol of honor and strength, where every Viyavar shirt
-            represents the spirit of a head soldier — leading with courage,
-            standing firm, and inspiring generations through wearable pride.
+            To become a symbol of strength and honor where every Viyavar shirt
+            represents courage, leadership, and pride.
+            <br />
+            <br />A brand that speaks without words and stands beyond trends.
           </p>
         </div>
-      </div>
+
+        <div className="imagecontainer" data-aos="zoom-in" data-aos-delay="200">
+          <Image src={img2} boxSize="420px" objectFit="cover" />
+        </div>
+      </section>
 
       {/* ================= MISSION ================= */}
-      <div className="Content1">
+      <section className="Content1">
         <div className="text" data-aos="fade-right">
           <h1>Our Mission</h1>
           <p>
-            Viyavar exists to pay tribute to the head soldier — the leader, the
+            Viyavar exists to honor the head soldier — the leader, the
             protector, the one who stands first in every battle.
             <br />
             <br />
-            Through thoughtfully designed printed apparel, we transform stories
-            of courage, unity, and sacrifice into clothing that speaks louder
-            than words.
-            <br />
-            <br />
-            Our mission is to let people wear respect, leadership, and pride —
-            every single day.
+            Through bold designs and premium craftsmanship, we transform stories
+            of courage and unity into apparel that carries meaning.
           </p>
         </div>
 
-        <div className="imagecontainer" data-aos="fade-left">
-          <Image
-            boxSize="400px"
-            objectFit="cover"
-            src="https://images.unsplash.com/photo-1601582589748-6a1d1e99f9d6?auto=format&fit=crop&w=600&q=80"
-            alt="Mission"
-          />
+        <div className="imagecontainer" data-aos="zoom-in">
+          <Image src={img3} boxSize="420px" objectFit="cover" />
+        </div>
+      </section>
+
+      {/* ================= STORY PARALLAX ================= */}
+      <div
+        className="parallax-banner story"
+        style={{
+          backgroundImage:
+           `url(${img6})`,
+        }}
+      >
+        <div className="overlay">
+          <h2 data-aos="fade-up">Born From Respect</h2>
+          <p data-aos="fade-up" data-aos-delay="200">
+            Viyavar was not created to follow fashion.
+            <br />
+            It was created to represent leadership, loyalty, and honor — values
+            that never fade.
+          </p>
         </div>
       </div>
 
       {/* ================= CRAFT ================= */}
-      <div className="Content2">
-        <div className="imagecontainer" data-aos="fade-right">
-          <Image
-            boxSize="400px"
-            objectFit="cover"
-            src="https://images.unsplash.com/photo-1585386959984-a41552231692?auto=format&fit=crop&w=600&q=80"
-            alt="Craftsmanship"
-          />
-        </div>
-
+      <section className="Content2">
         <div className="text" data-aos="fade-left">
           <h1>Our Craft</h1>
           <p>
-            Every Viyavar shirt is built with purpose. From premium fabric
-            selection to bold, meaningful prints, our craftsmanship reflects
-            discipline, durability, and pride — just like a soldier’s mindset.
+            Every Viyavar shirt is built with discipline. From premium fabric to
+            bold prints, every detail reflects strength, durability, and pride.
             <br />
             <br />
-            We don’t follow trends. We create statements that last.
+            We don’t follow trends. We create statements.
           </p>
         </div>
-      </div>
+
+        <div className="imagecontainer" data-aos="zoom-in">
+          <Image src={img4} boxSize="420px" objectFit="cover" />
+        </div>
+      </section>
 
       {/* ================= VALUES ================= */}
-      <div className="values-section">
+      <section className="values-section">
         <h1 data-aos="fade-up">What We Stand For</h1>
 
         <div className="values-grid">
-          <div className="value-card" data-aos="fade-up">
+          <div className="value-card" data-aos="flip-up">
             <h3>Leadership</h3>
-            <p>Designs inspired by those who lead by example.</p>
+            <p>Inspired by those who lead by example.</p>
           </div>
 
-          <div className="value-card" data-aos="fade-up" data-aos-delay="150">
+          <div className="value-card" data-aos="flip-up" data-aos-delay="200">
             <h3>Courage</h3>
-            <p>Fearless expression that honors strength and sacrifice.</p>
+            <p>Fearless expression that honors sacrifice.</p>
           </div>
 
-          <div className="value-card" data-aos="fade-up" data-aos-delay="300">
+          <div className="value-card" data-aos="flip-up" data-aos-delay="400">
             <h3>Discipline</h3>
-            <p>Precision in fabric, print, and finish — no compromises.</p>
+            <p>Precision in fabric, print, and purpose.</p>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* ================= FINAL PARALLAX ================= */}
       <div
         className="parallax-banner2"
         style={{
-          backgroundImage:
-            "url('https://images.unsplash.com/photo-1590086782792-42dd2350140d?auto=format&fit=crop&w=1600&q=80')",
+          backgroundImage: `url(${img5})`,
         }}
       >
-        <div className="overlay" data-aos="zoom-in">
+        <div className="overlay">
           <h2 data-aos="fade-up">Wear the Leader Within</h2>
           <p data-aos="fade-up" data-aos-delay="200">
-            Not just fashion. A tribute to courage.
+            Not just fashion.
+            <br />A tribute to courage.
           </p>
         </div>
       </div>

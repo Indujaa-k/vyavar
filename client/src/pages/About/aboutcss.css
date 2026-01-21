@@ -129,21 +129,21 @@
 
 
 :root {
-  /* --primary: #020617; */
   --accent: #c7a14a;
-  --text-light: #000000;
+  --dark: #020617;
   --muted: #9ca3af;
 }
 
 .aboutcontainer {
-  background: var(--primary);
-  color: var(--text-light);
+  background: var(--dark);
+  color: white;
   overflow-x: hidden;
 }
 
 /* PARALLAX */
 .parallax-banner,
-.parallax-banner2 {
+.parallax-banner2,
+.story {
   height: 100vh;
   background-size: cover;
   background-position: center;
@@ -177,6 +177,7 @@
   max-width: 600px;
   margin-top: 20px;
   color: var(--muted);
+  line-height: 1.8;
 }
 
 /* CONTENT */
@@ -215,9 +216,9 @@
 
 /* IMAGES */
 .imagecontainer img {
-  border-radius: 16px;
+  border-radius: 18px;
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
-  transition: all 0.5s ease;
+  transition: 0.5s ease;
 }
 
 .imagecontainer img:hover {
@@ -260,8 +261,8 @@
 }
 
 .value-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 30px 60px rgba(199, 161, 74, 0.2);
+  transform: translateY(-12px);
+  box-shadow: 0 30px 60px rgba(199, 161, 74, 0.25);
 }
 
 /* RESPONSIVE */
@@ -270,10 +271,16 @@
   .Content2 {
     flex-direction: column;
     padding: 80px 6%;
+    text-align: center;
   }
 
   .overlay h1,
   .overlay h2 {
-    font-size: 2.5rem;
+    font-size: 2.3rem;
+  }
+
+  .text h1::after {
+    left: 50%;
+    transform: translateX(-50%);
   }
 }

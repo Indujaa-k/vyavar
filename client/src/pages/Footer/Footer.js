@@ -19,8 +19,12 @@ const Footer = () => {
           <h1>Help</h1>
           <ul>
             <li>FAQs</li>
-            <li><Link to="/contactus">Contact us</Link></li>
-            <li><Link to="/about">About</Link></li>
+            <li>
+              <Link to="/contactus">Contact us</Link>
+            </li>
+            <li>
+              <Link to="/about">About</Link>
+            </li>
             <li>Track Order</li>
           </ul>
         </div>
@@ -28,36 +32,81 @@ const Footer = () => {
         <div className="footerCategorie">
           <h1>TopCategories</h1>
           <ul>
-            <li><Link to="/?gender">TopWear</Link></li>
-            <li><Link to="/?gender">Hoodies</Link></li>
+            <li>
+              <Link to="/?gender">TopWear</Link>
+            </li>
+            <li>
+              <Link to="/?gender">Hoodies</Link>
+            </li>
           </ul>
         </div>
 
         <div className="fooHelp">
           <h1>About Us</h1>
-          <ul><li><Link to="/about">About</Link></li></ul>
+          <ul>
+            <li>
+              <Link to="/about">About</Link>
+            </li>
+          </ul>
         </div>
 
         <div className="fooHelp">
           <h1>Policies</h1>
           <ul>
-            <li><Link to="/terms">Terms and Conditions</Link></li>
-            <li><Link to="/policy">Privacy Policy</Link></li>
+            <li>
+              <Link to="/terms">Terms and Conditions</Link>
+            </li>
+            <li>
+              <Link to="/policy">Privacy Policy</Link>
+            </li>
           </ul>
         </div>
       </footer>
 
       <div className="paragraphFooter">
-        <p>Copyright ©2025 Palette Productions All Rights Reserved</p>
+        <p>
+          Copyright © {new Date().getFullYear()} Viyavar | Developed By{" "}
+          <a
+            href="https://paletteproduction.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "#ff4d6d", fontWeight: "600" }}
+          >
+            PALETTE PRODUCTION
+          </a>
+        </p>
       </div>
 
       {/* Social Media Icons */}
       <div className="footerIcons">
-        <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer"><FiFacebook style={{ color: "black", fontSize: "20px" }} /></a>
-        <a href="https://www.twitter.com" target="_blank" rel="noopener noreferrer"><AiOutlineTwitter style={{ color: "black", fontSize: "20px" }} /></a>
-        <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer"><FiInstagram style={{ color: "black", fontSize: "20px" }} /></a>
-        <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer"><FiYoutube style={{ color: "black", fontSize: "20px" }} /></a>
-        <a href="https://www.linkedin.com" target="_blank" rel="noopener noreferrer"><AiFillLinkedin style={{ color: "black", fontSize: "20px" }} /></a>
+        <a
+          href="https://www.facebook.com/share/p/17RiMftCXv/?mibextid=qi2Omg"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <FiFacebook style={{ color: "black", fontSize: "20px" }} />
+        </a>
+        <a
+          href="https://www.instagram.com/viyavarfashions?igsh=MXd3cXdyYnZkY3IwcA=="
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <FiInstagram style={{ color: "black", fontSize: "20px" }} />
+        </a>
+        <a
+          href="https://www.youtube.com"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <FiYoutube style={{ color: "black", fontSize: "20px" }} />
+        </a>
+        {/* <a
+          href="https://www.linkedin.com"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <AiFillLinkedin style={{ color: "black", fontSize: "20px" }} />
+        </a> */}
       </div>
     </div>
   );
