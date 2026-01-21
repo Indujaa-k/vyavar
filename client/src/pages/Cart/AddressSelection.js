@@ -40,7 +40,7 @@ const AddressSelection = () => {
       <HStack justify="space-between">
         <HStack>
           <FaHome />
-          <Text fontWeight="bold">Delivery in 60min | {user?.name}</Text>
+          <Text fontWeight="bold">Delivery in 10 to 12 Days | {user?.name}</Text>
         </HStack>
         <IconButton
           icon={<FiEdit />}

@@ -68,6 +68,7 @@ import ShippingCost from "./pages/Delivery/ShippingCost";
 // import ProtectedRoute from "./pages/ProtectedRoutes";
 const App = () => {
   const { userInfo } = useSelector((state) => state.userLogin);
+  const hideFooterRoutes = ["/login"];
 
   return (
     <div className="main">
@@ -221,8 +222,8 @@ const App = () => {
                   <Route path="/Favorites" element={<FavoritesPage />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/contactus" element={<Contactus />} />
-                  <Route path="/terms" element={<TermsandCondition/>}/>
-                  <Route path="/policy" element={<Privatepolicy/>}/>
+                  <Route path="/terms" element={<TermsandCondition />} />
+                  <Route path="/policy" element={<Privatepolicy />} />
                   <Route path="/product/:id" element={<Productpage />} />
                   <Route path="/cart/:id?" element={<Cartpage />} />
                   <Route path="/login/*" element={<Navigate to="/login" />} />
@@ -257,7 +258,7 @@ const App = () => {
                   <Route path="*" element={<NotFoundPage />} />
                 </Routes>
                 <ScrollButtons />
-                <Footer />
+                {!hideFooterRoutes.includes(location.pathname) && <Footer />}
                 {/* path="/products/:category" */}
               </>
             )}

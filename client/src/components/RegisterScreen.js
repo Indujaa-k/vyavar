@@ -4,7 +4,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { sendOtp, verifyOtp, register } from "../actions/userActions";
 import { Helmet } from "react-helmet";
 import { useToast } from "@chakra-ui/react";
-import Trust from "../components/Trustdetails/Trust";
 import "./Registerscreen.css";
 
 const RegisterScreen = () => {
@@ -24,7 +23,7 @@ const RegisterScreen = () => {
   const location = useLocation();
 
   const { loading: otpLoading, success: otpSentSuccess } = useSelector(
-    (state) => state.sendOtp
+    (state) => state.sendOtp,
   );
 
   const {
@@ -164,7 +163,6 @@ const RegisterScreen = () => {
       });
       return;
     }
-   
 
     // Phone validation
     if (!/^\d{10}$/.test(phone)) {
@@ -287,13 +285,7 @@ const RegisterScreen = () => {
                 />
                 <span
                   onClick={togglePasswordVisibility}
-                  style={{
-                    position: " absolute",
-                    right: "50px",
-                    top: "60%",
-                    transform: "translateY(-50%)",
-                    cursor: "pointer",
-                  }}
+                  className="password-toggle-icon"
                 >
                   {showPassword ? "🙈" : "👁️"}
                 </span>
@@ -331,28 +323,27 @@ const RegisterScreen = () => {
                     {otpVerified
                       ? "Verified ✅"
                       : verifyLoading
-                      ? "Verifying..."
-                      : "Verify"}
+                        ? "Verifying..."
+                        : "Verify"}
                   </button>
                 </div>
               )}
-             <button
-  type="submit"
-  className="btna2"
-  onClick={() => {
-    if (!otpVerified) {
-      toast({
-        title: "Verify OTP first",
-        status: "info",
-        duration: 2000,
-        isClosable: true,
-      });
-    }
-  }}
->
-  Sign up
-</button>
-
+              <button
+                type="submit"
+                className="btna2"
+                onClick={() => {
+                  if (!otpVerified) {
+                    toast({
+                      title: "Verify OTP first",
+                      status: "info",
+                      duration: 2000,
+                      isClosable: true,
+                    });
+                  }
+                }}
+              >
+                Sign up
+              </button>
               <br />
               Have an Account?{" "}
               <Link to={redirect ? `/login?redirect=${redirect}` : "/login"}>
@@ -362,7 +353,6 @@ const RegisterScreen = () => {
           </div>
         </div>
       </div>
-      <Trust />
     </>
   );
 };
