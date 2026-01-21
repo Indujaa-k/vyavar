@@ -21,7 +21,7 @@ import {
   productGroupUpdateReducer,
   productVariantUpdateReducer,
 } from "./reducers/productReducers";
-
+import { contactSendReducer } from "./reducers/contactReducers";
 import {
   offerCreateReducer,
   offerDeleteReducer,
@@ -29,7 +29,7 @@ import {
   offerListReducer,
   offerValidateReducer,
 } from "./reducers/offerReducers";
-
+import { shippingReducers } from "./reducers/shippingReducers";
 import { cartReducer } from "./reducers/cartReducers";
 import {
   CreateOrderReducers,
@@ -158,7 +158,7 @@ const reducer = combineReducers({
   activeOfferBanner: activeOfferBannerReducer,
   incomeByPincode: incomeByPincodeReducer,
   transactionList: transactionListReducer,
-  shipping: shippingReducer,
+  shippiment: shippingReducer,
   shipment: shipmentReducer,
   stripepayment: StripepaymentReducer,
   reviewList: reviewListReducer,
@@ -196,6 +196,9 @@ const reducer = combineReducers({
   offerDelete: offerDeleteReducer,
   offerUpdate: offerUpdateReducer,
   offerValidate: offerValidateReducer,
+  checkoutShipping: shippingReducers,
+  adminShipping: shippingReducers,
+  contactSend: contactSendReducer,
 });
 
 const userInfoFromStorage = localStorage.getItem("userInfo")
@@ -214,7 +217,7 @@ const middelware = [thunk];
 const store = createStore(
   reducer,
   initialState,
-  composeWithDevTools(applyMiddleware(...middelware))
+  composeWithDevTools(applyMiddleware(...middelware)),
 );
 
 export default store;

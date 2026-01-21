@@ -64,6 +64,7 @@ import AdminOfferBannerScreen from "./pages/AdminBanner/AdminOfferBannerScreen";
 import CreateOfferpage from "./pages/OffersPage/CreateOfferpage";
 import TermsandCondition from "./pages/Userslist/terms/TermsandCondition";
 import Privatepolicy from "./pages/Userslist/terms/Privatepolicy";
+import ShippingCost from "./pages/Delivery/ShippingCost";
 // import ProtectedRoute from "./pages/ProtectedRoutes";
 const App = () => {
   const { userInfo } = useSelector((state) => state.userLogin);
@@ -205,6 +206,10 @@ const App = () => {
                   <Route
                     path="/admin/delivery/transactions"
                     element={<AdminTransactionsScreen />}
+                  />
+                  <Route
+                    path="/admin/shippingcost"
+                    element={<ShippingCost />}
                   />
                 </Routes>{" "}
               </AdminLayout>

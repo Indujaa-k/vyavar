@@ -46,7 +46,11 @@ const Order = () => {
   const userLogin = useSelector((state) => state.userLogin);
   const { userInfo } = userLogin;
   const invoiceDetails = useSelector((state) => state.invoiceDetails);
-  const couponCode = order?.couponCode;
+  const coupon = order?.coupon;
+  const couponCode = coupon?.code;
+  const discountPercentage = coupon?.percentage || 0;
+  const discountAmount = coupon?.discountAmount || 0;
+
   const {
     loading: invoiceLoading,
     error: invoiceError,
@@ -60,16 +64,6 @@ const Order = () => {
     order.itemsPrice = addDecimals(
       order.orderItems.reduce((acc, item) => acc + item.price, 0)
     );
-  }
-  let discountAmount = 0;
-
-  if (couponCode) {
-    const subtotal =
-      Number(order.itemsPrice) +
-      Number(order.shippingPrice) +
-      Number(order.taxPrice);
-
-    discountAmount = addDecimals(subtotal - order.totalPrice);
   }
 
   useEffect(() => {
@@ -90,10 +84,13 @@ const Order = () => {
     dispatch(deliverOrder(order));
   };
   console.log("Invoice Details in orderpage:", invoiceDetails);
+  console.log("ORDER FROM BACKEND:", order);
+  console.log("COUPON DATA:", order?.coupon);
+
   return (
     <Box mx="auto" px={40} py={10} bg="white">
       <Helmet>
-        <title>Orderr Details</title>
+        <title>Order Details</title>
       </Helmet>
 
       {loading || loadingDeliver ? (
@@ -230,7 +227,7 @@ const Order = () => {
                     Size: <strong>{item.size}</strong>
                   </Text>
                   <Text>
-                    {item.qty} x Rs. {item.price / item.qty} = Rs. {item.price }
+                    {item.qty} x Rs. {item.price / item.qty} = Rs. {item.price}
                   </Text>
                 </HStack>
               ))}
@@ -269,17 +266,24 @@ const Order = () => {
                 <Text>Tax:</Text>
                 <Text color={"grey"}>Rs. {order.taxPrice}</Text>
               </HStack>
-              {couponCode && (
+              {coupon && discountAmount > 0 && (
                 <HStack justify="space-between" w="full">
                   <Text>
-                    Coupon Applied{" "}
+                    Coupon Applied
                     <Badge ml={2} colorScheme="green">
                       {couponCode}
                     </Badge>
+                    <Text as="span" color="gray.500" ml={2}>
+                      ({discountPercentage}% OFF)
+                    </Text>
                   </Text>
-                  <Text color="green">- Rs. {discountAmount}</Text>
+
+                  <Text color="green" fontWeight="bold">
+                    - Rs. {discountAmount}
+                  </Text>
                 </HStack>
               )}
+
               <HStack justify="space-between" w="full">
                 <Text fontSize="xl" fontWeight="bold">
                   Total:

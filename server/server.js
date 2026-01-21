@@ -13,21 +13,25 @@ import transactionRoutes from "./routes/transactionRoutes.js";
 import bannerRoutes from "./routes/bannerRoutes.js";
 import subscriptionsRoutes from "./routes/subscriptionRoutes.js";
 import offerRoutes from "./routes/offerRoutes.js";
+import shippingRoutes from "./routes/shippingRoutes.js";
+import contactRoutes from "./routes/contactRoutes.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import cors from "cors";
 import "./utils/subscriptionCron.js";
-import './utils/razorpayInstance.js'
-
+import "./utils/razorpayInstance.js";
 
 connectDB();
 const app = express();
 app.use(
   cors({
-    origin: ["https://new-vyavarclient-3f1f.vercel.app", "http://localhost:3000"], // Adjust for your frontend's URL
+    origin: [
+      "https://new-vyavarclient-3f1f.vercel.app",
+      "http://localhost:3000",
+    ], // Adjust for your frontend's URL
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true
-  })
+    credentials: true,
+  }),
 );
 // https://vyavar.vercel.app
 
@@ -49,13 +53,14 @@ app.use("/api/delivery", deliveryRoutes);
 app.use("/api/subscriptions", subscriptionsRoutes);
 // app.use("/api/users", subscriptionPaymentRoutes);
 // app.use("/api/transactions", transactionRoutes);
-app.use("/api", transactionRoutes); 
+app.use("/api", transactionRoutes);
 app.use("/api/offers", offerRoutes);
 
-
+app.use("/api/shipping", shippingRoutes);
+app.use("/api/contact", contactRoutes);
 
 app.get("/api/config/paypal", (req, res) =>
-  res.send(process.env.PAYPAL_CLIENT_ID)
+  res.send(process.env.PAYPAL_CLIENT_ID),
 );
 
 const __dirname = path.resolve();
@@ -77,8 +82,7 @@ app.use(errorHandler);
 const PORT = process.env.PORT;
 app.listen(
   PORT,
-  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`)
+  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`),
 );
 
 //runingin
-

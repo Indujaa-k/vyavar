@@ -53,7 +53,7 @@ const PaymentModal = ({
           headers: {
             Authorization: `Bearer ${userInfo.token}`,
           },
-        }
+        },
       );
 
       if (!window.Razorpay) {
@@ -76,12 +76,10 @@ const PaymentModal = ({
             },
           });
 
-          await handleOrder({
-            paymentMethod: "Razorpay",
-            paymentResult: response,
-          });
+          
+          await handleOrder();
 
-          // 🔥 REFRESH CART FROM DB
+         
           dispatch(fetchCart());
 
           onClose();
@@ -95,17 +93,28 @@ const PaymentModal = ({
         theme: { color: "#000" },
       };
 
-      const rzp = new window.Razorpay(options);
+      // const rzp = new window.Razorpay(options);
 
-      rzp.on("payment.failed", function (response) {
-        alert(response.error.description);
-      });
+      // rzp.on("payment.failed", function (response) {
+      //   alert(response.error.description);
+      // });
 
-      rzp.open();
+      // rzp.open();
+      onClose(); // close Chakra modal first
+
+      setTimeout(() => {
+        const rzp = new window.Razorpay(options);
+
+        rzp.on("payment.failed", function (response) {
+          alert(response.error.description);
+        });
+
+        rzp.open();
+      }, 300);
     } catch (error) {
       console.error(
         "❌ Razorpay Error:",
-        error.response?.data || error.message
+        error.response?.data || error.message,
       );
     }
   };

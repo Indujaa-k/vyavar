@@ -485,6 +485,18 @@ const AdminLayout = ({ children }) => {
                 >
                   🧾 Billing
                 </Button>
+                <Button
+                  onClick={() => setActiveTab("ShippingCost")}
+                  as={RouterLink}
+                  to="/admin/shippingcost"
+                  bg="transparent"
+                  justifyContent="flex-start"
+                  color="white"
+                  variant="ghost"
+                  fontSize="md"
+                >
+                  🚚 Shipping Cost
+                </Button>
                 {/* <Button
                   onClick={() => setActiveTab("settings")}
                   as={RouterLink}

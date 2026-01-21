@@ -56,7 +56,7 @@ import profileimg from "../assets/profile_profile.svg";
 import addressimg from "../assets/profile_address.svg";
 import ordersimg from "../assets/profile_orders.svg";
 import profiletag from "../assets/profiletag.png";
-
+import { getShippingSettings } from "../actions/shippingActions";
 const ProfileScreen = () => {
   const [activeSection, setActiveSection] = useState("profile");
   const [name, setName] = useState("");
@@ -128,6 +128,15 @@ const ProfileScreen = () => {
   //     }
   //   }
   // }, [dispatch, navigate, userInfo, user]);
+  const shipping = useSelector((state) => state.checkoutShipping);
+  const { shippingRules = [], loading: loadingShipping } = shipping || {};
+
+  useEffect(() => {
+    if (userInfo) {
+      dispatch(getShippingSettings());
+    }
+  }, [dispatch, userInfo]);
+
   useEffect(() => {
     if (!userInfo) {
       navigate("/login");
@@ -808,18 +817,42 @@ const ProfileScreen = () => {
                     <FormLabel>
                       {field.replace(/([A-Z])/g, " $1").toUpperCase()}
                     </FormLabel>
-                    <Input
-                      value={newAddress[field]}
-                      placeholder={`Enter ${field}`}
-                      onChange={(e) =>
-                        setNewAddress({
-                          ...newAddress,
-                          [field]: e.target.value,
-                        })
-                      }
-                    />
-                    {errors[field] && (
-                      <Text color="red.500">{errors[field]}</Text>
+
+                    {field === "state" ? (
+                      <select
+                        value={newAddress.state}
+                        onChange={(e) =>
+                          setNewAddress({
+                            ...newAddress,
+                            state: e.target.value,
+                          })
+                        }
+                        style={{
+                          width: "100%",
+                          padding: "8px",
+                          borderRadius: "6px",
+                          border: "1px solid #ccc",
+                        }}
+                      >
+                        <option value="">Select State</option>
+
+                        {shippingRules.map((rule) => (
+                          <option key={rule._id} value={rule.state}>
+                            {rule.state}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <Input
+                        value={newAddress[field]}
+                        placeholder={`Enter ${field}`}
+                        onChange={(e) =>
+                          setNewAddress({
+                            ...newAddress,
+                            [field]: e.target.value,
+                          })
+                        }
+                      />
                     )}
                   </FormControl>
                 ))}

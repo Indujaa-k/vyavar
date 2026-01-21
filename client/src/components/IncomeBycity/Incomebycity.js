@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import { getIncomeByPincode } from "../../actions/orderActions";
+import { ZoomControl } from "react-leaflet";
 import {
   Box,
   Flex,
@@ -61,7 +62,7 @@ const IncomeByPincode = () => {
           incomeByPincode.map(async (item) => {
             try {
               const response = await fetch(
-                `https://nominatim.openstreetmap.org/search?postalcode=${item.pinCode}&country=India&format=json`
+                `https://nominatim.openstreetmap.org/search?postalcode=${item.pinCode}&country=India&format=json`,
               );
 
               const data = await response.json();
@@ -78,7 +79,7 @@ const IncomeByPincode = () => {
               console.error(`Pincode ${item.pinCode} error`, err);
             }
             return null;
-          })
+          }),
         );
 
         setLocations(updatedLocations.filter(Boolean));
@@ -119,6 +120,7 @@ const IncomeByPincode = () => {
           center={[22.9734, 78.6569]}
           zoom={5}
           minZoom={4}
+          zoomControl={false}
           maxBounds={[
             [6.4627, 68.1097],
             [35.5133, 97.3956],
@@ -138,6 +140,9 @@ const IncomeByPincode = () => {
           ))}
 
           <AutoZoomIndia locations={locations} />
+
+          {/* 👇 Zoom buttons at bottom-right */}
+          <ZoomControl position="bottomright" />
         </MapContainer>
       </Box>
 
