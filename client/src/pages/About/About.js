@@ -33,8 +33,7 @@ const About = () => {
       <div
         className="parallax-banner"
         style={{
-          backgroundImage:
-           `url(${img7})`
+          backgroundImage: `url(${img7})`,
         }}
       >
         <div className="overlay">
@@ -58,11 +57,13 @@ const About = () => {
             <br />
             We are not just a clothing brand. We are a symbol of leadership,
             discipline, and sacrifice — transformed into wearable identity.
-            <br/>
-            <br/>
-            Each piece carries the spirit of those who protect, inspire, and stand firm even when the weight of duty is heavy.
-            <br/>
-            Designed for those who carry strength quietly and command respect without speaking.
+            <br />
+            <br />
+            Each piece carries the spirit of those who protect, inspire, and
+            stand firm even when the weight of duty is heavy.
+            <br />
+            Designed for those who carry strength quietly and command respect
+            without speaking.
           </p>
         </div>
 
@@ -80,6 +81,13 @@ const About = () => {
             represents courage, leadership, and pride.
             <br />
             <br />A brand that speaks without words and stands beyond trends.
+            <br />
+            <br />
+            Viyavar stands for pride in identity, strength in character, and
+            confidence in every moment.
+            <br />
+            Our vision is to build a brand that speaks without words—one that
+            transcends trends, seasons, and fast fashion.
           </p>
         </div>
 
@@ -99,6 +107,12 @@ const About = () => {
             <br />
             Through bold designs and premium craftsmanship, we transform stories
             of courage and unity into apparel that carries meaning.
+            <br /><br/>
+            Each Viyavar shirt is crafted to remind you of who you are —
+            resilient, fearless, and honorable.
+            <br /><br/>
+            Viyavar represents those who carry the weight of leadership with
+            pride and wear their values with confidence.
           </p>
         </div>
 
@@ -111,8 +125,7 @@ const About = () => {
       <div
         className="parallax-banner story"
         style={{
-          backgroundImage:
-           `url(${img6})`,
+          backgroundImage: `url(${img6})`,
         }}
       >
         <div className="overlay">

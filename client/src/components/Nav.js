@@ -66,6 +66,7 @@ const Nav = () => {
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const btnRef = useRef();
   const [showCategory, setShowCategory] = useState(false);
+  const [showMobileCategory, setShowMobileCategory] = useState(false);
 
   const onSearchSubmit = (e) => {
     e.preventDefault();
@@ -103,9 +104,8 @@ const Nav = () => {
     dispatch(getActiveOfferBanner());
   }, [dispatch]);
   useEffect(() => {
-  dispatch(checkHasCombo());
-}, [dispatch]);
-
+    dispatch(checkHasCombo());
+  }, [dispatch]);
 
   const { banner } = useSelector((state) => state.activeOfferBanner || {});
 
@@ -324,9 +324,54 @@ const Nav = () => {
           finalFocusRef={btnRef}
         >
           <DrawerOverlay />
-          <DrawerContent bg="orange.400" color="white">
+          <DrawerContent bg="rgb(9, 37, 74)" color="white">
             <DrawerCloseButton />
-            <DrawerBody>
+            <DrawerBody
+              display="flex"
+              flexDirection="column"
+              height="100%"
+              paddingTop="20px"
+              paddingBottom="20px"
+            >
+              {/* Top: Profile info */}
+              {userInfo && (
+                <Link
+                  to="/profile"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    marginBottom: "30px",
+                    textDecoration: "none",
+                    color: "white",
+                  }}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {user?.profilePicture ? (
+                    <img
+                      src={
+                        user.profilePicture.startsWith("http")
+                          ? user.profilePicture
+                          : `${process.env.REACT_APP_API_URL}${user.profilePicture}`
+                      }
+                      alt="Profile"
+                      style={{
+                        width: "40px",
+                        height: "40px",
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : (
+                    <CgProfile size={40} />
+                  )}
+                  <span style={{ fontSize: "18px", fontWeight: "bold" }}>
+                    {user?.name || userInfo.name || "Profile"}
+                  </span>
+                </Link>
+              )}
+
+              {/* Middle: Menu links */}
               <ul
                 className="navLinks-mobile"
                 style={{
@@ -334,8 +379,8 @@ const Nav = () => {
                   display: "flex",
                   flexDirection: "column",
                   gap: "20px",
-                  marginTop: "40px",
                   paddingLeft: "0",
+                  // removed flexGrow
                 }}
               >
                 <li>
@@ -347,15 +392,47 @@ const Nav = () => {
                     Home
                   </NavLink>
                 </li>
-                <li>
-                  <NavLink
-                    style={{ color: "white", fontSize: "18px" }}
-                    to="/products"
-                    onClick={() => setMobileMenuOpen(false)}
+                <li
+                  style={{
+                    color: "white",
+                    cursor: "pointer",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  {/* Navigate to products */}
+                  <span
+                    onClick={() => {
+                      navigate("/products?productMode=combo");
+                      setMobileMenuOpen(false);
+                    }}
                   >
                     Categories
-                  </NavLink>
+                  </span>
+
+                  {/* Toggle dropdown */}
+                  <span
+                    onClick={() => setShowMobileCategory(!showMobileCategory)}
+                    style={{ fontSize: "22px", paddingLeft: "10px" }}
+                  >
+                    ▾
+                  </span>
                 </li>
+
+                {/* Mobile Category List */}
+                {showMobileCategory && (
+                  <Box pl="15px" mt="10px">
+                    <Categorylist
+                      isMobile
+                      onItemClick={() => {
+                        setShowMobileCategory(false);
+                        setMobileMenuOpen(false);
+                      }}
+                    />
+                  </Box>
+                )}
+
                 <li>
                   <NavLink
                     style={{ color: "white", fontSize: "18px" }}
@@ -371,18 +448,44 @@ const Nav = () => {
                     to="/cart"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Bag
+                    Bag {incart > 0 && `(${incart})`}
                   </NavLink>
                 </li>
-                <li>
-                  <NavLink
-                    style={{ color: "white", fontSize: "18px" }}
-                    to="/login"
-                    onClick={() => setMobileMenuOpen(false)}
+
+                {/* Logout button directly after Bag */}
+                {userInfo && (
+                  <li
+                    onClick={onOpen} // triggers the AlertDialog
+                    style={{
+                      width: "100%",
+                      color: "white",
+                      fontWeight: "bold",
+                      cursor: "pointer",
+                      borderRadius: "8px",
+                      transition: "text-decoration 0.2s",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.textDecoration = "underline")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.textDecoration = "none")
+                    }
                   >
-                    Sign In
-                  </NavLink>
-                </li>
+                    Logout
+                  </li>
+                )}
+
+                {!userInfo && (
+                  <li>
+                    <NavLink
+                      style={{ color: "white", fontSize: "18px" }}
+                      to="/login"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Sign In
+                    </NavLink>
+                  </li>
+                )}
               </ul>
             </DrawerBody>
           </DrawerContent>
