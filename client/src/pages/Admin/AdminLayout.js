@@ -109,7 +109,7 @@ const AdminLayout = ({ children }) => {
           width={isSidebarOpen ? "280px" : "60px"}
           height="calc(100vh - 56px)" // Adjust height to account for navbar
           position="fixed"
-          top="80px"
+          top="63px"
           transition="width 0.3s ease-in-out"
           overflowX="hidden"
           overflowY="auto"
@@ -518,7 +518,7 @@ const AdminLayout = ({ children }) => {
         <Box
           ml={isSidebarOpen ? "280px" : "60px"}
           p={6}
-          height="calc(100vh - 80px)"
+          height="100vh"
           width="full"
           bg={"white"}
           overflowY="auto"

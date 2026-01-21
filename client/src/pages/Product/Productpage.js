@@ -505,9 +505,9 @@ const Productpage = () => {
                     <MdVerified color="green" />
                   </Flex>
                 )}
-                <Text fontSize="13px" color="#ffb700" mb={3}>
+                {/* <Text fontSize="13px" color="#ffb700" mb={3}>
                   (Inclusive of all taxes)
-                </Text>
+                </Text> */}
                 <p
                   style={{
                     fontWeight: "bold",
