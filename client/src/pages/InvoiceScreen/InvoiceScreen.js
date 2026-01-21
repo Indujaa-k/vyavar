@@ -107,23 +107,25 @@ const InvoiceScreen = ({ match }) => {
     y += 8;
 
     // ===== SUMMARY =====
-    doc.text(`Tax: Rs. ${invoice.taxPrice}`, 20, y);
+    // ===== SUMMARY =====
+    doc.text(`Tax: Rs. ${invoice.pricing?.taxPrice || 0}`, 20, y);
     y += 6;
-    doc.text(`Shipping: Rs. ${invoice.shippingPrice}`, 20, y);
+
+    doc.text(`Shipping: Rs. ${invoice.pricing?.shippingPrice || 0}`, 20, y);
     y += 6;
+
+    // ✅ COUPON
+    if (invoice.pricing?.coupon) {
+      doc.text(
+        `Coupon (${invoice.pricing.coupon.code}) : - Rs. ${invoice.pricing.coupon.discountAmount}`,
+        20,
+        y,
+      );
+      y += 6;
+    }
 
     doc.setFontSize(12);
-    doc.text(`Total: Rs. ${invoice.totalPrice}`, 20, y);
-    y += 8;
-
-    doc.setFontSize(10);
-    doc.text(
-      invoice.isPaid
-        ? `Paid at: ${new Date(invoice.paidAt).toLocaleString()}`
-        : "Payment Status: Not Paid",
-      20,
-      y
-    );
+    doc.text(`Total: Rs. ${invoice.pricing?.totalPrice || 0}`, 20, y);
 
     // ===== SAVE =====
     doc.save(`invoice_${invoice.orderId}.pdf`);
@@ -185,7 +187,7 @@ const InvoiceScreen = ({ match }) => {
                       <Td>{item.qty}</Td>
                       <Td>{item.name}</Td>
                       <Td>{item.size}</Td>
-                      <Td>₹{item.price }</Td>
+                      <Td>₹{item.price}</Td>
                     </Tr>
                   ))
                 ) : (
@@ -201,11 +203,27 @@ const InvoiceScreen = ({ match }) => {
             <Text fontSize="xl" fontWeight="bold" mb={3}>
               Summary
             </Text>
-            <Text>Tax: ₹{invoice.taxPrice || 0}</Text>
-            <Text>Shipping: ₹{invoice.shippingPrice || 0}</Text>
-            <Text>Total: ₹{invoice.totalPrice || 0}</Text>
-            <Text>
-              {invoice.isPaid ? `Paid at ${invoice.paidAt}` : "Not Paid"}
+
+            <Text>Tax: ₹{invoice.pricing?.taxPrice || 0}</Text>
+            <Text>Shipping: ₹{invoice.pricing?.shippingPrice || 0}</Text>
+
+            {invoice.pricing?.coupon && (
+              <Text color="green.600" fontWeight="bold">
+                Coupon ({invoice.pricing.coupon.code}) − ₹
+                {invoice.pricing.coupon.discountAmount}
+              </Text>
+            )}
+
+            <Text fontWeight="bold" mt={2}>
+              Total: ₹{invoice.pricing?.totalPrice || 0}
+            </Text>
+
+            <Text mt={1}>
+              {invoice.paymentStatus?.isPaid
+                ? `Paid on ${new Date(
+                    invoice.paymentStatus.paidAt,
+                  ).toLocaleDateString()}`
+                : "Not Paid"}
             </Text>
           </Box>
 

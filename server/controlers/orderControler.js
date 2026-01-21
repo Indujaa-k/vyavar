@@ -7,9 +7,11 @@ import BillingInvoice from "../models/billingInvoiceModel.js";
 import sendEmail from "../utils/sendEmail.js";
 import Razorpay from "razorpay";
 import crypto from "crypto";
+import ShippingCost from "../models/shippingcostModel.js";
 
 // @desc Create new order
 // @route POST /api/orders
+// @access Private
 // @access Private
 const addorderitems = asyncHandler(async (req, res) => {
   const {
@@ -19,7 +21,7 @@ const addorderitems = asyncHandler(async (req, res) => {
     taxPrice,
     shippingPrice,
     totalPrice,
-    couponCode,
+    coupon,
     paymentResult,
   } = req.body;
 
@@ -27,8 +29,6 @@ const addorderitems = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error("No order items");
   }
-
-  const isCOD = paymentMethod === "COD";
 
   const order = new Order({
     user: req.user._id,
@@ -38,20 +38,20 @@ const addorderitems = asyncHandler(async (req, res) => {
     taxPrice,
     shippingPrice,
     totalPrice,
-    couponCode,
 
-    isPaid: !isCOD,
-    paidAt: !isCOD ? Date.now() : null,
-    orderStatus: isCOD ? "ORDERED" : "CONFIRMED",
-
-    paymentResult: isCOD
+    // ✅ SAFE STORAGE
+    coupon: coupon
       ? {
-          id: "COD-" + Date.now(),
-          status: "Pending (Cash on Delivery)",
-          update_time: new Date().toISOString(),
-          email_address: req.user.email,
+          code: coupon.code,
+          percentage: coupon.percentage,
+          discountAmount: coupon.discountAmount,
         }
-      : paymentResult,
+      : null,
+
+    isPaid: true,
+    paidAt: Date.now(),
+    orderStatus: "CONFIRMED",
+    paymentResult,
   });
 
   const createdOrder = await order.save();
@@ -60,21 +60,6 @@ const addorderitems = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(req.user._id, {
     $set: { cartItems: [] },
   });
-
-  // Update coupon usage
-  if (couponCode) {
-    const offer = await Offer.findOne({ code: couponCode.toUpperCase() });
-
-    if (offer) {
-      offer.usedCount = (offer.usedCount || 0) + 1;
-
-      if (!offer.usedBy.includes(req.user._id)) {
-        offer.usedBy.push(req.user._id);
-      }
-
-      await offer.save();
-    }
-  }
 
   res.status(201).json(createdOrder);
 });
@@ -328,36 +313,61 @@ const assignOrderToDeliveryPerson = asyncHandler(async (req, res) => {
 const generateInvoice = asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.id).populate(
     "user",
-    "name email"
+    "name email",
   );
 
-  if (order) {
-    const invoice = {
-      orderId: order._id,
-      user: {
-        name: order.user?.name || "N/A",
-        email: order.user?.email || "N/A",
-      },
-      orderItems: order.orderItems,
-      shippingAddress: order.shippingAddress,
-      paymentMethod: order.paymentMethod,
-      taxPrice: order.taxPrice,
-      shippingPrice: order.shippingPrice,
-      totalPrice: order.totalPrice,
-      isPaid: order.isPaid,
-      paidAt: order.paidAt,
-      isDelivered: order.isDelivered,
-      deliveredAt: order.deliveredAt,
-      createdAt: order.createdAt,
-    };
-    order.invoiceDetails = invoice;
-    await order.save();
-    res.json(invoice);
-  } else {
+  if (!order) {
     res.status(404);
     throw new Error("Order not found");
   }
+
+  const invoice = {
+    orderId: order._id,
+
+    user: {
+      name: order.user?.name || "N/A",
+      email: order.user?.email || "N/A",
+    },
+
+    orderItems: order.orderItems,
+    shippingAddress: order.shippingAddress,
+    paymentMethod: order.paymentMethod,
+
+    pricing: {
+      taxPrice: order.taxPrice,
+      shippingPrice: order.shippingPrice,
+
+      // ✅ Coupon details
+      coupon: order.coupon
+        ? {
+            code: order.coupon.code,
+            percentage: order.coupon.percentage,
+            discountAmount: order.coupon.discountAmount,
+          }
+        : null,
+
+      totalPrice: order.totalPrice,
+    },
+
+    paymentStatus: {
+      isPaid: order.isPaid,
+      paidAt: order.paidAt,
+    },
+
+    deliveryStatus: {
+      isDelivered: order.isDelivered,
+      deliveredAt: order.deliveredAt,
+    },
+
+    createdAt: order.createdAt,
+  };
+
+  order.invoiceDetails = invoice;
+  await order.save();
+
+  res.json(invoice);
 });
+
 // @desc  getlocations
 // @route   GET /api/incomebycity
 // @access  Private/Admin
@@ -415,7 +425,7 @@ const getTransactions = asyncHandler(async (req, res) => {
   }
 
   const transactions = await Order.find(query).select(
-    "createdAt paymentMethod isPaid isDelivered totalPrice taxPrice shippingPrice orderItems"
+    "createdAt paymentMethod isPaid isDelivered totalPrice taxPrice shippingPrice orderItems",
   );
 
   res.json(transactions);
@@ -429,7 +439,12 @@ const razorpay = new Razorpay({
 // CREATE ORDER
 const createRazorpayOrder = async (req, res) => {
   try {
-    const { couponCode, shippingPrice } = req.body;
+    let { couponCode } = req.body;
+
+    couponCode = couponCode?.trim();
+    if (couponCode === "") couponCode = null;
+
+    console.log("COUPON:", couponCode, typeof couponCode);
 
     const user = await User.findById(req.user._id);
 
@@ -451,45 +466,86 @@ const createRazorpayOrder = async (req, res) => {
 
     for (const item of user.cartItems) {
       if (!item.price) {
-        return res.status(400).json({
-          message: "Cart item price missing",
-        });
+        return res.status(400).json({ message: "Cart item price missing" });
       }
+      subtotal += item.price; // ignoring quantity if needed
+    }
+    subtotal = parseFloat(subtotal.toFixed(2)); // ✅ Round to 2 decimals
 
-      subtotal += item.price ;
+    const taxAmount = parseFloat(((subtotal * 5) / 100).toFixed(2));
+
+    // Shipping
+    // Fetch shipping settings
+    const shippingSettings = await ShippingCost.findOne();
+    if (!shippingSettings) {
+      return res
+        .status(400)
+        .json({ message: "Shipping settings not configured" });
     }
 
-    const taxAmount = (subtotal * 5) / 100;
-    const shippingAmount = Number(shippingPrice || 0);
+    // Fetch default address
+    const defaultAddress =
+      user.addresses?.find((addr) => addr.isDefault) || user.addresses?.[0];
 
-    // 🎟️ Coupon snapshot
-    let couponSnapshot = null;
+    if (!defaultAddress || !defaultAddress.state) {
+      return res
+        .status(400)
+        .json({ message: "No default address found for shipping" });
+    }
+
+    // Now you can use shippingSettings
+    const stateRule = shippingSettings.shippingRules.find(
+      (rule) => rule.state === defaultAddress.state,
+    );
+
+    if (!stateRule) {
+      return res.status(400).json({
+        message: `Shipping not available for state: ${defaultAddress.state}`,
+      });
+    }
+
+    let shippingAmount = parseFloat(stateRule.cost.toFixed(2));
+
+    // Coupon
+    // Coupon
     let discountAmount = 0;
+    let couponSnapshot = null;
 
     if (couponCode) {
-      const offer = await Offer.findOne({
-        code: couponCode.toUpperCase(),
-        isActive: true,
-      });
+      const offer = await Offer.findOne({ code: couponCode.toUpperCase() });
+      if (!offer) throw new Error("Invalid coupon");
 
-      if (!offer) {
-        return res.status(400).json({ message: "Invalid coupon" });
-      }
+      // Calculate discount on subtotal, allow decimals up to 2 places
+      const rawDiscount = (subtotal * offer.offerPercentage) / 100;
 
-      if (offer.expiryDate && offer.expiryDate < new Date()) {
-        return res.status(400).json({ message: "Coupon expired" });
-      }
+      // Ensure discount does not exceed (subtotal + tax + shipping - 1)
+      discountAmount = Math.min(
+        rawDiscount,
+        subtotal + taxAmount + shippingAmount - 1,
+      );
 
-      discountAmount = Math.round((subtotal * offer.offerPercentage) / 100);
+      // Round to 2 decimal places (allow fractional discounts)
+      discountAmount = parseFloat(discountAmount.toFixed(2));
 
       couponSnapshot = {
         code: offer.code,
         percentage: offer.offerPercentage,
         discountAmount,
       };
+
+      console.log("🧮 PRICE CALCULATION", {
+        subtotal,
+        taxAmount,
+        shippingAmount,
+        discountAmount,
+        finalAmount: subtotal + taxAmount + shippingAmount - discountAmount,
+      });
     }
 
-    const finalAmount = subtotal + taxAmount + shippingAmount - discountAmount;
+    // Final total
+    const finalAmount = parseFloat(
+      (subtotal + taxAmount + shippingAmount - discountAmount).toFixed(2),
+    );
 
     if (finalAmount < 1) {
       return res.status(400).json({ message: "Final amount too low" });
@@ -645,11 +701,11 @@ const createBillingInvoice = asyncHandler(async (req, res) => {
   const subtotal = items.reduce((sum, item) => sum + item.rate * item.qty, 0);
   const cgstTotal = items.reduce(
     (sum, item) => sum + ((item.cgst || 0) / 100) * item.rate * item.qty,
-    0
+    0,
   );
   const sgstTotal = items.reduce(
     (sum, item) => sum + ((item.sgst || 0) / 100) * item.rate * item.qty,
-    0
+    0,
   );
   const total = subtotal + cgstTotal + sgstTotal;
   const invoice = new BillingInvoice({
