@@ -39,6 +39,9 @@ const CreateProductPage = () => {
   const [description, setdescription] = useState("");
   const [isFeatured, setIsFeatured] = useState(false);
   const [SKU, setSKU] = useState("");
+  const [productType, setProductType] = useState("single"); // default single
+  const [comboName, setComboName] = useState("");
+
   const [productdetails, setProductdetails] = useState({
     gender: "",
     category: "",
@@ -154,6 +157,7 @@ const CreateProductPage = () => {
       country: "",
     },
   });
+
   useEffect(() => {
     if (success) {
       toast({
@@ -170,6 +174,15 @@ const CreateProductPage = () => {
       navigate("/admin/productlist");
     }
   }, [dispatch, success, navigate, toast]);
+  // useEffect(() => {
+  //   if (productType === "combo") {
+  //     setProductdetails((prev) => ({
+  //       ...prev,
+  //       category: "Combo",
+  //       subcategory: "",
+  //     }));
+  //   }
+  // }, [productType]);
 
   const [colorVariants, setColorVariants] = useState([
     {
@@ -254,44 +267,60 @@ const CreateProductPage = () => {
     formData.append("description", description);
     formData.append("SKU", SKU);
     formData.append("isFeatured", isFeatured ? "true" : "false");
-
+    formData.append("productType", productType);
     // 🔹 SHIPPING
     formData.append("shippingDetails", JSON.stringify(shippingDetails));
 
-    // 🔥 VARIANTS
-    formData.append(
-      "products",
-      JSON.stringify(
-        colorVariants.map((variant) => {
-          const oldPrice = safeNumber(variant.oldPrice);
-          const discount = safeNumber(variant.discount);
-          const price = calculateVariantPrice(oldPrice, discount);
+    if (productType === "combo") {
+      formData.append("comboName", comboName);
 
-          return {
-            color: variant.color || "",
-            oldPrice,
-            discount,
-            price,
-            imagesCount: variant.images.filter(Boolean).length,
+      formData.append(
+        "products",
+        JSON.stringify(
+          colorVariants.map((v) => ({
+            color: v.color || "Combo",
+            oldPrice: safeNumber(v.oldPrice),
+            discount: safeNumber(v.discount),
+            price: calculateVariantPrice(v.oldPrice, v.discount),
+            imagesCount: v.images.filter(Boolean).length,
+
             productdetails: {
-              gender: productdetails.gender || "",
-              category: productdetails.category || "",
-              subcategory: productdetails.subcategory || "",
-              type: productdetails.type || "",
-              ageRange: productdetails.ageRange || "",
-              fabric: productdetails.fabric || "",
-              color: variant.color || "",
-              sizes: Array.isArray(variant.sizes) ? variant.sizes : [],
-              stockBySize: Array.isArray(variant.stockBySize)
-                ? variant.stockBySize.filter((s) =>
-                    variant.sizes?.includes(s.size)
-                  )
-                : [],
+              ...productdetails,
+              color: v.color || "Combo",
+              sizes: v.sizes,
+              stockBySize: v.stockBySize.filter((s) =>
+                v.sizes.includes(s.size)
+              ),
+              category: "Combo",
+              subcategory: "Combo",
             },
-          };
-        })
-      )
-    );
+          }))
+        )
+      );
+    } else {
+      // ✅ SINGLE PRODUCT VARIANTS
+      formData.append(
+        "products",
+        JSON.stringify(
+          colorVariants.map((v) => ({
+            color: v.color,
+            oldPrice: safeNumber(v.oldPrice),
+            discount: safeNumber(v.discount),
+            price: calculateVariantPrice(v.oldPrice, v.discount),
+            imagesCount: v.images.filter(Boolean).length,
+
+            productdetails: {
+              ...productdetails,
+              color: v.color,
+              sizes: v.sizes,
+              stockBySize: v.stockBySize.filter((s) =>
+                v.sizes.includes(s.size)
+              ),
+            },
+          }))
+        )
+      );
+    }
 
     // 🔥 IMAGES
 
@@ -328,6 +357,17 @@ const CreateProductPage = () => {
       <Heading as="h2" size="lg" mb={6} textAlign="center">
         🛍️ Create Product
       </Heading>
+      <FormControl mb={4}>
+        <FormLabel>Product Type</FormLabel>
+        <select
+          value={productType}
+          onChange={(e) => setProductType(e.target.value)}
+        >
+          <option value="single">Single Product</option>
+          <option value="combo">Combo Product</option>
+        </select>
+      </FormControl>
+
       {error && <Text color="red.500">{error}</Text>}
       <form
         onSubmit={submitHandler}
@@ -398,47 +438,52 @@ const CreateProductPage = () => {
         </FormControl>
         <FormControl>
           <FormLabel>Category</FormLabel>
-          <select
-            value={productdetails.category}
-            onChange={(e) =>
-              setProductdetails({
-                ...productdetails,
-                category: e.target.value,
-                subcategory: "", // 🔥 reset subcategory
-              })
-            }
-          >
-            <option value="">Select Category</option>
-            {CATEGORY_DATA.map((cat) => (
-              <option key={cat.name} value={cat.name}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
+          {productType === "combo" ? (
+            <Input value="Combo" isReadOnly />
+          ) : (
+            <select
+              value={productdetails.category}
+              onChange={(e) =>
+                setProductdetails({
+                  ...productdetails,
+                  category: e.target.value,
+                  subcategory: "", // reset subcategory
+                })
+              }
+            >
+              <option value="">Select Category</option>
+              {CATEGORY_DATA.map((cat) => (
+                <option key={cat.name} value={cat.name}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          )}
         </FormControl>
-        <FormControl>
-          <FormLabel>Subcategory</FormLabel>
-          <select
-            value={productdetails.subcategory}
-            onChange={(e) =>
-              setProductdetails({
-                ...productdetails,
-                subcategory: e.target.value,
-              })
-            }
-            disabled={!productdetails.category}
-          >
-            <option value="">Select Subcategory</option>
-
-            {CATEGORY_DATA.find(
-              (cat) => cat.name === productdetails.category
-            )?.subcategories.map((sub) => (
-              <option key={sub} value={sub}>
-                {sub}
-              </option>
-            ))}
-          </select>
-        </FormControl>
+        {productType !== "combo" && (
+          <FormControl>
+            <FormLabel>Subcategory</FormLabel>
+            <select
+              value={productdetails.subcategory}
+              onChange={(e) =>
+                setProductdetails({
+                  ...productdetails,
+                  subcategory: e.target.value,
+                })
+              }
+              disabled={!productdetails.category}
+            >
+              <option value="">Select Subcategory</option>
+              {CATEGORY_DATA.find(
+                (cat) => cat.name === productdetails.category
+              )?.subcategories.map((sub) => (
+                <option key={sub} value={sub}>
+                  {sub}
+                </option>
+              ))}
+            </select>
+          </FormControl>
+        )}
         <FormControl>
           <FormLabel>Type</FormLabel>
           <select
@@ -717,7 +762,6 @@ const CreateProductPage = () => {
                           stock: 0,
                         })),
                         images: [],
-
                         oldPrice: 0,
                         discount: 0,
                       },

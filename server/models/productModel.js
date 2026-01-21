@@ -29,7 +29,6 @@ const reviewSchema = mongoose.Schema(
   { timestamps: true }
 );
 
-
 const bannerSchema = mongoose.Schema(
   {
     image: { type: String, required: true },
@@ -82,6 +81,17 @@ const productSchema = mongoose.Schema(
     },
     SKU: { type: String, unique: true, required: true },
     productGroupId: { type: String, required: true },
+    productType: {
+      type: String,
+      enum: ["single", "combo"],
+      default: "single",
+    },
+
+    comboName: {
+      type: String,
+      default: "",
+    },
+
     images: [
       {
         type: String,

@@ -13,7 +13,6 @@ import {
   FormLabel,
   VStack,
   Text,
-  Select,
   HStack,
   SimpleGrid,
 } from "@chakra-ui/react";
@@ -41,7 +40,7 @@ const CreateSubscriptionModal = ({ isOpen, onClose }) => {
 
   const activePlanExists = subscriptions.some((s) => s.isActive);
 
-  /* Auto calculate end date */
+  // Auto calculate end date
   useEffect(() => {
     if (startDate && durationInDays) {
       const end = new Date(startDate);
@@ -52,7 +51,7 @@ const CreateSubscriptionModal = ({ isOpen, onClose }) => {
     }
   }, [startDate, durationInDays]);
 
-  /* Reset on success */
+  // Reset form on success
   useEffect(() => {
     if (success) {
       dispatch({ type: SUBSCRIPTION_CREATE_RESET });
@@ -70,7 +69,7 @@ const CreateSubscriptionModal = ({ isOpen, onClose }) => {
     }
   }, [success, dispatch, onClose]);
 
-  /* Offers handlers */
+  // Offers handlers
   const handleOfferChange = (index, value) => {
     const updated = [...offers];
     updated[index] = value;
@@ -80,6 +79,7 @@ const CreateSubscriptionModal = ({ isOpen, onClose }) => {
   const addOffer = () => setOffers([...offers, ""]);
   const removeOffer = (index) =>
     setOffers(offers.filter((_, i) => i !== index));
+
   const submitHandler = () => {
     const cleanedOffers = offers.filter((o) => o.trim() !== "");
 
@@ -99,7 +99,7 @@ const CreateSubscriptionModal = ({ isOpen, onClose }) => {
       createSubscription({
         title,
         description,
-        offers: cleanedOffers, // ✅ always valid array
+        offers: cleanedOffers,
         price: Number(price),
         discountPercent: Number(discountPercent || 0),
         durationInDays: Number(durationInDays),
@@ -109,12 +109,19 @@ const CreateSubscriptionModal = ({ isOpen, onClose }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="md">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      size="lg"
+      isCentered
+      scrollBehavior="inside" // ensures body scroll, not whole modal
+    >
       <ModalOverlay />
-      <ModalContent>
+      <ModalContent maxH="90vh">
         <ModalHeader>Create Subscription</ModalHeader>
         <ModalCloseButton />
-        <ModalBody>
+
+        <ModalBody overflowY="auto" maxH="calc(90vh - 120px)">
           {error && (
             <Text color="red.500" mb={2}>
               {error}
@@ -127,8 +134,8 @@ const CreateSubscriptionModal = ({ isOpen, onClose }) => {
             </Text>
           )}
 
-          <VStack spacing={6} align="stretch">
-            {/* ========= BASIC DETAILS ========= */}
+          <VStack spacing={4} align="stretch">
+            {/* ===== BASIC DETAILS ===== */}
             <SimpleGrid columns={2} spacing={4}>
               <FormControl isRequired>
                 <FormLabel>Title</FormLabel>
@@ -147,9 +154,10 @@ const CreateSubscriptionModal = ({ isOpen, onClose }) => {
               </FormControl>
             </SimpleGrid>
 
-            {/* ========= OFFERS ========= */}
+            {/* ===== OFFERS ===== */}
             <FormControl isRequired>
-              <VStack align="stretch">
+              <FormLabel>Offers</FormLabel>
+              <VStack align="stretch" spacing={2}>
                 {offers.map((offer, index) => (
                   <HStack key={index}>
                     <Input
@@ -169,13 +177,12 @@ const CreateSubscriptionModal = ({ isOpen, onClose }) => {
                   </HStack>
                 ))}
               </VStack>
-
-              <Button mt={2} size="sm" onClick={addOffer}>
+              <Button mt={2} size="sm" colorScheme="blue" onClick={addOffer}>
                 + Add Offer
               </Button>
             </FormControl>
 
-            {/* ========= PRICING ========= */}
+            {/* ===== PRICING ===== */}
             <SimpleGrid columns={2} spacing={4}>
               <FormControl isRequired>
                 <FormLabel>Price</FormLabel>
@@ -196,8 +203,8 @@ const CreateSubscriptionModal = ({ isOpen, onClose }) => {
               </FormControl>
             </SimpleGrid>
 
-            {/* ========= DURATION ========= */}
-           <SimpleGrid columns={2} spacing={4}>
+            {/* ===== DURATION ===== */}
+            <SimpleGrid columns={2} spacing={4}>
               <FormControl isRequired>
                 <FormLabel>Duration (Days)</FormLabel>
                 <Input

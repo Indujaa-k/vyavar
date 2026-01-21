@@ -24,7 +24,7 @@ import { MdKeyboardArrowRight } from "react-icons/md";
 import { IoLogOutOutline } from "react-icons/io5";
 import { CgProfile } from "react-icons/cg";
 import { logout } from "../actions/userActions";
-import Logo from "../assets/vyavarlogo.png";
+import Logo from "../assets/viyavar.png";
 import navheart from "../assets/navheart.svg";
 import Categorylist from "./Categorylist/Categorylist";
 import Brandlist from "./Brandlist/Brandlist";
@@ -33,6 +33,7 @@ import CategoryImg from "../../src/assets/categoryimg.svg";
 import "./Nav.css";
 import { getUserDetails } from "../actions/userActions";
 import { getActiveOfferBanner } from "../actions/bannerActions";
+import { checkHasCombo } from "../actions/productActions";
 
 import {
   IconButton,
@@ -101,6 +102,10 @@ const Nav = () => {
   useEffect(() => {
     dispatch(getActiveOfferBanner());
   }, [dispatch]);
+  useEffect(() => {
+  dispatch(checkHasCombo());
+}, [dispatch]);
+
 
   const { banner } = useSelector((state) => state.activeOfferBanner || {});
 
