@@ -1,27 +1,73 @@
-import React, { useState } from "react";
-import { Image } from "@chakra-ui/react";
-import { Helmet } from "react-helmet";
-// import cover from "./cover.jpg";
+import React, { useState, useEffect } from "react";
 import {
+  Image,
   Input,
   InputGroup,
   InputLeftElement,
   Textarea,
   Button,
+  useToast,
+  Spinner,
 } from "@chakra-ui/react";
+import { Helmet } from "react-helmet";
 import { BsEnvelope } from "react-icons/bs";
 import { GiPositionMarker } from "react-icons/gi";
 import { HiOutlinePhone } from "react-icons/hi";
+import { useDispatch, useSelector } from "react-redux";
+import { sendContactMessage, resetContact } from "../../actions/contactActions";
 import "./contactuscss.css";
+
 const Contactus = () => {
   const [email, setemail] = useState("");
   const [body, setbody] = useState("");
 
-  const handlesubmit = () => {
-    window.open(
-      `mailto:PaletteProduction@gmail.com?subject=Sample&body=${body}`
-    );
+  const dispatch = useDispatch();
+  const toast = useToast();
+
+  const contactSend = useSelector((state) => state.contactSend);
+  const { loading, success, error } = contactSend;
+
+  const handleSubmit = () => {
+    if (!email || !body) {
+      toast({
+        title: "Missing fields",
+        description: "Please enter email and message",
+        status: "warning",
+        duration: 3000,
+        position: "top",
+      });
+      return;
+    }
+
+    dispatch(sendContactMessage(email, body));
   };
+
+  useEffect(() => {
+    if (success) {
+      toast({
+        title: "Message sent",
+        description: "We will contact you shortly",
+        status: "success",
+        duration: 3000,
+        position: "top",
+      });
+      setemail("");
+      setbody("");
+      dispatch(resetContact());
+    }
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error,
+        status: "error",
+        duration: 3000,
+        position: "top",
+      });
+      dispatch(resetContact());
+    }
+  }, [success, error, toast, dispatch]);
+
   return (
     <div className="contactUscontainer">
       <Helmet>
@@ -51,7 +97,7 @@ const Contactus = () => {
               <Input
                 value={email}
                 onChange={(e) => setemail(e.target.value)}
-                type="text"
+                type="email"
                 placeholder="Your Email Address"
               />
             </InputGroup>
@@ -67,14 +113,15 @@ const Contactus = () => {
           </div>
           <div className="contentContact">
             <Button
-              onClick={handlesubmit}
+              onClick={handleSubmit}
               borderRadius="90px"
               colorScheme="teal"
               variant="solid"
               size="180px"
               className="contactBtn"
+              isDisabled={loading} // Disable while loading
             >
-              Submit
+              {loading ? <Spinner size="sm" color="white" /> : "Submit"}
             </Button>
           </div>
         </div>
@@ -85,7 +132,10 @@ const Contactus = () => {
             </div>
             <div className="adressCtn">
               <h3> Address</h3>
-              <p>Palette Production, Tiruppur-641602</p>
+              <p>
+                Viyavar Fashions 173A, Anna Nagar, Industrial Estate Karur,
+                Tamil Nadu – 639004, India
+              </p>
             </div>
           </div>
           <div className="box">
@@ -94,7 +144,7 @@ const Contactus = () => {
             </div>
             <div className="adressCtn">
               <h3>Lets Talk</h3>
-              <p className="infoCtn">07946138520</p>
+              <p className="infoCtn">6383532399</p>
             </div>
           </div>
           <div className="box">
@@ -103,7 +153,11 @@ const Contactus = () => {
             </div>
             <div className="adressCtn">
               <h3>Sale Support</h3>
-              <p className="infoCtn">Palette@gmail.com</p>
+              <p className="infoCtn">
+                <a href="mailto:viyavarfashion@gmail.com">
+                  viyavarfashion@gmail.com
+                </a>
+              </p>
             </div>
           </div>
         </div>
