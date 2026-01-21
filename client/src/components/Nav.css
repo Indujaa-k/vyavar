@@ -250,3 +250,47 @@
     justify-content: space-between;
   }
 }
+/* example */
+.category-dropdown {
+  position: absolute;
+}
+
+.category-dropdown.mobile {
+  position: static;
+}
+
+@media screen and (max-width: 768px) {
+
+  /* Disable hover dropdown behaviour */
+  .dropdown:hover .dropdown-menu {
+    display: none;
+  }
+
+  /* Mobile dropdown style */
+  .dropdown-menu.mobile {
+    position: static;
+    transform: none;
+    width: 100%;
+    display: block;
+    background: transparent;
+    padding: 0;
+    box-shadow: none;
+  }
+
+  .dropdown-menu.mobile .category-contain {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .dropdown-menu.mobile .category-column {
+    padding: 0;
+  }
+
+  .dropdown-menu.mobile h4 {
+    color: #DBA751;
+  }
+
+  .dropdown-menu.mobile li a {
+    color: #ddd;
+  }
+}

@@ -5,6 +5,8 @@ import { Helmet } from "react-helmet";
 import { useDispatch, useSelector } from "react-redux";
 import { IoMdDoneAll } from "react-icons/io";
 import { getInvoice } from "../../actions/orderActions";
+import { Image } from "@chakra-ui/react";
+
 
 import {
   getOrderDetails,
@@ -62,7 +64,7 @@ const Order = () => {
   };
   if (!loading) {
     order.itemsPrice = addDecimals(
-      order.orderItems.reduce((acc, item) => acc + item.price, 0)
+      order.orderItems.reduce((acc, item) => acc + item.price, 0),
     );
   }
 
@@ -88,7 +90,13 @@ const Order = () => {
   console.log("COUPON DATA:", order?.coupon);
 
   return (
-    <Box mx="auto" px={40} py={10} bg="white">
+    <Box
+      mx="auto"
+      px={{ base: 4, md: 10, lg: 20 }}
+      py={{ base: 6, md: 10 }}
+      bg="white"
+      mt="60px"
+    >
       <Helmet>
         <title>Order Details</title>
       </Helmet>
@@ -103,14 +111,15 @@ const Order = () => {
         <Box maxW="container.md" mx="auto" p={4}>
           <Stack
             direction={{ base: "column", md: "row" }}
-            spacing={6}
+            spacing={{ base: 4, md: 6 }}
             justify="center"
+            align="stretch"
           >
             {/* Left Side - Order Info */}
             <VStack
               flex="2"
               bg="white"
-              p={6}
+              p={{ base: 4, md: 6 }}
               borderRadius="md"
               boxShadow="lg"
               align="stretch"
@@ -146,14 +155,16 @@ const Order = () => {
               <Text>
                 <strong>Name:</strong> {order.user?.name || "Customer"}
               </Text>
-              <Text>
-                <strong>Address:</strong> {order.shippingAddress.doorNo},{" "}
-                {order.shippingAddress.street},
-                {order.shippingAddress.nearestLandmark},{" "}
-                {order.shippingAddress.city}, {order.shippingAddress.state} -{" "}
-                {order.shippingAddress.pin}, {order.shippingAddress.country}
-                {order.shippingAddress.phoneNumber}
-              </Text>
+              <Box overflowX={{ base: "auto", md: "visible" }}>
+                <Text>
+                  <strong>Address:</strong> {order.shippingAddress.doorNo},{" "}
+                  {order.shippingAddress.street},
+                  {order.shippingAddress.nearestLandmark},{" "}
+                  {order.shippingAddress.city}, {order.shippingAddress.state} -{" "}
+                  {order.shippingAddress.pin}, {order.shippingAddress.country}
+                  {order.shippingAddress.phoneNumber}
+                </Text>
+              </Box>
               <Text>
                 {order.isDelivered ? (
                   <Badge colorScheme="green">
@@ -188,25 +199,23 @@ const Order = () => {
                   justify="space-between"
                   w="full"
                   mb={4}
+                  wrap={{ base: "wrap", md: "nowrap" }}
                 >
                   {/* Left side: Image and Name */}
                   <HStack spacing={2}>
                     {/* Product Image */}
                     {/* <Link to={`/product/${item.product._id}`}> */}
                     <Link to={`/product/${item.product?._id || item.product}`}>
-                      <img
+                      <Image
                         src={
                           typeof item.product === "object"
                             ? item.product.images?.[0]
                             : "/placeholder.jpg"
                         }
                         alt={item.name}
-                        style={{
-                          width: "80px",
-                          height: "100px",
-                          objectFit: "cover",
-                          borderRadius: "5px",
-                        }}
+                        boxSize={{ base: "60px", md: "80px" }}
+                        objectFit="cover"
+                        borderRadius="md"
                       />
                     </Link>
 
@@ -241,7 +250,7 @@ const Order = () => {
                 bg="pink"
                 color="brown"
                 size="sm"
-                mr="auto"
+                width={{ base: "100%", md: "auto" }}
                 fontWeight="600"
                 p={2}
                 onClick={() => navigate(`/admin/order/${orderId}/invoice`)}
