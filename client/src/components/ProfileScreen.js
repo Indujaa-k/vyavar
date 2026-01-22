@@ -130,6 +130,9 @@ const ProfileScreen = () => {
   // }, [dispatch, navigate, userInfo, user]);
   const shipping = useSelector((state) => state.checkoutShipping);
   const { shippingRules = [], loading: loadingShipping } = shipping || {};
+  const isAdmin = user?.isAdmin === true;
+  const isSeller = user?.role === "seller";
+  const isRestrictedUser = isAdmin || isSeller;
 
   useEffect(() => {
     if (userInfo) {
@@ -154,7 +157,7 @@ const ProfileScreen = () => {
           user.profilePicture &&
             user.profilePicture !== "/images/default-profile.png"
             ? user.profilePicture
-            : null
+            : null,
         );
       }
     }
@@ -175,7 +178,7 @@ const ProfileScreen = () => {
     if (editingAddress !== null) {
       // Replace by index
       updatedAddresses = addresses.map((addr, i) =>
-        i === editingAddress ? { ...newAddress } : addr
+        i === editingAddress ? { ...newAddress } : addr,
       );
     } else {
       // Add new address
@@ -250,13 +253,35 @@ const ProfileScreen = () => {
     dispatch(getUserDetails("profile"));
   };
 
-  // ✅ Handle Image Upload
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setProfilePicture(file);
+    if (!file) return;
+
+    setProfilePicture(file); // UI instant preview
+
+    const formData = new FormData();
+    formData.append("profilePicture", file);
+
+    try {
+      await dispatch(updateUserProfile(formData));
+      dispatch(getUserDetails("profile"));
+
+      toast({
+        title: "Profile picture updated",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (err) {
+      toast({
+        title: "Image upload failed",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
     }
   };
+
   const handleDeleteProfilePicture = async () => {
     try {
       await axios.delete(
@@ -265,7 +290,7 @@ const ProfileScreen = () => {
           headers: {
             Authorization: `Bearer ${userInfo.token}`,
           },
-        }
+        },
       );
 
       // 🔄 Clear image instantly
@@ -295,113 +320,6 @@ const ProfileScreen = () => {
     }
   };
 
-  // const submitHandler = (e) => {
-  //   e.preventDefault();
-  //   console.log("Addresses being sent:", addresses);
-
-  //   const formData = new FormData();
-  //   formData.append("name", name);
-  //   formData.append("email", email);
-  //   formData.append("lastName", lastName);
-  //   formData.append("gender", gender);
-  //   formData.append("dateOfBirth", dateOfBirth);
-  //   formData.append("addresses", JSON.stringify(addresses));
-
-  //   if (profilePicture) {
-  //     formData.append("profilePicture", profilePicture);
-  //   }
-
-  //   dispatch(updateUserProfile(formData)).then(() => {
-  //     // Keep the new image visible after update
-  //     if (profilePicture) {
-  //       setProfilePicture(profilePicture);
-  //     }
-  //     toast({
-  //       title: "Profile Updated",
-  //       description: "Your profile has been successfully updated.",
-  //       status: "success",
-  //       duration: 3000,
-  //       isClosable: true,
-  //       position: "top",
-  //     });
-
-  //     // Refresh backend details
-  //     dispatch(getUserDetails("profile"));
-  //   });
-  // };
-
-  // const validateAddress = () => {
-  //   let newErrors = {};
-
-  //   if (!String(address.doorNo || "").trim()) {
-  //     newErrors.doorNo = "Door number is required";
-  //   }
-
-  //   if (!String(address.street || "").trim()) {
-  //     newErrors.street = "Street is required";
-  //   }
-
-  //   if (!String(address.city || "").trim()) {
-  //     newErrors.city = "City is required";
-  //   }
-
-  //   if (!String(address.state || "").trim()) {
-  //     newErrors.state = "State is required";
-  //   }
-
-  //   const pin = String(address.pin || "");
-
-  //   if (!pin.trim()) {
-  //     newErrors.pin = "PIN code is required";
-  //   } else if (!/^\d{6}$/.test(pin)) {
-  //     newErrors.pin = "PIN must be 6 digits";
-  //   }
-
-  //   const phone = String(address.phoneNumber || "");
-
-  //   if (!phone.trim()) {
-  //     newErrors.phoneNumber = "Phone number is required";
-  //   } else if (!/^\d{10}$/.test(phone)) {
-  //     newErrors.phoneNumber = "Phone must be 10 digits";
-  //   }
-
-  //   setErrors(newErrors);
-
-  //   return Object.keys(newErrors).length === 0;
-  // };
-
-  // // ✅ Handle Address Update (separate)
-  // const handleAddressUpdate = (e) => {
-  //   e.preventDefault();
-
-  //   if (!validateAddress()) {
-  //     toast({
-  //       title: "Invalid Address",
-  //       description: "Please fill the highlighted fields.",
-  //       status: "error",
-  //       duration: 3000,
-  //       isClosable: true,
-  //       position: "top",
-  //     });
-  //     return;
-  //   }
-  //   const formData = new FormData();
-  //   formData.append("addresses", JSON.stringify(addresses));
-
-  //   dispatch(updateUserProfile(formData));
-  //   toast({
-  //     title: "Address Updated",
-  //     description: "Your address has been successfully updated.",
-  //     status: "success",
-  //     duration: 3000,
-  //     isClosable: true,
-  //     position: "top",
-  //   });
-
-  //   // Optional: refresh details
-  //   dispatch(getUserDetails("profile"));
-  // };
-
   const submitHandler = async (e) => {
     e.preventDefault();
 
@@ -413,9 +331,9 @@ const ProfileScreen = () => {
     formData.append("dateOfBirth", dateOfBirth ? dateOfBirth : null);
     formData.append("addresses", JSON.stringify(addresses));
 
-    if (profilePicture instanceof File) {
-      formData.append("profilePicture", profilePicture);
-    }
+    // if (profilePicture instanceof File) {
+    //   formData.append("profilePicture", profilePicture);
+    // }
 
     try {
       await dispatch(updateUserProfile(formData));
@@ -433,58 +351,54 @@ const ProfileScreen = () => {
   };
 
   const menuOptions = [
-    { id: "profile", label: "Profile", image: profileimg, icon: FaUser },
-    {
-      id: "subscription",
-      label: "Subscriptions",
-      path: "/subscription",
-      icon: FaBoxOpen,
-    },
-    {
-      id: "addresses",
-      label: "Address",
-      image: addressimg,
-      icon: FaMapMarkerAlt,
-    },
-    { id: "orders", label: "My Orders", image: ordersimg, icon: FaShoppingBag },
-    { id: "about", label: "About", path: "/About", icon: FaInfoCircle },
-    {
-      id: "contactus",
-      label: "Contact Us",
-      path: "/Contactus",
-      icon: FaPhoneAlt,
-    },
-    // {
-    //   id: "Terms and conditions",
-    //   label: "Terms and Conditions",
-    //   path: "/_blank ",
-    //   icon: FaFileContract,
-    // },
-    // {
-    //   id: "Privacy policy",
-    //   label: "Privacy Policy",
-    //   path: "/_blank",
-    //   icon: FaShieldAlt,
-    // },
-    {
-      id: "Return policy",
-      label: "Return Policy",
-      path: "/_blank",
-      icon: FaUndo,
-    },
-    {
-      id: "tracking",
-      label: "Order Tracking",
-      icon: FaMapMarkerAlt,
-      path: "/order-tracking",
-    },
+    // ✅ Profile for ALL users
+    { id: "profile", label: "Profile", icon: FaUser },
 
-    {
-      id: "logout",
-      label: "Logout",
-      icon: FaSignOutAlt,
-      onClick: handleLogout,
-    },
+    // ✅ Only NORMAL users
+    ...(!isRestrictedUser
+      ? [
+          {
+            id: "subscription",
+            label: "Subscriptions",
+            path: "/subscription",
+            icon: FaBoxOpen,
+          },
+          {
+            id: "addresses",
+            label: "Address",
+            icon: FaMapMarkerAlt,
+          },
+          {
+            id: "orders",
+            label: "My Orders",
+            icon: FaShoppingBag,
+          },
+          {
+            id: "about",
+            label: "About",
+            path: "/About",
+            icon: FaInfoCircle,
+          },
+          {
+            id: "contactus",
+            label: "Contact Us",
+            path: "/Contactus",
+            icon: FaPhoneAlt,
+          },
+        ]
+      : []),
+
+    // ✅ Logout for ALL
+    ...(!isRestrictedUser
+      ? [
+          {
+            id: "logout",
+            label: "Logout",
+            icon: FaSignOutAlt,
+            onClick: handleLogout,
+          },
+        ]
+      : []),
   ];
 
   const renderProfile = () => (
@@ -1105,6 +1019,12 @@ const ProfileScreen = () => {
   };
 
   const renderContent = () => {
+    // 🔒 Admin & Seller → Profile ONLY
+    if (isRestrictedUser) {
+      return renderProfile();
+    }
+
+    // 👤 Normal users
     switch (activeSection) {
       case "profile":
         return renderProfile();
@@ -1113,7 +1033,7 @@ const ProfileScreen = () => {
       case "orders":
         return renderOrders();
       default:
-        return null;
+        return renderProfile();
     }
   };
 
@@ -1124,86 +1044,89 @@ const ProfileScreen = () => {
       </Helmet>
 
       <Flex
-        direction={{ base: "column", md: "row" }}
+        direction={{ base: "column", md: isRestrictedUser ? "column" : "row" }}
         gap={8}
         justify="center"
         align="stretch"
         mx="auto"
-        maxW="1000px"
+        maxW={isRestrictedUser ? "520px" : "1000px"}
         w="full"
         p={5}
-        minH="520px" // ✅ ADD THIS
+        minH="520px"
       >
-        {/* LEFT SIDE MENU */}
-        <Box
-          bg="white"
-          p={4}
-          border="1px solid"
-          borderColor="gray.300"
-          borderRadius="md"
-          w={{ base: "100%", md: "400px" }}
-          minW="unset"
-          flex="1"
-          overflowY="visible"
-          css={{
-            scrollbarWidth: "none",
-            "&::-webkit-scrollbar": { display: "none" },
-          }}
-        >
-          <Box mb="3">
-            <img src={profiletag} alt="Profile" width="full" height="full" />
-          </Box>
-          <List spacing={3}>
-            {menuOptions.map((menu) => (
-              <ListItem key={menu.id}>
-                {menu.id === "logout" ? (
-                  <HStack
-                    p={3}
-                    borderRadius="md"
-                    cursor="pointer"
-                    bg="red.500"
-                    color="white"
-                    onClick={menu.onClick}
-                  >
-                    {menu.icon && (
-                      <Icon as={menu.icon} boxSize={5} color="white" />
-                    )}
-                    <Text fontWeight="600">{menu.label}</Text>
-                  </HStack>
-                ) : (
-                  <Link
-                    to={menu.path || "#"}
-                    style={{ textDecoration: "none" }}
-                  >
+        {/* LEFT SIDE MENU → ONLY NORMAL USER */}
+        {!isRestrictedUser && (
+          <Box
+            bg="white"
+            p={4}
+            border="1px solid"
+            borderColor="gray.300"
+            borderRadius="md"
+            w={{ base: "100%", md: "360px" }}
+            minW="unset"
+            flex="1"
+            overflowY="visible"
+            css={{
+              scrollbarWidth: "none",
+              "&::-webkit-scrollbar": { display: "none" },
+            }}
+          >
+            <Box mb="3">
+              <img src={profiletag} alt="Profile" width="full" height="full" />
+            </Box>
+
+            <List spacing={3}>
+              {menuOptions.map((menu) => (
+                <ListItem key={menu.id}>
+                  {menu.id === "logout" ? (
                     <HStack
                       p={3}
                       borderRadius="md"
                       cursor="pointer"
-                      color={activeSection === menu.id ? "white" : "black"}
-                      bg={activeSection === menu.id ? "black" : "gray.100"}
-                      onClick={() => setActiveSection(menu.id)}
+                      bg="red.500"
+                      color="white"
+                      onClick={menu.onClick}
                     >
                       {menu.icon && (
-                        <Icon
-                          as={menu.icon}
-                          boxSize={5}
-                          color={
-                            activeSection === menu.id
-                              ? "rgb(3,156,195)"
-                              : "gray.500"
-                          }
-                        />
+                        <Icon as={menu.icon} boxSize={5} color="white" />
                       )}
                       <Text fontWeight="600">{menu.label}</Text>
                     </HStack>
-                  </Link>
-                )}
-              </ListItem>
-            ))}
-          </List>
-        </Box>
+                  ) : (
+                    <Link
+                      to={menu.path || "#"}
+                      style={{ textDecoration: "none" }}
+                    >
+                      <HStack
+                        p={3}
+                        borderRadius="md"
+                        cursor="pointer"
+                        color={activeSection === menu.id ? "white" : "black"}
+                        bg={activeSection === menu.id ? "black" : "gray.100"}
+                        onClick={() => setActiveSection(menu.id)}
+                      >
+                        {menu.icon && (
+                          <Icon
+                            as={menu.icon}
+                            boxSize={5}
+                            color={
+                              activeSection === menu.id
+                                ? "rgb(3,156,195)"
+                                : "gray.500"
+                            }
+                          />
+                        )}
+                        <Text fontWeight="600">{menu.label}</Text>
+                      </HStack>
+                    </Link>
+                  )}
+                </ListItem>
+              ))}
+            </List>
+          </Box>
+        )}
 
-        {/* RIGHT SIDE CONTENT */}
+        {/* RIGHT SIDE CONTENT → ALL USERS */}
         <Box
           p={{ base: 4, md: 6 }}
           bg="white"
@@ -1213,8 +1136,8 @@ const ProfileScreen = () => {
           borderColor="gray.300"
           flex="1"
           w="100%"
-          h="760px" // ✅ ADD THIS
-          overflow="hidden" // ✅ ADD THIS
+          h="700px"
+          overflow="hidden"
         >
           <Box
             h={{ base: "auto", md: "100%" }}
@@ -1225,10 +1148,12 @@ const ProfileScreen = () => {
               "&::-webkit-scrollbar": { display: "none" },
             }}
           >
-            {renderContent()}
+            {/* 🔥 ADMIN / SELLER → PROFILE ONLY */}
+            {isRestrictedUser ? renderProfile() : renderContent()}
           </Box>
         </Box>
       </Flex>
+
       <Trust />
     </Box>
   );
