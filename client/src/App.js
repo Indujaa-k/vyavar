@@ -69,6 +69,7 @@ import ShippingCost from "./pages/Delivery/ShippingCost";
 const App = () => {
   const { userInfo } = useSelector((state) => state.userLogin);
   const hideFooterRoutes = ["/login"];
+  const hideArrowRoutes = ["/login"];
 
   return (
     <div className="main">
@@ -257,7 +258,9 @@ const App = () => {
 
                   <Route path="*" element={<NotFoundPage />} />
                 </Routes>
-                <ScrollButtons />
+                {!hideArrowRoutes.includes(location.pathname) && (
+                  <ScrollButtons />
+                )}
                 {!hideFooterRoutes.includes(location.pathname) && <Footer />}
                 {/* path="/products/:category" */}
               </>

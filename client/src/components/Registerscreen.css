@@ -1,23 +1,11 @@
-/* Full-Screen Background */
-.registerSc {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100vw;
-  margin-top: 30px;
-  height: 100vh;
-  background: url("../assets/loginimg.png") no-repeat center center black;
-  background-size: cover;
-  background-attachment: fixed;
-  position: relative;
-}
+
 .password-toggle-icon {
   position: absolute;
   right: 12px;
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
-  z-index: 999; /* 👈 important */
+  z-index: 999; 
   font-size: 18px;
   user-select: none;
 }
@@ -27,10 +15,11 @@
   margin-bottom: 1rem;
   background-color: white;
   border-radius: 20px;
+  position:relative;
 }
 
 .form-row label {
-  width: 100px; /* adjust as needed */
+  width: 100px; 
   font-weight: bold;
 }
 
@@ -56,7 +45,8 @@
 /* Center the Form Container */
 .registerSc .containera {
   width: 450px;
-  height: 500px;
+  height: auto;
+  min-height: auto;
   background: rgba(255, 255, 255, 0.9);
   padding: 40px 30px;
   box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
@@ -64,6 +54,7 @@
   position: relative;
   z-index: 2;
   margin: 20px;
+  margin-bottom: 0px;
   border-radius: 20px;
 }
 
