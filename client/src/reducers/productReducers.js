@@ -58,7 +58,9 @@ import {
   PRODUCT_GROUP_REQUEST,
   PRODUCT_GROUP_SUCCESS,
   PRODUCT_GROUP_FAIL,
-  
+  REVIEW_UNAPPROVE_REQUEST,
+  REVIEW_UNAPPROVE_SUCCESS,
+  REVIEW_UNAPPROVE_FAIL,
 } from "../constants/productConstants";
 export const productListReducer = (state = { products: [] }, action) => {
   switch (action.type) {
@@ -77,7 +79,7 @@ export const productDetailsReducer = (
     product: { reviews: [], images: [], productdetails: {} },
     variants: [],
   },
-  action
+  action,
 ) => {
   switch (action.type) {
     case PRODUCT_DETAILS_REQUEST:
@@ -147,12 +149,12 @@ export const productBulkUploadReducer = (state = {}, action) => {
   switch (action.type) {
     case PRODUCT_BULK_UPLOAD_REQUEST:
       return { loading: true };
-   case PRODUCT_BULK_UPLOAD_SUCCESS:
-  return {
-    loading: false,
-    success: true,
-    message: action.payload,
-  };
+    case PRODUCT_BULK_UPLOAD_SUCCESS:
+      return {
+        loading: false,
+        success: true,
+        message: action.payload,
+      };
     case PRODUCT_BULK_UPLOAD_FAIL:
       return { loading: false, error: action.payload };
     case PRODUCT_BULK_UPLOAD_RESET:
@@ -263,7 +265,7 @@ export const productVariantsReducer = (state = { variants: [] }, action) => {
 };
 export const productGroupDetailsReducer = (
   state = { products: [] },
-  action
+  action,
 ) => {
   switch (action.type) {
     case PRODUCT_GROUP_DETAILS_REQUEST:
@@ -279,7 +281,6 @@ export const productGroupDetailsReducer = (
       return state;
   }
 };
-
 
 export const productVariantAddReducer = (state = {}, action) => {
   switch (action.type) {
@@ -298,7 +299,7 @@ export const productVariantAddReducer = (state = {}, action) => {
 };
 export const productEditReducer = (
   state = { loading: false, product: {}, variants: [], group: {} },
-  action
+  action,
 ) => {
   switch (action.type) {
     case PRODUCT_EDIT_REQUEST:
@@ -321,7 +322,7 @@ export const productEditReducer = (
 };
 export const productGroupReducer = (
   state = { common: {}, variants: [] },
-  action
+  action,
 ) => {
   switch (action.type) {
     case PRODUCT_GROUP_REQUEST:
@@ -381,6 +382,18 @@ export const productListByGroupReducer = (state = { products: [] }, action) => {
     case PRODUCT_LIST_BY_GROUP_SUCCESS:
       return { loading: false, products: action.payload };
     case PRODUCT_LIST_BY_GROUP_FAIL:
+      return { loading: false, error: action.payload };
+    default:
+      return state;
+  }
+};
+export const reviewUnapproveReducer = (state = {}, action) => {
+  switch (action.type) {
+    case REVIEW_UNAPPROVE_REQUEST:
+      return { loading: true };
+    case REVIEW_UNAPPROVE_SUCCESS:
+      return { loading: false, success: true };
+    case REVIEW_UNAPPROVE_FAIL:
       return { loading: false, error: action.payload };
     default:
       return state;

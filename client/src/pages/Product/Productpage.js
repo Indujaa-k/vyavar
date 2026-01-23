@@ -44,6 +44,7 @@ import {
   ModalCloseButton,
   useDisclosure,
   ModalHeader,
+  Avatar,
 } from "@chakra-ui/react";
 import HashLoader from "react-spinners/HashLoader";
 import { useParams } from "react-router-dom";
@@ -108,6 +109,8 @@ const Productpage = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [modalImage, setModalImage] = useState(null);
   const [images, setImages] = useState([]);
+  const [reviewLoading, setReviewLoading] = useState(false);
+
   const openImageModal = (img) => {
     setModalImage(img);
     onOpen();
@@ -127,7 +130,7 @@ const Productpage = () => {
   const hasUserReviewed =
     userInfo &&
     product?.reviews?.some(
-      (review) => review.user?.toString() === userInfo._id
+      (review) => review.user?.toString() === userInfo._id,
     );
 
   const togglePDF = () => setShowPDF((prev) => !prev);
@@ -141,7 +144,7 @@ const Productpage = () => {
 
   function slideImage() {
     const displayWidth = document.querySelector(
-      ".img-showcase img:first-child"
+      ".img-showcase img:first-child",
     ).clientWidth;
     imgShowcase.current.style.transform = `translateX(${
       -(imgId - 1) * displayWidth
@@ -162,20 +165,24 @@ const Productpage = () => {
   };
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = Array.from(e.target.files);
 
-    if (photos.length >= 3) {
-      alert("You can upload only 3 images");
+    if (!files.length) return;
+
+    if (photos.length + files.length > 3) {
+      toast({
+        title: "Limit exceeded",
+        description: "You can upload maximum 3 images",
+        status: "warning",
+        duration: 3000,
+      });
       return;
     }
 
-    // store file
-    setPhotos((prev) => [...prev, file]);
-
-    // preview
-    const previewUrl = URL.createObjectURL(file);
-    setPreviewImages((prev) => [...prev, previewUrl]);
+    files.forEach((file) => {
+      setPhotos((prev) => [...prev, file]);
+      setPreviewImages((prev) => [...prev, URL.createObjectURL(file)]);
+    });
 
     e.target.value = "";
   };
@@ -217,23 +224,6 @@ const Productpage = () => {
   }, [orders, id]);
 
   useEffect(() => {
-    if (successProductReview) {
-      toast({
-        title: "Review Submitted",
-        description: "Your review is successfully noted!",
-        status: "success",
-        duration: 4000,
-        position: "top-right",
-        isClosable: true,
-      });
-
-      setrating(0);
-      setcomment("");
-      setPreviewImages([]);
-      setImages([]);
-      setShowCreateReview(false);
-      dispatch({ type: PRODUCT_CREATE_REVIEW_RESET });
-    }
 
     dispatch(listProductDetails(id));
 
@@ -256,7 +246,7 @@ const Productpage = () => {
       console.log("Product:", product.SKU);
       console.log(
         "Variants:",
-        product.variants.map((v) => v.SKU)
+        product.variants.map((v) => v.SKU),
       );
     }
   }, [product]);
@@ -284,21 +274,24 @@ const Productpage = () => {
       dispatch(listProductsByGroupId(product.productGroupId));
     }
   }, [dispatch, product?.productGroupId, userInfo]);
-  const submitHandler = (e) => {
+  const submitHandler = async (e) => {
     e.preventDefault();
 
     if (rating === 0) {
-      alert("Please select rating");
+      toast({
+        title: "Rating required",
+        status: "warning",
+        duration: 2000,
+      });
       return;
     }
 
     if (!comment.trim()) {
-      alert("Please enter comment");
-      return;
-    }
-
-    if (photos.length !== 3) {
-      alert("Please upload exactly 3 images");
+      toast({
+        title: "Comment required",
+        status: "warning",
+        duration: 2000,
+      });
       return;
     }
 
@@ -310,7 +303,36 @@ const Productpage = () => {
       formData.append("photos", photo);
     });
 
-    dispatch(createproductReview(id, formData));
+    setReviewLoading(true); // 🔥 START LOADING
+
+    try {
+      await dispatch(createproductReview(id, formData));
+
+      toast({
+        title: "Review submitted",
+        description: "Thanks for your feedback!",
+        status: "success",
+        duration: 3000,
+        position: "top-right",
+        isClosable: true,
+      });
+
+      // reset UI
+      setrating(0);
+      setcomment("");
+      setPhotos([]);
+      setPreviewImages([]);
+      setShowCreateReview(false);
+    } catch (err) {
+      toast({
+        title: "Submission failed",
+        description: "Please try again",
+        status: "error",
+        duration: 3000,
+      });
+    } finally {
+      setReviewLoading(false); // 🔥 STOP LOADING
+    }
   };
 
   //Handler of button add to cart
@@ -358,7 +380,7 @@ const Productpage = () => {
         qty: 1,
         size: selectedSize,
         action: "add",
-      })
+      }),
     );
 
     navigate("/cart");
@@ -853,13 +875,12 @@ const Productpage = () => {
                         boxShadow="sm"
                       >
                         <Flex gap={3} align="center" mb={2}>
-                          <Image
-                            src={review.user?.profilePicture || ""}
-                            alt={review.user?.name || "User"}
-                            boxSize="40px"
-                            borderRadius="full"
-                            fallbackSrc="https://via.placeholder.com/40?text=U"
+                          <Avatar
+                            name={review.user?.name}
+                            src={review.user?.profilePicture}
+                            size="sm"
                           />
+
                           <Box>
                             <Text fontWeight="bold">
                               {review.user?.name || "User"}
@@ -1015,7 +1036,13 @@ const Productpage = () => {
                       placeholder="Share your experience"
                     />
 
-                    <FormLabel mt={3}>Upload Photos (max 3)</FormLabel>
+                    <FormLabel mt={3}>
+                      Upload Photos{" "}
+                      <Text as="span" fontSize="sm" color="gray.500">
+                        (optional, max 3)
+                      </Text>
+                    </FormLabel>
+
                     <input
                       type="file"
                       accept="image/*"
@@ -1042,6 +1069,8 @@ const Productpage = () => {
                       w="100%"
                       colorScheme="blue"
                       onClick={submitHandler}
+                      isLoading={reviewLoading}
+                      loadingText="Submitting..."
                     >
                       Submit Review
                     </Button>

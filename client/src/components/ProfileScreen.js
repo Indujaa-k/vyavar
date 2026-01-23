@@ -608,34 +608,49 @@ const ProfileScreen = () => {
       <Box mx="auto" p={6}>
         {/* ADDRESS LIST */}
         {!showForm && (
-          <Flex justify="space-between" mb={4}>
-            <Button
-              colorScheme="blue"
-              px={6}
-              py={2}
-              onClick={() => setShowForm(true)}
-            >
+          // <Flex justify="space-between" mb={4}>
+          //   <Button
+          //     colorScheme="blue"
+          //     px={6}
+          //     py={2}
+          //     onClick={() => setShowForm(true)}
+          //   >
+          //     Add Address
+          //   </Button>
+          //   <Button
+          //     colorScheme="red"
+          //     onClick={() => {
+          //       setEditingAddress(null);
+          //       setNewAddress({
+          //         doorNo: "",
+          //         street: "",
+          //         nearestLandmark: "",
+          //         city: "",
+          //         state: "",
+          //         pin: "",
+          //         phoneNumber: "",
+          //         isDefault: false,
+          //       });
+          //     }}
+          //   >
+          //     Cancel
+          //   </Button>
+          // </Flex>
+          <HStack w="100%" justify="space-between" mb={4}>
+            <Button colorScheme="blue" onClick={() => setShowForm(true)}>
               Add Address
             </Button>
+
             <Button
               colorScheme="red"
               onClick={() => {
+                setShowForm(false);
                 setEditingAddress(null);
-                setNewAddress({
-                  doorNo: "",
-                  street: "",
-                  nearestLandmark: "",
-                  city: "",
-                  state: "",
-                  pin: "",
-                  phoneNumber: "",
-                  isDefault: false,
-                });
               }}
             >
               Cancel
             </Button>
-          </Flex>
+          </HStack>
         )}
 
         <RadioGroup
@@ -651,20 +666,31 @@ const ProfileScreen = () => {
                 borderRadius="md"
                 borderColor={addr.isDefault ? "green.400" : "gray.300"}
               >
-                <Flex justify="space-between" align="center">
-                  <Radio value={String(index)} colorScheme="green">
-                    <Box>
-                      <Text fontWeight="600">
+                <Flex
+                  direction={{ base: "column", md: "row" }}
+                  align={{ base: "flex-start", md: "center" }}
+                  gap={3}
+                >
+                  <Radio
+                    value={String(index)}
+                    colorScheme="green"
+                    alignItems="flex-start"
+                  >
+                    <Box ml={2}>
+                      <Text fontWeight="600" fontSize="sm">
                         {addr.doorNo}, {addr.street}
                       </Text>
-                      <Text fontSize="sm">
+                      <Text fontSize="xs">
                         {addr.city}, {addr.state} - {addr.pin}
                       </Text>
-                      <Text fontSize="sm">Phone: {addr.phoneNumber}</Text>
+                      <Text fontSize="xs">Phone: {addr.phoneNumber}</Text>
                     </Box>
                   </Radio>
-
-                  <HStack spacing={2}>
+                  <HStack
+                    spacing={2}
+                    w="full"
+                    justify={{ base: "flex-end", md: "flex-start" }}
+                  >
                     <Button
                       size="sm"
                       onClick={() => {
@@ -693,7 +719,15 @@ const ProfileScreen = () => {
 
         {/* FORM */}
         {showForm && (
-          <Box p={4} border="1px solid" borderRadius="md" position="relative">
+          <Box
+            p={4}
+            border="1px solid"
+            borderRadius="md"
+            w="100%"
+            maxW="500px"
+            mx="auto"
+            position="relative"
+          >
             <IconButton
               type="button"
               icon={<CloseIcon />}
