@@ -62,6 +62,9 @@ import {
   PRODUCT_HAS_COMBO_REQUEST,
   PRODUCT_HAS_COMBO_SUCCESS,
   PRODUCT_HAS_COMBO_FAIL,
+  REVIEW_UNAPPROVE_REQUEST,
+  REVIEW_UNAPPROVE_SUCCESS,
+  REVIEW_UNAPPROVE_FAIL,
 } from "../constants/productConstants";
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -84,7 +87,7 @@ export const listProducts =
 
       const { data } = await axios.get(
         `${API_URL}/api/products?keyword=${keyword}`,
-        config
+        config,
       );
 
       dispatch({ type: PRODUCT_LIST_SUCCESS, payload: data });
@@ -144,7 +147,7 @@ export const Listproductbyfiters = (filters) => async (dispatch, getState) => {
 
   const { data } = await axios.get(
     `${API_URL}/api/products/${queryString}`,
-    config
+    config,
   );
 
   dispatch({ type: PRODUCT_LIST_SUCCESS, payload: data });
@@ -261,7 +264,7 @@ export const CreateProduct = (productData) => async (dispatch, getState) => {
     const { data } = await axios.post(
       `${API_URL}/api/products/create`,
       productData,
-      config
+      config,
     );
 
     dispatch({ type: PRODUCT_CREATE_SUCCESS, payload: data });
@@ -311,7 +314,7 @@ export const uploadBulkProducts = (file) => async (dispatch, getState) => {
     const { data } = await axios.post(
       `${API_URL}/api/products/upload`,
       formData,
-      config
+      config,
     );
 
     dispatch({
@@ -352,7 +355,7 @@ export const UpdateProduct =
       const { data } = await axios.put(
         `${API_URL}/api/products/${productId}`,
         formData,
-        config
+        config,
       );
       dispatch({
         type: PRODUCT_UPDATE_SUCCESS,
@@ -388,7 +391,7 @@ export const createproductReview =
       const { data } = await axios.post(
         `${API_URL}/api/products/${productId}/reviews`,
         formData,
-        config
+        config,
       );
 
       dispatch({
@@ -420,7 +423,7 @@ export const listPendingReviews = () => async (dispatch, getState) => {
 
     const { data } = await axios.get(
       `${API_URL}/api/products/reviews/pending`,
-      config
+      config,
     );
     console.log("Pending reviews from backend:", data);
 
@@ -455,7 +458,7 @@ export const approveReview =
       const { data } = await axios.put(
         `${API_URL}/api/products/${productId}/reviews/${reviewId}/approve`,
         {},
-        config
+        config,
       );
 
       dispatch({
@@ -488,14 +491,14 @@ export const deleteReview = (reviewId) => async (dispatch, getState) => {
     // Call the correct backend endpoint
     const { data } = await axios.delete(
       `${API_URL}/api/products/reviews/${reviewId}`,
-      config
+      config,
     );
 
     dispatch({ type: REVIEW_DELETE_SUCCESS, payload: data });
   } catch (error) {
     console.error(
       "❌ deleteReview frontend error:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
     dispatch({
       type: REVIEW_DELETE_FAIL,
@@ -514,7 +517,7 @@ export const getProductsByGroupId = (groupId) => async (dispatch, getState) => {
 
     const { data } = await axios.get(
       `${API_URL}/api/products/group/${groupId}`,
-      config
+      config,
     );
 
     dispatch({ type: PRODUCT_GROUP_DETAILS_SUCCESS, payload: data });
@@ -540,7 +543,7 @@ export const updateGroupCommonFields =
       const { data } = await axios.put(
         `${API_URL}/api/products/group/${groupId}/common`,
         updateData,
-        config
+        config,
       );
 
       dispatch({ type: PRODUCT_GROUP_UPDATE_SUCCESS, payload: data });
@@ -569,7 +572,7 @@ export const updateProductVariant =
           headers: {
             Authorization: `Bearer ${userInfo.token}`,
           },
-        }
+        },
       );
 
       dispatch({ type: PRODUCT_VARIANT_UPDATE_SUCCESS });
@@ -595,7 +598,7 @@ export const addVariantToGroup =
       const { data } = await axios.post(
         `${API_URL}/api/products/group/${groupId}/variant`,
         formData,
-        config
+        config,
       );
 
       dispatch({ type: PRODUCT_VARIANT_ADD_SUCCESS, payload: data });
@@ -643,7 +646,7 @@ export const updateProductGroup =
       const { data } = await axios.put(
         `${API_URL}/api/products/group/${groupId}`,
         updatedData,
-        config
+        config,
       );
 
       dispatch({ type: PRODUCT_GROUP_UPDATE_SUCCESS, payload: data });
@@ -672,7 +675,7 @@ export const markReviewHelpful =
     await axios.put(
       `${API_URL}/api/products/${productId}/reviews/${reviewId}/helpful`,
       {},
-      config
+      config,
     );
 
     // 🔥 VERY IMPORTANT
@@ -694,7 +697,7 @@ export const markReviewNotHelpful =
     await axios.put(
       `${API_URL}/api/products/${productId}/reviews/${reviewId}/not-helpful`,
       {},
-      config
+      config,
     );
 
     // 🔥 VERY IMPORTANT
@@ -718,7 +721,7 @@ export const listProductsByGroupId =
 
       const { data } = await axios.get(
         `${API_URL}/api/products/group/${groupId}`,
-        config
+        config,
       );
 
       dispatch({
@@ -749,7 +752,7 @@ export const getProductGroup = (groupId) => async (dispatch, getState) => {
         headers: {
           Authorization: `Bearer ${userInfo.token}`,
         },
-      }
+      },
     );
 
     dispatch({
@@ -779,7 +782,7 @@ export const updateProductGroupCommon =
           headers: {
             Authorization: `Bearer ${userInfo.token}`,
           },
-        }
+        },
       );
 
       dispatch({ type: PRODUCT_GROUP_UPDATE_SUCCESS });
@@ -807,3 +810,35 @@ export const checkHasCombo = () => async (dispatch) => {
     });
   }
 };
+export const unapproveReview =
+  (productId, reviewId) => async (dispatch, getState) => {
+    try {
+      dispatch({ type: REVIEW_UNAPPROVE_REQUEST });
+
+      const {
+        userLogin: { userInfo },
+      } = getState();
+
+      const config = {
+        headers: {
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
+
+      const { data } = await axios.put(
+        `${API_URL}/api/products/${productId}/reviews/${reviewId}/unapprove`,
+        {},
+        config,
+      );
+
+      dispatch({
+        type: REVIEW_UNAPPROVE_SUCCESS,
+        payload: data,
+      });
+    } catch (error) {
+      dispatch({
+        type: REVIEW_UNAPPROVE_FAIL,
+        payload: error.response?.data?.message || error.message,
+      });
+    }
+  };

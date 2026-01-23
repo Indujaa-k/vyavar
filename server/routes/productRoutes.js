@@ -25,6 +25,8 @@ import {
   getProductGroup,
   updateVariant,
   createProductReview,
+  unapproveReview,
+  
 } from "../controlers/productControler.js";
 
 import { uploadProductFiles, uploadMultipleImages,uploadReviewImages, } from "../multer/multer.js";
@@ -112,5 +114,9 @@ router.put(
   protect,
   markReviewNotHelpful
 );
+router
+  .route("/:id/reviews/:reviewId/unapprove")
+  .put(protect, adminOrSeller, unapproveReview);
+
 export default router;
       

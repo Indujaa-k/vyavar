@@ -121,7 +121,7 @@ const getProducts = asyncHandler(async (req, res) => {
   const products = await Product.find(filterCriteria).sort(sortOptions).lean();
 
   const finalProducts = products.map((product) =>
-    applySubscriptionPrice(product, req.user)
+    applySubscriptionPrice(product, req.user),
   );
 
   res.json(finalProducts);
@@ -172,23 +172,23 @@ const createProductReview = asyncHandler(async (req, res) => {
     throw new Error("Product not found");
   }
 
-  if (!req.files || req.files.length !== 3) {
-    return res.status(400).json({
-      message: "Please upload exactly 3 review images",
-    });
+  // ✅ PHOTOS OPTIONAL
+  let photos = [];
+  if (req.files && req.files.length > 0) {
+    photos = req.files.map((file) => file.path);
   }
-
-  const photos = req.files.map((file) => file.path);
 
   const review = {
     name: req.user.name,
     rating: Number(rating),
     comment,
-    photos,
+    photos, // [] if no images
     user: req.user._id,
+    approved: false,
   };
 
   product.reviews.push(review);
+
   product.numReviews = product.reviews.length;
   product.rating =
     product.reviews.reduce((acc, r) => acc + r.rating, 0) /
@@ -196,8 +196,9 @@ const createProductReview = asyncHandler(async (req, res) => {
 
   await product.save();
 
-  res.status(201).json({ message: "Review added" });
+  res.status(201).json({ message: "Review added successfully" });
 });
+
 // Alternative: If you want a separate endpoint for variants
 const getProductVariants = async (req, res) => {
   try {
@@ -239,7 +240,7 @@ const getProductBySku = asyncHandler(async (req, res) => {
   res.json({
     product: applySubscriptionPrice(product.toObject(), req.user),
     variants: variants.map((v) =>
-      applySubscriptionPrice(v.toObject(), req.user)
+      applySubscriptionPrice(v.toObject(), req.user),
     ),
   });
 });
@@ -352,7 +353,7 @@ const addToCart = asyncHandler(async (req, res) => {
   user.cartItems = user.cartItems || [];
 
   const sizeStock = product.productdetails?.stockBySize?.find(
-    (s) => s.size === size
+    (s) => s.size === size,
   );
 
   if (!sizeStock)
@@ -373,13 +374,14 @@ const addToCart = asyncHandler(async (req, res) => {
   if (!existingCartItem) {
     existingCartItem = user.cartItems.find(
       (item) =>
-        item.product.toString() === product._id.toString() && item.size === size
+        item.product.toString() === product._id.toString() &&
+        item.size === size,
     );
   }
 
   if (existingCartItem && qty === 0) {
     user.cartItems = user.cartItems.filter(
-      (item) => item._id.toString() !== existingCartItem._id.toString()
+      (item) => item._id.toString() !== existingCartItem._id.toString(),
     );
   } else if (existingCartItem) {
     const pricedProduct = applySubscriptionPrice(product.toObject(), user);
@@ -492,7 +494,7 @@ const deleteCartItem = asyncHandler(async (req, res) => {
 
   // 🔍 FIND THE CART ITEM (IMPORTANT)
   const cartItem = user.cartItems.find(
-    (item) => item._id.toString() === cartItemId
+    (item) => item._id.toString() === cartItemId,
   );
 
   if (!cartItem) {
@@ -504,7 +506,7 @@ const deleteCartItem = asyncHandler(async (req, res) => {
 
   if (product) {
     const sizeStock = product.productdetails.stockBySize.find(
-      (s) => s.size === cartItem.size
+      (s) => s.size === cartItem.size,
     );
 
     if (sizeStock) {
@@ -516,7 +518,7 @@ const deleteCartItem = asyncHandler(async (req, res) => {
 
   // 🗑 REMOVE ITEM
   user.cartItems = user.cartItems.filter(
-    (item) => item._id.toString() !== cartItemId
+    (item) => item._id.toString() !== cartItemId,
   );
 
   await user.save();
@@ -580,16 +582,16 @@ const createProduct = asyncHandler(async (req, res) => {
     const sizeChart = req.files?.sizeChart?.[0]?.path || "";
     const allImages = req.files?.images || [];
 
-//     // ✅ TOTAL IMAGE VALIDATION
-//     const minImages = parsedProducts.length * 3;
-//     const maxImages = parsedProducts.length * 5;
+    //     // ✅ TOTAL IMAGE VALIDATION
+    //     const minImages = parsedProducts.length * 3;
+    //     const maxImages = parsedProducts.length * 5;
 
-//     if (allImages.length < minImages || allImages.length > maxImages) {
-//       return res.status(400).json({
-//         message: `Each variant must have 3–5 images.
-// Expected ${minImages}–${maxImages}, got ${allImages.length}`,
-//       });
-//     }
+    //     if (allImages.length < minImages || allImages.length > maxImages) {
+    //       return res.status(400).json({
+    //         message: `Each variant must have 3–5 images.
+    // Expected ${minImages}–${maxImages}, got ${allImages.length}`,
+    //       });
+    //     }
 
     let imageIndex = 0;
     const createdProducts = [];
@@ -1009,7 +1011,7 @@ const approveReview = asyncHandler(async (req, res) => {
     "🔍 Approving Review - Product ID:",
     req.params.id,
     "Review ID:",
-    req.params.reviewId
+    req.params.reviewId,
   );
 
   const product = await Product.findById(req.params.id);
@@ -1020,7 +1022,7 @@ const approveReview = asyncHandler(async (req, res) => {
   }
 
   const review = product.reviews.find(
-    (r) => r._id.toString() === req.params.reviewId
+    (r) => r._id.toString() === req.params.reviewId,
   );
 
   if (!review) {
@@ -1050,7 +1052,7 @@ const getPendingReviews = asyncHandler(async (req, res) => {
   try {
     // Get all products with unapproved reviews
     const products = await Product.find({ "reviews.approved": false }).select(
-      "reviews brandname images"
+      "reviews brandname images",
     ); // include images
 
     const pendingReviews = [];
@@ -1102,7 +1104,7 @@ const deleteReviewById = async (req, res) => {
 
     // Remove the review
     product.reviews = product.reviews.filter(
-      (r) => r._id.toString() !== reviewId
+      (r) => r._id.toString() !== reviewId,
     );
 
     // Recalculate rating
@@ -1158,7 +1160,7 @@ const updateGroupCommonFields = asyncHandler(async (req, res) => {
         "productdetails.fabric": req.body.fabric,
         "productdetails.ageRange": req.body.ageRange,
       },
-    }
+    },
   );
 
   res.json({ message: "Common fields updated" });
@@ -1272,7 +1274,7 @@ const updateProductGroup = asyncHandler(async (req, res) => {
   const updatedProducts = await Product.updateMany(
     { productGroupId: groupId },
     { $set: updateFields },
-    { new: true }
+    { new: true },
   );
 
   if (!updatedProducts) {
@@ -1297,7 +1299,7 @@ const getProductsByGroupId = asyncHandler(async (req, res) => {
   const products = await Product.find({ productGroupId: groupId }).lean();
 
   const finalProducts = products.map((product) =>
-    applySubscriptionPrice(product, req.user)
+    applySubscriptionPrice(product, req.user),
   );
 
   if (!products) {
@@ -1375,6 +1377,34 @@ const updateVariant = asyncHandler(async (req, res) => {
   const updated = await product.save();
   res.json(updated);
 });
+// @desc Unapprove Review
+// @route PUT /api/products/:id/reviews/:reviewId/unapprove
+// @access Private/Admin
+
+// controllers/reviewController.js
+// @desc Unapprove Review
+// @route PUT /api/products/:id/reviews/:reviewId/unapprove
+// @access Private/Admin
+const unapproveReview = asyncHandler(async (req, res) => {
+  const { id: productId, reviewId } = req.params;
+
+  const product = await Product.findById(productId);
+  if (!product) {
+    return res.status(404).json({ message: "Product not found" });
+  }
+
+  const review = product.reviews.id(reviewId);
+  if (!review) {
+    return res.status(404).json({ message: "Review not found" });
+  }
+
+  review.approved = false; // ✅ Unapprove the review
+
+  await product.save();
+
+  res.json({ message: "Review unapproved successfully", review });
+});
+
 
 export {
   getProducts,
@@ -1399,4 +1429,5 @@ export {
   getProductGroup,
   updateVariant,
   createProductReview,
+  unapproveReview,
 };

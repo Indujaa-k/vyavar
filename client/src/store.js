@@ -20,6 +20,7 @@ import {
   productGroupReducer,
   productGroupUpdateReducer,
   productVariantUpdateReducer,
+   reviewUnapproveReducer,
 } from "./reducers/productReducers";
 import { contactSendReducer } from "./reducers/contactReducers";
 import {
@@ -115,6 +116,7 @@ const reducer = combineReducers({
   productBulkUpload: productBulkUploadReducer,
   productUpdate: productUpdateReducer,
   productReviewCreate: productreviewCreateReducer,
+   reviewUnapprove: reviewUnapproveReducer,
   cart: cartReducer,
   sendOtp: sendOtpReducer,
   verifyOtp: verifyOtpReducer,
