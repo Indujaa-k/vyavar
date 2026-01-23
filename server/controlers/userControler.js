@@ -5,6 +5,7 @@ import Product from "../models/productModel.js";
 import RegisterEmailOtp from "../utils/registerEmailOtp.js";
 import ResetEmailOtp from "../utils/resetEmailOtp.js";
 import Subscription from "../models/subscriptionModel.js";
+import Order from "../models/orderModel.js";
 
 // @desc Auth user & get token
 // @route POST /api/users/login
@@ -440,12 +441,29 @@ const updateUser = asyncHandler(async (req, res) => {
 // @desc Get All users
 // @route GET /api/users
 // @access Private/admin
+// const getUsers = asyncHandler(async (req, res) => {
+//   const users = await User.find({}).populate(
+//     "orderHistory",
+//     "totalPrice isPaid createdAt _id"
+//   );
+//   res.json(users);
+// });
+
 const getUsers = asyncHandler(async (req, res) => {
-  const users = await User.find({}).populate(
-    "orderHistory",
-    "totalPrice isPaid createdAt _id"
+  const users = await User.find({}).select("-password");
+
+  const usersWithOrderCount = await Promise.all(
+    users.map(async (user) => {
+      const orderCount = await Order.countDocuments({ user: user._id });
+
+      return {
+        ...user.toObject(),
+        orderCount,
+      };
+    })
   );
-  res.json(users);
+
+  res.json(usersWithOrderCount);
 });
 
 // @desc Get user by ID

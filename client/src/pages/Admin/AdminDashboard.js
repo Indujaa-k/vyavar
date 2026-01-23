@@ -28,8 +28,7 @@ const AdminDashboard = () => {
       <TotalDetails />
 
       {/* 🔒 Hide AdminWallet for sellers */}
-      {user?.isSeller === false && <AdminWallet />}
-
+      {user?.isAdmin && !user?.isSeller && <AdminWallet />}
       <Admincharts />
       <AdminTopCustomers />
       <AdminProduct />

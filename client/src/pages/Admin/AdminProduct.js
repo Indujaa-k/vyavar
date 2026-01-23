@@ -29,6 +29,13 @@ const AdminProduct = () => {
   useEffect(() => {
     dispatch(listProducts());
   }, [dispatch]);
+  useEffect(() => {
+    if (products?.length) {
+      console.log("product", products[0]);
+    }
+  }, [products]);
+
+  console.log("Products from backend:", products);
 
   // Get top 8 most popular products (sorted by reviews)
   const mostPopularProducts = [...(products || [])]
@@ -36,9 +43,9 @@ const AdminProduct = () => {
     .slice(0, 6);
 
   // Get top 8 best-selling products (sorted by sold count)
- const topSellingProducts = [...(products || [])]
+  const topSellingProducts = [...(products || [])]
     .sort((a, b) => (b.soldCount || 0) - (a.soldCount || 0))
-  .slice(0, 5);
+    .slice(0, 5);
   // Calculate top 5 most popular brands
   const brandReviewCount = products?.reduce((acc, product) => {
     if (product.brandname) {
@@ -76,44 +83,45 @@ const AdminProduct = () => {
       ) : (
         <Flex gap={6} flexWrap="wrap" justify="center">
           {/* Most Popular Products */}
-          <Box flex="1" maxW="600px" p={4} boxShadow="xl" borderRadius="lg">
+          <Box flex="1" maxW="400px" p={4} boxShadow="xl" borderRadius="lg">
             <Heading size="md" mb={4} textAlign="center">
-              🎗️ Most Popular Products
+              🎗️ Most Reviewed Products
             </Heading>
-            <SimpleGrid columns={2} spacing={4}>
+
+            <Stack spacing={4}>
               {mostPopularProducts.map((product) => (
                 <Link to={`/product/${product._id}`} key={product._id}>
-                  <Card
-                    key={product._id}
-                    borderWidth="1px"
-                    borderRadius="md"
-                    p={4}
-                  >
-                    <CardBody>
+                  <Card borderWidth="1px" borderRadius="md" p={3}>
+                    <Flex align="center" gap={3}>
                       <Image
                         src={product.images?.[0] || "/placeholder-image.jpg"}
                         alt={product.brandname}
                         borderRadius="md"
-                        mb={2}
+                        boxSize="50px"
                         objectFit="cover"
-                        boxSize="80px"
-                        mx="auto"
                       />
-                      <Text textAlign="center" fontWeight="bold" noOfLines={1}>
-                        {product.brandname}
-                      </Text>
-                      <Center mt={1}>
-                        <AiFillStar color="gold" />
-                        <Text ml={1}>
-                          {product.rating || "N/A"} ({product.numReviews || 0}{" "}
-                          Reviews)
+
+                      <Box flex="1">
+                        <Text fontWeight="bold" noOfLines={1}>
+                          {product.brandname}
                         </Text>
-                      </Center>
-                    </CardBody>
+                        <Badge colorScheme="purple">
+                          <Flex align="center" fontSize="sm" color="gray.600">
+                            <AiFillStar color="gold" />
+                            <Text ml={1}>
+                              {product?.rating
+                                ? Number(product.rating).toFixed(1)
+                                : "N/A"}{" "}
+                              ({product?.numReviews || 0}) Reviews
+                            </Text>
+                          </Flex>
+                        </Badge>
+                      </Box>
+                    </Flex>
                   </Card>
                 </Link>
               ))}
-            </SimpleGrid>
+            </Stack>
           </Box>
 
           {/* Top Selling Products */}
@@ -143,7 +151,7 @@ const AdminProduct = () => {
                         </Text>
                       </Box>
                       <Badge colorScheme="blue">
-                        Sold: {product.sold || 0}
+                        Sold: {product.soldCount || 0}
                       </Badge>
                     </Flex>
                   </Card>
@@ -154,7 +162,7 @@ const AdminProduct = () => {
           {/* Most Popular Brands */}
           <Box flex="1" maxW="400px" p={4} boxShadow="xl" borderRadius="lg">
             <Heading size="md" mb={4} textAlign="center">
-              🔥 Most Popular Brands
+              🔥 Most Popular Products
             </Heading>
             <Stack spacing={4}>
               {mostPopularBrands.map((brand) => (

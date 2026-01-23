@@ -35,6 +35,7 @@ import {
   ORDER_STATUS_SUCCESS,
   ORDER_STATUS_FAIL,
   ORDER_CREATE_RESET,
+  ORDER_STATUS_UPDATE_RESET,
 } from "../constants/orderConstants";
 import {
   ORDER_UNDELIVERED_LIST_REQUEST,
@@ -368,6 +369,9 @@ export const orderStatusUpdateReducer = (state = {}, action) => {
 
     case ORDER_STATUS_UPDATE_FAIL:
       return { loading: false, error: action.payload };
+    
+    case ORDER_STATUS_UPDATE_RESET:
+      return {};
 
     default:
       return state;

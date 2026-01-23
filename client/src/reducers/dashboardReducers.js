@@ -11,6 +11,9 @@ import {
   DASHBOARD_TOTALORDERS_REQUEST,
   DASHBOARD_TOTALORDERS_SUCCESS,
   DASHBOARD_TOTALORDERS_FAIL,
+  DASHBOARD_TOPCUSTOMERS_REQUEST,
+  DASHBOARD_TOPCUSTOMERS_SUCCESS,
+  DASHBOARD_TOPCUSTOMERS_FAIL,
 } from "../constants/dashboardConstants";
 
 export const salesReducer = (state = { sales: [] }, action) => {
@@ -60,6 +63,26 @@ export const ordersReducer = (state = { orders: [] }, action) => {
       return { loading: false, orders: action.payload };
     case DASHBOARD_ORDERS_FAIL:
       return { loading: false, error: action.payload };
+    default:
+      return state;
+  }
+};
+
+
+export const topCustomersReducer = (
+  state = { customers: [] },   // ✅ initial state
+  action
+) => {
+  switch (action.type) {
+    case DASHBOARD_TOPCUSTOMERS_REQUEST:
+      return { loading: true, customers: [] };
+
+    case DASHBOARD_TOPCUSTOMERS_SUCCESS:
+      return { loading: false, customers: action.payload };
+
+    case DASHBOARD_TOPCUSTOMERS_FAIL:
+      return { loading: false, error: action.payload };
+
     default:
       return state;
   }

@@ -76,6 +76,7 @@ import {
   revenueReducer,
   ordersReducer,
   totalOrdersReducer,
+  topCustomersReducer,
 } from "./reducers/dashboardReducers";
 
 import {
@@ -172,7 +173,6 @@ const reducer = combineReducers({
   subscriptionCreate: subscriptionCreateReducer,
   subscriptionUpdate: subscriptionUpdateReducer,
   subscriptionToggle: subscriptionToggleReducer,
-
   subscriptionOrder: subscriptionOrderReducer,
   subscriptionConfirm: subscriptionConfirmReducer,
 
@@ -201,6 +201,7 @@ const reducer = combineReducers({
   checkoutShipping: shippingReducers,
   adminShipping: shippingReducers,
   contactSend: contactSendReducer,
+  topCustomers: topCustomersReducer,
 });
 
 const userInfoFromStorage = localStorage.getItem("userInfo")

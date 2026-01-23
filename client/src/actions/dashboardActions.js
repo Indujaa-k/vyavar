@@ -12,6 +12,9 @@ import {
   DASHBOARD_ORDERS_REQUEST,
   DASHBOARD_ORDERS_SUCCESS,
   DASHBOARD_ORDERS_FAIL,
+  DASHBOARD_TOPCUSTOMERS_REQUEST,
+  DASHBOARD_TOPCUSTOMERS_SUCCESS,
+  DASHBOARD_TOPCUSTOMERS_FAIL,
 } from "../constants/dashboardConstants";
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -125,6 +128,33 @@ export const getDashboardOrders = () => async (dispatch, getState) => {
         error.response && error.response.data.message
           ? error.response.data.message
           : error.message,
+    });
+  }
+};
+
+
+export const getTopCustomers = () => async (dispatch, getState) => {
+  try {
+    dispatch({ type: DASHBOARD_TOPCUSTOMERS_REQUEST });
+
+    const {
+      userLogin: { userInfo },
+    } = getState();
+
+    const config = {
+      headers: { Authorization: `Bearer ${userInfo.token}` },
+    };
+
+    const { data } = await axios.get(
+      `${API_URL}/api/dashboard/top-customers`,
+      config
+    );
+
+    dispatch({ type: DASHBOARD_TOPCUSTOMERS_SUCCESS, payload: data });
+  } catch (error) {
+    dispatch({
+      type: DASHBOARD_TOPCUSTOMERS_FAIL,
+      payload: error.message,
     });
   }
 };

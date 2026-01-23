@@ -285,48 +285,6 @@ const Checkout = () => {
           shadow="md"
         >
           {/* Delivery Address Display */}
-          <Box
-            borderWidth="2px"
-            borderRadius="md"
-            p={4}
-            mb={5}
-            w="full"
-            bg="white"
-            borderColor="gray.100"
-            shadow="md"
-          >
-            <Text fontSize="m" fontWeight="bold" mb={2}>
-              DELIVERY ADDRESS
-            </Text>
-            <Divider mb={3} />
-            {defaultAddress ? (
-              <VStack align="start" spacing={1}>
-                <Text fontWeight="semibold">
-                  {defaultAddress.doorNo}, {defaultAddress.street}
-                </Text>
-                {defaultAddress.nearestLandmark && (
-                  <Text fontSize="sm" color="gray.600">
-                    Near: {defaultAddress.nearestLandmark}
-                  </Text>
-                )}
-                <Text>
-                  {defaultAddress.city}, {defaultAddress.state} -{" "}
-                  {defaultAddress.pin}
-                </Text>
-                <Text>{defaultAddress.country}</Text>
-                {defaultAddress.phoneNumber && (
-                  <Text fontSize="sm" color="gray.600">
-                    Phone: {defaultAddress.phoneNumber}
-                  </Text>
-                )}
-              </VStack>
-            ) : (
-              <Text color="red.500">
-                No address found. Please add an address in your profile.
-              </Text>
-            )}
-          </Box>
-
           {/* Bill Details */}
           <Box
             borderWidth="2px"

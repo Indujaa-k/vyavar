@@ -25,7 +25,7 @@ const Footer = () => {
             <li>
               <Link to="/about">About</Link>
             </li>
-            <li>Track Order</li>
+            {/* <li>Track Order</li> */}
           </ul>
         </div>
 
@@ -94,7 +94,7 @@ const Footer = () => {
           <FiInstagram style={{ color: "black", fontSize: "20px" }} />
         </a>
         <a
-          href="https://www.youtube.com"
+          href="https://www.youtube.com/@viyavarfashions"
           target="_blank"
           rel="noopener noreferrer"
         >

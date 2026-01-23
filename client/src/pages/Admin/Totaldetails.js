@@ -11,10 +11,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { FaClipboardList, FaUsers, FaBoxOpen } from "react-icons/fa";
-import { MdPendingActions, MdLocalShipping, MdCancel } from "react-icons/md";
-import { AiOutlineDeliveredProcedure, AiOutlineRollback } from "react-icons/ai";
+import { MdLocalShipping } from "react-icons/md";
 import { GiCardboardBox } from "react-icons/gi";
-import { ImCross } from "react-icons/im";
 import { getTotalOrders } from "../../actions/dashboardActions";
 import { getOrderStatusCounts } from "../../actions/orderActions";
 import { ListUsers } from "../../actions/userActions";
@@ -77,7 +75,7 @@ const TotalDetails = () => {
   const navigate = useNavigate();
   const [filter, setFilter] = useState("Overall");
   const { totalOrders, loading: loadingOrders } = useSelector(
-    (state) => state.totalOrders
+    (state) => state.totalOrders,
   );
   const userList = useSelector((state) => state.userList) || {};
   const { users = [], loading: loadingUsers } = userList;
@@ -143,25 +141,41 @@ const TotalDetails = () => {
   ];
 
   return (
-    <Box bg="gray.100" p={6} borderRadius="md">
-      <Flex justify="space-between" align="center" mb={4}>
+    <Box
+      bg="gray.100"
+      p={{ base: 4, md: 6 }}
+      borderRadius="md"
+      overflowX="hidden"
+    >
+      <Flex
+        justify="space-between"
+        align="center"
+        mb={4}
+        flexWrap="wrap"
+        gap={2}
+      >
         <Text fontSize="lg" fontWeight="bold">
           📊 Business Analytics
         </Text>
         <Select
-          width="200px"
+          width={{ base: "100%", sm: "200px" }}
           bg="white"
           boxShadow="sm"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
         >
           <option value="Overall">Overall statistics</option>
-          <option value="LastMonth">Last Month</option>
-          <option value="LastWeek">Last Week</option>
+          <option value="Month">Month</option>
+          <option value="Week">Week</option>
         </Select>
       </Flex>
 
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={4} mb={4}>
+      <SimpleGrid
+        columns={{ base: 1, md: 2, lg: 3 }}
+        spacing={4}
+        mb={4}
+        minChildWidth="250px"
+      >
         <AnalyticsCard
           title="Total Orders"
           value={totalOrders || 0}
@@ -184,9 +198,10 @@ const TotalDetails = () => {
       </SimpleGrid>
 
       <SimpleGrid
-        columns={{ base: 1, md: 3 }}
+        columns={{ base: 1, md: 2, lg: 3 }}
         spacing={5}
         justifyItems="center"
+        minChildWidth="250px"
       >
         {loadingOrderStatuses ? (
           <Spinner size="lg" />
