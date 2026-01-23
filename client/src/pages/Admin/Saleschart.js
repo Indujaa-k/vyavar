@@ -19,7 +19,7 @@ import {
   getDashboardOrders,
   getTotalOrders,
 } from "../../actions/dashboardActions";
-import { FaBox, FaDollarSign, FaChartLine } from "react-icons/fa";
+import { ResponsiveContainer } from "recharts";
 import {
   LineChart,
   Line,
@@ -77,7 +77,7 @@ const Saleschart = () => {
     })) || [];
 
   return (
-    <Box p={10}>
+    <Box p={10} >
       {/* Key Metrics */}
       <Grid templateColumns="repeat(3, 1fr)" gap={6} mb={10}>
         <GridItem>
@@ -134,50 +134,51 @@ const Saleschart = () => {
       ) : (
         <Box>
           {/* Charts Section */}
-          <Grid templateColumns="repeat(2, 1fr)" gap={10} mb={10}>
-            <GridItem>
-              <Heading as="h3" size="md" mb={3} textAlign={"center"}>
+          <Grid
+            templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }}
+            gap={10}
+            mb={10}
+          >
+            <GridItem w="100%" h="350px">
+              <Heading as="h3" size="md" mb={3} textAlign="center">
                 Sales Data
               </Heading>
-              <LineChart
-                width={500}
-                height={300}
-                data={formatChartData(sales)}
-                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke="violet"
-                  strokeWidth={8}
-                />
-              </LineChart>
+
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={formatChartData(sales)}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="violet"
+                    strokeWidth={3}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </GridItem>
-            <GridItem>
-              <Heading as="h3" size="md" mb={3} textAlign={"center"}>
+
+            <GridItem w="100%" h="350px">
+              <Heading as="h3" size="md" mb={3} textAlign="center">
                 Revenue Data
               </Heading>
-              <LineChart
-                width={500}
-                height={300}
-                data={formatChartData(revenue)}
-                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke="yellow"
-                  strokeWidth={8}
-                />
-              </LineChart>
+
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={formatChartData(revenue)}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="orange"
+                    strokeWidth={3}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </GridItem>
           </Grid>
         </Box>

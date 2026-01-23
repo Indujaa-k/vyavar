@@ -26,11 +26,15 @@ const UsersPieChart = () => {
   }
 
   const totalUsers = users.length;
-  const usersWithOrders = users.filter(
-    (user) => user.orderHistory?.length > 0
+
+  const usersWithOrders = users.filter((user) => user.orderCount > 0).length;
+
+  const usersWithoutOrders = users.filter(
+    (user) => !user.orderCount || user.orderCount === 0,
   ).length;
-  const usersWithoutOrders = totalUsers - usersWithOrders;
+
   const adminUsers = users.filter((user) => user.isAdmin).length;
+
   const deliveryAgents = users.filter((user) => user.isDelivery).length;
 
   const data = [
@@ -45,7 +49,7 @@ const UsersPieChart = () => {
   return (
     <Box width="100%" p={6}>
       {/* Pie Chart Container */}
-      <Flex justify="center" align="center" w="100%">
+      <Flex align="center" w="100%">
         <Box
           p={4}
           bg="white"

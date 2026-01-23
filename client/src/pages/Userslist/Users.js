@@ -64,9 +64,6 @@ const Users = () => {
           <Table className="tableusers" variant="striped">
             <Thead>
               <Tr>
-                <Th textAlign="center" w="5%">
-                  ID
-                </Th>
                 <Th textAlign="center" w="10%">
                   Profile
                 </Th>
@@ -98,7 +95,6 @@ const Users = () => {
             <Tbody>
               {users.map((user) => (
                 <Tr key={user._id}>
-                  <Td>{user._id}</Td>
                   {/* Profile Picture */}
                   <Td textAlign="center">
                     <Avatar
@@ -119,7 +115,7 @@ const Users = () => {
                         color="green.600"
                         fontWeight="semibold"
                       >
-                        Subscribed with  {user.subscription.discountPercent}%
+                        Subscribed with {user.subscription.discountPercent}%
                       </Text>
                     ) : (
                       <Text fontSize="xs" color="gray.500">
@@ -134,15 +130,15 @@ const Users = () => {
                           <strong>Amount:</strong> ₹{user.subscription.price}
                         </Text>
                         <Text>
-                          <strong>Start:</strong>{" "}
+                          <strong>Start:</strong>
                           {new Date(
-                            user.subscription.startDate
+                            user.subscription.startDate,
                           ).toLocaleDateString()}
                         </Text>
                         <Text>
                           <strong>End:</strong>{" "}
                           {new Date(
-                            user.subscription.endDate
+                            user.subscription.endDate,
                           ).toLocaleDateString()}
                         </Text>
                       </Box>
@@ -157,9 +153,9 @@ const Users = () => {
                     <a href={`mailto:${user.email}`}></a>
                     {user.email}
                   </Td>
-                  <Td>
+                  {/* <Td>
                     {user.address &&
-                    Object.values(user.address).some((val) => val) ? (
+                    Object.values(user.addresses).some((val) => val) ? (
                       <Text>
                         {[
                           user.address.doorNo,
@@ -175,7 +171,32 @@ const Users = () => {
                     ) : (
                       <Text color="gray.500">No Address Provided</Text>
                     )}
+                  </Td> */}
+                  <Td>
+                    {user.addresses?.length > 0 ? (
+                      <Text>
+                        {(() => {
+                          const defaultAddress =
+                            user.addresses.find((addr) => addr.isDefault) ||
+                            user.addresses[0];
+
+                          return [
+                            defaultAddress.doorNo,
+                            defaultAddress.street,
+                            defaultAddress.city,
+                            defaultAddress.state,
+                            defaultAddress.pin,
+                            defaultAddress.phoneNumber,
+                          ]
+                            .filter(Boolean)
+                            .join(", ");
+                        })()}
+                      </Text>
+                    ) : (
+                      <Text color="gray.500">No Address Provided</Text>
+                    )}
                   </Td>
+
                   <Td>
                     {user.isAdmin ? (
                       <div className="paid">YES</div>
@@ -192,10 +213,7 @@ const Users = () => {
                   </Td>
                   <Td textAlign="center">
                     <Button colorScheme="purple" size="xs" fontWeight="bold">
-                      {user.orderHistory?.length
-                        ? user.orderHistory.length
-                        : "0"}{" "}
-                      Orders
+                      {user.orderCount || 0} Orders
                     </Button>
                   </Td>
 

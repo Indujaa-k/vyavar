@@ -26,7 +26,7 @@ const reviewSchema = mongoose.Schema(
     helpful: { type: Number, default: 0 },
     notHelpful: { type: Number, default: 0 },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const bannerSchema = mongoose.Schema(
@@ -49,7 +49,7 @@ const bannerSchema = mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 const videoBannerSchema = mongoose.Schema(
   {
@@ -58,7 +58,7 @@ const videoBannerSchema = mongoose.Schema(
       required: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const sizeStockSchema = mongoose.Schema(
@@ -66,7 +66,7 @@ const sizeStockSchema = mongoose.Schema(
     size: { type: String, required: true },
     stock: { type: Number, required: true, min: 0 },
   },
-  { _id: false }
+  { _id: false },
 );
 const productSchema = mongoose.Schema(
   {
@@ -144,6 +144,10 @@ const productSchema = mongoose.Schema(
       required: true,
       default: 0,
     },
+    soldCount: {
+      type: Number,
+      default: 0,
+    },
     price: {
       type: Number,
       required: true,
@@ -186,7 +190,7 @@ const productSchema = mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const Product = mongoose.model("Product", productSchema);

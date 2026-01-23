@@ -89,6 +89,7 @@ const addorderitems = asyncHandler(async (req, res) => {
     // 🔻 Reduce stock
     sizeStock.stock -= item.qty;
 
+    product.soldCount = (product.soldCount || 0) + item.qty;
     await product.save();
   }
 

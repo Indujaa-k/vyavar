@@ -77,7 +77,7 @@ const getTotalOrders = asyncHandler(async (req, res) => {
 //     .populate({
 //       path: "orderItems.product",
 //       select: "name images price", // Select the images field
-    // });
+// });
 //   const latestOrders = orders.map((order) => ({
 //     _id: order._id,
 //     customerName: order.user.name,
@@ -119,9 +119,7 @@ const getLatestOrders = asyncHandler(async (req, res) => {
     createdAt: order.createdAt
       ? new Date(order.createdAt).toLocaleDateString()
       : "N/A",
-    paidAt: order.paidAt
-      ? new Date(order.paidAt).toLocaleDateString()
-      : "N/A",
+    paidAt: order.paidAt ? new Date(order.paidAt).toLocaleDateString() : "N/A",
     orderItems: order.orderItems.map((item) => ({
       productName: item.product?.name || "Deleted Product",
       productImage: item.product?.images || [],
@@ -133,11 +131,6 @@ const getLatestOrders = asyncHandler(async (req, res) => {
 
   res.json(latestOrders);
 });
-
-
-
-
-
 
 const getOrderStatus = (order) => {
   if (order.isReturned) {
@@ -153,4 +146,36 @@ const getOrderStatus = (order) => {
   }
 };
 
-export { getSalesData, getRevenueData, getLatestOrders, getTotalOrders };
+const getTopCustomers = asyncHandler(async (req, res) => {
+  const topCustomers = await Order.aggregate([
+    {
+      $group: {
+        _id: "$user",
+        totalOrders: { $sum: 1 },
+      },
+    },
+    { $sort: { totalOrders: -1 } },
+    { $limit: 6 },
+    {
+      $lookup: {
+        from: "users",
+        localField: "_id",
+        foreignField: "_id",
+        as: "user",
+      },
+    },
+    { $unwind: "$user" },
+    {
+      $project: {
+        _id: "$user._id",
+        name: "$user.name",
+        profilePicture: "$user.profilePicture",
+        totalOrders: 1,
+      },
+    },
+  ]);
+
+  res.json(topCustomers);
+});
+
+export { getSalesData, getRevenueData, getLatestOrders, getTotalOrders,getTopCustomers };

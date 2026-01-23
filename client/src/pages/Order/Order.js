@@ -7,7 +7,6 @@ import { IoMdDoneAll } from "react-icons/io";
 import { getInvoice } from "../../actions/orderActions";
 import { Image } from "@chakra-ui/react";
 
-
 import {
   getOrderDetails,
   payOrder,
@@ -17,6 +16,7 @@ import "./Order.css";
 import {
   ORDER_PAY_RESET,
   ORDER_DELIVER_RESET,
+  ORDER_STATUS_UPDATE_RESET,
 } from "../../constants/orderConstants";
 import { Button } from "@chakra-ui/button";
 import OrderTracking from "../Tracking/OrderTracking";
@@ -68,27 +68,44 @@ const Order = () => {
     );
   }
 
+  const orderStatusUpdate = useSelector((state) => state.orderStatusUpdate);
+
+  const { success: successStatusUpdate } = orderStatusUpdate;
+
   useEffect(() => {
     if (!userInfo) {
       navigate("/login");
     }
 
-    if (!order || successDeliver || order._id !== orderId) {
-      dispatch({
-        type: ORDER_DELIVER_RESET,
-      });
+    if (
+      !order ||
+      order._id !== orderId ||
+      successDeliver ||
+      successStatusUpdate
+    ) {
+      dispatch({ type: ORDER_DELIVER_RESET });
       dispatch(getOrderDetails(orderId));
       dispatch(getInvoice(orderId));
     }
-  }, [dispatch, orderId, navigate, order, successDeliver, userInfo]);
+  }, [
+    dispatch,
+    orderId,
+    navigate,
+    order,
+    successDeliver,
+    successStatusUpdate,
+    userInfo,
+  ]);
+
+  useEffect(() => {
+    if (successStatusUpdate) {
+      dispatch({ type: ORDER_STATUS_UPDATE_RESET });
+    }
+  }, [dispatch, successStatusUpdate]);
 
   const deliverHandler = () => {
     dispatch(deliverOrder(order));
   };
-  console.log("Invoice Details in orderpage:", invoiceDetails);
-  console.log("ORDER FROM BACKEND:", order);
-  console.log("COUPON DATA:", order?.coupon);
-
   return (
     <Box
       mx="auto"
@@ -310,7 +327,7 @@ const Order = () => {
                 Back
               </Button>
             </VStack>
-            {userInfo?.isAdmin && order.isPaid && !order.isDelivered && (
+            {/* {userInfo?.isAdmin && order.isPaid && !order.isDelivered && (
               <Button
                 colorScheme="blue"
                 onClick={deliverHandler}
@@ -318,7 +335,7 @@ const Order = () => {
               >
                 Mark as Delivered
               </Button>
-            )}
+            )} */}
           </Stack>
         </Box>
       )}

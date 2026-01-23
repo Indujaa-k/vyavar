@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { ListUsers } from "../../actions/userActions";
+import { getTopCustomers } from "../../actions/dashboardActions";
+
 import {
   Box,
   Heading,
@@ -17,21 +18,13 @@ import { FaMedal } from "react-icons/fa";
 const AdminTopCustomers = () => {
   const dispatch = useDispatch();
 
-  // Get user list from Redux store
-  const userList = useSelector((state) => state.userList);
-  const { loading, error, users } = userList;
+  const { loading, error, customers } = useSelector(
+    (state) => state.topCustomers,
+  );
 
   useEffect(() => {
-    dispatch(ListUsers()); // Fetch users from the database
+    dispatch(getTopCustomers());
   }, [dispatch]);
-
-  // Sort users by number of orders (descending) and get the top 6 customers
-  const topCustomers = users
-    ? [...users]
-        .filter((user) => user.orderHistory?.length > 0) // Only include users with orders
-        .sort((a, b) => b.orderHistory.length - a.orderHistory.length)
-        .slice(0, 6)
-    : [];
 
   return (
     <Box p={6} bg="white" borderRadius="md" boxShadow="sm">
@@ -49,7 +42,7 @@ const AdminTopCustomers = () => {
         <Text color="red.500">Failed to load customers</Text>
       ) : (
         <Grid templateColumns="repeat(2, 1fr)" gap={6}>
-          {topCustomers.map((customer) => (
+          {customers.map((customer) => (
             <GridItem
               key={customer._id}
               p={5}
@@ -67,7 +60,7 @@ const AdminTopCustomers = () => {
               />
               <Text fontWeight="bold">{customer.name}</Text>
               <Badge colorScheme="blue" mt={2}>
-                Orders: {customer.orderHistory.length}
+                Orders: {customer.totalOrders}
               </Badge>
             </GridItem>
           ))}

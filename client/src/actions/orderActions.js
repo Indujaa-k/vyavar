@@ -152,7 +152,7 @@ export const payOrder =
       const { data } = await axios.put(
         `${API_URL}/api/orders/${orderId}/pay`,
         paymentResult,
-        config
+        config,
       );
       dispatch({
         type: ORDER_PAY_SUCCESS,
@@ -188,7 +188,7 @@ export const deliverOrder = (order) => async (dispatch, getState) => {
     const { data } = await axios.put(
       `${API_URL}/api/orders/${order._id}/deliver`,
       {},
-      config
+      config,
     );
     dispatch({
       type: ORDER_DELIVER_SUCCESS,
@@ -311,7 +311,7 @@ export const acceptOrder = (orderId) => async (dispatch, getState) => {
     const { data } = await axios.put(
       `${API_URL}/api/orders/delivery/accept/${orderId}`,
       {},
-      config
+      config,
     );
 
     dispatch({ type: ORDER_ACCEPT_SUCCESS, payload: data });
@@ -339,7 +339,7 @@ export const rejectOrder = (orderId) => async (dispatch, getState) => {
     const { data } = await axios.put(
       `${API_URL}/api/orders/delivery/reject/${orderId}`,
       {},
-      config
+      config,
     );
 
     dispatch({ type: ORDER_REJECT_SUCCESS, payload: data });
@@ -367,7 +367,7 @@ export const completeOrder = (orderId) => async (dispatch, getState) => {
     const { data } = await axios.put(
       `${API_URL}/api/orders/delivery/complete/${orderId}`,
       {},
-      config
+      config,
     );
 
     dispatch({ type: ORDER_COMPLETE_SUCCESS, payload: data });
@@ -395,7 +395,7 @@ export const returnOrder = (orderId, reason) => async (dispatch, getState) => {
     const { data } = await axios.put(
       `${API_URL}/api/orders/delivery/return/${orderId}`,
       { returnReason: reason },
-      config
+      config,
     );
 
     dispatch({ type: ORDER_RETURN_SUCCESS, payload: data });
@@ -422,7 +422,7 @@ export const listUndeliveredOrders = () => async (dispatch, getState) => {
     };
     const { data } = await axios.get(
       `${API_URL}/api/orders/undelivered`,
-      config
+      config,
     ); // Fetch only undelivered orders
 
     dispatch({
@@ -460,7 +460,7 @@ export const assignOrder =
       const { data } = await axios.put(
         `${API_URL}/api/orders/admin/orders/assign/${orderId}`,
         { deliveryPersonId },
-        config
+        config,
       );
 
       dispatch({ type: ORDER_ASSIGN_SUCCESS, payload: data });
@@ -487,7 +487,7 @@ export const getInvoice = (id) => async (dispatch, getState) => {
 
     const { data } = await axios.get(
       `${API_URL}/api/orders/admin/order/${id}/invoice`,
-      config
+      config,
     );
 
     dispatch({
@@ -520,7 +520,7 @@ export const getIncomeByPincode = () => async (dispatch, getState) => {
 
     const { data } = await axios.get(
       `${API_URL}/api/orders/admin/incomebypincode?timestamp=${Date.now()}`,
-      config
+      config,
     );
 
     dispatch({
@@ -594,7 +594,7 @@ export const processRazorpayPayment =
           headers: {
             Authorization: `Bearer ${userInfo.token}`,
           },
-        }
+        },
       );
 
       dispatch({
@@ -636,12 +636,13 @@ export const updateOrderStatus =
       const { data } = await axios.put(
         `${API_URL}/api/orders/${orderId}/updateorderstatus`,
         { status },
-        config
+        config,
       );
 
       dispatch({ type: ORDER_STATUS_UPDATE_SUCCESS, payload: data });
 
-      // 🔥 ADD THIS LINE
+      dispatch(getOrderDetails(orderId));
+
       dispatch(getOrderStatusCounts());
     } catch (error) {
       dispatch({
@@ -667,7 +668,7 @@ export const getOrderStatusCounts = () => async (dispatch, getState) => {
 
     const { data } = await axios.get(
       `${API_URL}/api/orders/status-count`,
-      config
+      config,
     );
 
     dispatch({ type: ORDER_STATUS_SUCCESS, payload: data });
