@@ -250,13 +250,18 @@ const deleteProfilePicture = asyncHandler(async (req, res) => {
     throw new Error("User not found");
   }
 
-  user.profilePicture = "/images/default-profile.png"; // or null
+  if (user.profilePicture && !user.profilePicture.includes("default-profile")) {
+    const imagePath = path.join(process.cwd(), user.profilePicture);
+    if (fs.existsSync(imagePath)) {
+      fs.unlinkSync(imagePath);
+    }
+  }
+
+  user.profilePicture = "/images/default-profile.png";
   await user.save();
 
   res.status(200).json({ message: "Profile picture deleted" });
 });
-
-export { deleteProfilePicture };
 
 // ROUTER:
 // router.post("/resetPassword", resetPasswordWithOtp); // No change needed here
@@ -286,14 +291,17 @@ export { deleteProfilePicture };
 //     throw new Error("User not found");
 //   }
 // });
- 
+
 // @desc Get user profile with full subscription details
 // @route GET /api/users/profile
 // @access Private
 const getUserProfile = asyncHandler(async (req, res) => {
   // Find user and populate subscription details
   const user = await User.findById(req.user._id)
-    .populate("subscription.subscriptionId", "title description offers price discountPercent startDate endDate")
+    .populate(
+      "subscription.subscriptionId",
+      "title description offers price discountPercent startDate endDate",
+    )
     .select("-password");
 
   if (user) {
@@ -334,79 +342,89 @@ const getUserProfile = asyncHandler(async (req, res) => {
 // @route PUT /api/users/profile
 // @access Private
 const updateUserProfile = asyncHandler(async (req, res) => {
-  try {
-    console.log("Incoming profile update request:", req.body);
-    console.log("Incoming file:", req.file);
-    const user = await User.findById(req.user._id);
-    if (!user) {
-      console.error("User not found");
-      res.status(404);
-      throw new Error("User not found");
-    }
+  const user = await User.findById(req.user._id);
 
-    // Log file information
-    console.log("Received address:", req.body.address);
-    // Handle file upload correctly
-    if (req.file) {
-      console.log("Uploaded file:", req.file.path);
-      user.profilePicture = req.file.path;
-    }
-
-    user.name = req.body.name || user.name;
-    user.email = req.body.email || user.email;
-    user.lastName = req.body.lastName || user.lastName;
-    user.gender = req.body.gender || user.gender;
-    user.dateOfBirth = req.body.dateOfBirth || user.dateOfBirth;
-    if (req.body.password) user.password = req.body.password;
-
-    // Handle profile picture
-    if (req.file) {
-      user.profilePicture = req.file.path;
-    }
-
-    // ✅ Handle multiple addresses
-    if (req.body.addresses) {
-      let addresses =
-        typeof req.body.addresses === "string"
-          ? JSON.parse(req.body.addresses)
-          : req.body.addresses;
-
-      // Convert numeric fields to numbers
-      addresses = addresses.map((addr) => ({
-        ...addr,
-        pin: addr.pin ? Number(addr.pin) : null,
-        phoneNumber: addr.phoneNumber ? Number(addr.phoneNumber) : null,
-      }));
-
-      // Ensure only one default address
-      const defaultExists = addresses.some((addr) => addr.isDefault);
-      if (!defaultExists && addresses.length > 0) {
-        addresses[0].isDefault = true; // fallback first address as default
-      }
-
-      user.addresses = addresses; // replace all addresses
-    }
-
-    const updatedUser = await user.save();
-
-    res.json({
-      _id: updatedUser._id,
-      name: updatedUser.name,
-      email: updatedUser.email,
-      lastName: updatedUser.lastName,
-      gender: updatedUser.gender,
-      dateOfBirth: updatedUser.dateOfBirth,
-      profilePicture: updatedUser.profilePicture,
-      isAdmin: updatedUser.isAdmin,
-      isSeller: updatedUser.isSeller,
-      isDelivery: updatedUser.isDelivery,
-      addresses: updatedUser.addresses,
-      token: generateToken(updatedUser._id),
-    });
-  } catch (error) {
-    console.error("Error updating user profile:", error.message);
-    res.status(500).json({ message: error.message });
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
   }
+
+  // Store old profile picture path BEFORE any changes
+  const oldProfilePicture = user.profilePicture;
+
+  /* ---------- BASIC FIELDS ---------- */
+  user.name = req.body.name ?? user.name;
+  user.email = req.body.email ?? user.email;
+  user.lastName = req.body.lastName ?? user.lastName;
+  user.gender = req.body.gender ?? user.gender;
+  user.dateOfBirth = req.body.dateOfBirth ?? user.dateOfBirth;
+
+  if (req.body.password?.trim()) {
+    user.password = req.body.password;
+  }
+
+  /* ---------- ADDRESSES ---------- */
+  if (req.body.addresses) {
+    let addresses =
+      typeof req.body.addresses === "string"
+        ? JSON.parse(req.body.addresses)
+        : req.body.addresses;
+
+    addresses = addresses.map((addr) => ({
+      ...addr,
+      pin: addr.pin ? Number(addr.pin) : null,
+      phoneNumber: addr.phoneNumber ? Number(addr.phoneNumber) : null,
+    }));
+
+    if (!addresses.some((a) => a.isDefault) && addresses.length > 0) {
+      addresses[0].isDefault = true;
+    }
+
+    user.addresses = addresses;
+  }
+
+  /* ---------- PROFILE IMAGE ---------- */
+  if (req.file) {
+    // Set new profile picture path
+    user.profilePicture = `/uploads/profiles/${req.file.filename}`;
+  }
+
+  // Save the updated user FIRST
+  const updatedUser = await user.save();
+
+  /* ---------- DELETE OLD IMAGE AFTER SUCCESSFUL SAVE ---------- */
+  // Only delete old image if:
+  // 1. A new file was uploaded
+  // 2. Old picture exists and is not default
+  // 3. Old picture is different from new picture
+  if (
+    req.file &&
+    oldProfilePicture &&
+    !oldProfilePicture.includes("default-profile") &&
+    oldProfilePicture !== updatedUser.profilePicture
+  ) {
+    try {
+      const oldPath = path.join(process.cwd(), oldProfilePicture);
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+    } catch (error) {
+      // Log error but don't fail the request
+      console.error("Failed to delete old profile picture:", error);
+    }
+  }
+
+  res.json({
+    _id: updatedUser._id,
+    name: updatedUser.name,
+    email: updatedUser.email,
+    profilePicture: updatedUser.profilePicture,
+    addresses: updatedUser.addresses,
+    isAdmin: updatedUser.isAdmin,
+    isSeller: updatedUser.isSeller,
+    isDelivery: updatedUser.isDelivery,
+    token: generateToken(updatedUser._id),
+  });
 });
 
 // @desc Update user user
@@ -506,12 +524,12 @@ const toggleFavorite = asyncHandler(async (req, res) => {
   }
 
   const isFavorite = user.favorites.some(
-    (item) => item._id.toString() === product._id.toString()
+    (item) => item._id.toString() === product._id.toString(),
   );
 
   if (isFavorite) {
     user.favorites = user.favorites.filter(
-      (item) => item._id.toString() !== product._id.toString()
+      (item) => item._id.toString() !== product._id.toString(),
     );
     await user.save();
     res
@@ -548,7 +566,6 @@ const getFavorites = asyncHandler(async (req, res) => {
 // @route POST /api/users/subscribe
 // @access Private
 
-
 export {
   authUser,
   registerUser,
@@ -563,6 +580,6 @@ export {
   toggleFavorite,
   getFavorites,
   PasswordResetOtp,
-  // deleteProfilePicture,
+  deleteProfilePicture,
   resetPasswordWithOtp,
 };

@@ -65,11 +65,13 @@ import FavoriteButton from "../../pages/Favourites/Favorites";
 
 const Productpage = () => {
   const { id } = useParams();
-  const API_URL = process.env.REACT_APP_API_URL;
+
   const navigate = useNavigate();
   const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
   const [isZoomVisible, setIsZoomVisible] = useState(false);
   const [hoveredImageIndex, setHoveredImageIndex] = useState(0);
+  const [hoverZoom, setHoverZoom] = useState(false);
+  const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
 
   const relatedProductsList = useSelector((state) => state.productList);
   const { products: relatedProducts, loading: relatedLoading } =
@@ -82,7 +84,10 @@ const Productpage = () => {
   const [rating, setrating] = useState(0);
   const [comment, setcomment] = useState("");
   const toast = useToast();
-
+  const imgs = document.querySelectorAll(".img-select a");
+  const imgShowcase = useRef(null);
+  const imgBtns = [...imgs];
+  let imgId = 1;
   const dispatch = useDispatch();
   const productDetails = useSelector((state) => state.productDetails);
   const { loading, error, product } = productDetails;
@@ -107,12 +112,8 @@ const Productpage = () => {
   const [modalImage, setModalImage] = useState(null);
   const [images, setImages] = useState([]);
   const [reviewLoading, setReviewLoading] = useState(false);
-  const isDesktop = window.innerWidth >= 1024;
-  const openImageModal = (img) => {
-    setModalImage(img);
-    onOpen();
-  };
 
+  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
   const [showAllReviews, setShowAllReviews] = useState(false);
   // const [reviewStats, setReviewStats] = useState([]);
   // const handleHelpful = (reviewId) => {
@@ -129,6 +130,30 @@ const Productpage = () => {
     product?.reviews?.some(
       (review) => review.user?.toString() === userInfo._id,
     );
+
+  const togglePDF = () => setShowPDF((prev) => !prev);
+  imgBtns.forEach((imgItem) => {
+    imgItem.addEventListener("click", (event) => {
+      event.preventDefault();
+      imgId = imgItem.dataset.id;
+      slideImage();
+    });
+  });
+
+  function slideImage() {
+    const displayWidth = document.querySelector(
+      ".img-showcase img:first-child",
+    ).clientWidth;
+    imgShowcase.current.style.transform = `translateX(${
+      -(imgId - 1) * displayWidth
+    }px)`;
+  }
+  const handleHoverMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setZoomPos({ x, y });
+  };
 
   const handleHelpful = (reviewId) => {
     if (!userInfo) {
@@ -374,22 +399,11 @@ const Productpage = () => {
     });
   };
 
-  const handleMouseMove = (e) => {
-    const { left, top, width, height } = e.target.getBoundingClientRect();
-    const x = ((e.pageX - left) / width) * 100;
-    const y = ((e.pageY - top) / height) * 100;
-    setZoomPosition({ x, y });
-  };
-
   const handleMouseEnter = (index) => {
-    if (!isDesktop) return;
     setIsZoomVisible(true);
     setHoveredImageIndex(index);
   };
-  const handleMouseLeave = () => {
-    if (!isDesktop) return;
-    setIsZoomVisible(false);
-  };
+  const handleMouseLeave = () => setIsZoomVisible(false);
 
   const isAllSizesOutOfStock =
     Object.values(sizeStock).length > 0 &&
@@ -408,28 +422,7 @@ const Productpage = () => {
 
   // Show strike for BOTH subscribed & non-subscribed
   const showMrpStrike = mrp > finalPrice;
-  const normalizeImagePath = (path) => {
-    if (!path) return "";
 
-    // Convert backslashes to forward slashes
-    let normalized = path.replace(/\\/g, "/");
-
-    // already correct (has /uploads/)
-    if (normalized.includes("/uploads/")) return normalized;
-
-    // fix broken path
-    normalized = normalized
-      .replace("/uploadsproductsimages", "/uploads/products/images/")
-      .replace("uploadsproductsimages", "/uploads/products/images/")
-      .replace("uploads/products/images/", "/uploads/products/images/"); // ensure leading slash
-
-    // Ensure path starts with /
-    if (!normalized.startsWith("/")) {
-      normalized = "/" + normalized;
-    }
-
-    return normalized;
-  };
   return (
     <>
       <Helmet>
@@ -448,59 +441,38 @@ const Productpage = () => {
               <div className="product-imgs">
                 <div className="img-select">
                   {product?.images?.map((image, index) => (
-                    <div
-                      className="img-item"
-                      key={index}
-                      onClick={() => setHoveredImageIndex(index)}
-                    >
-                      <Image
-                        objectFit="cover"
-                        width="100%"
-                        height="100%"
-                        src={`${API_URL}/${image}`}
-                        alt={`Thumbnail-${index}`}
-                      />
+                    <div className="img-item" key={index}>
+                      <a href="#" data-id={index + 1}>
+                        <Image
+                          objectFit="cover"
+                          width="100%"
+                          height="100%"
+                          src={`${API_URL}/${image}`}
+                          alt={`Thumbnail-${index}`}
+                        />
+                      </a>
                     </div>
                   ))}
                 </div>
-
                 <div className="img-display">
-                  <Image
-                    src={`${API_URL}/${product.images[hoveredImageIndex]}`}
-                    alt="Main Product"
-                    w="100%"
-                    h="100%"
-                    objectFit="contain"
-                    onMouseMove={handleMouseMove}
-                    onMouseEnter={() => handleMouseEnter(hoveredImageIndex)}
-                    onMouseLeave={handleMouseLeave}
-                  />
+                  <div ref={imgShowcase} className="img-showcase">
+                    {product.images.map((image, index) => (
+                      <Image
+                        src={`${API_URL}/${image}`}
+                        alt="Product"
+                        cursor="zoom-in"
+                        onMouseEnter={() => {
+                          setModalImage(image);
+                          setHoverZoom(true);
+                          onOpen();
+                        }}
+                      />
+                    ))}
+                  </div>
                 </div>
 
                 {/* Zoomed Image View */}
-                {isZoomVisible && isDesktop && (
-                  <div
-                    className="zoomed-image"
-                    style={{
-                      position: "absolute",
-                      top: "120px",
-                      left: "40px",
-                      width: "650px",
-                      height: "950px",
-                      border: "2px solid #ddd",
-                      backgroundImage: `url(${API_URL}${normalizeImagePath(
-                        product.images[hoveredImageIndex],
-                      )})`,
-                      backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
-                      backgroundSize: "300%",
-                      backgroundRepeat: "no-repeat",
-                      pointerEvents: "none",
-                      zIndex: 999,
-                    }}
-                  />
-                )}
               </div>
-
               <div className="product-content">
                 <Flex
                   justifyContent="space-between"
@@ -985,17 +957,31 @@ const Productpage = () => {
               </>
             )}
           </Box>
-          <Modal isOpen={isOpen} onClose={onClose} isCentered size="xl">
-            <ModalOverlay />
+          <Modal isOpen={isOpen} onClose={onClose} size="full" isCentered>
+            <ModalOverlay bg="blackAlpha.900" />
             <ModalContent bg="transparent" boxShadow="none">
-              <ModalCloseButton color="white" />
-              <ModalBody p={0}>
+              <ModalBody
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                p={0}
+                onMouseMove={handleHoverMove}
+                onMouseLeave={() => {
+                  setHoverZoom(false);
+                  onClose();
+                }}
+              >
                 <Image
                   src={`${API_URL}/${modalImage}`}
-                  alt="Preview"
-                  w="100%"
-                  h="auto"
-                  borderRadius="md"
+                  alt="Zoomed"
+                  maxW="90vw"
+                  maxH="90vh"
+                  style={{
+                    transform: hoverZoom ? "scale(1.4)" : "scale(1)",
+                    transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
+                    transition: "transform 0.2s ease-out",
+                    cursor: "zoom-out",
+                  }}
                 />
               </ModalBody>
             </ModalContent>

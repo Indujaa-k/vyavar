@@ -38,7 +38,7 @@ const ProductViewModal = ({ isOpen, onClose, product }) => {
             {/* LEFT – Image Section */}
             <Box w="45%">
               <Image
-                src={activeImage}
+                src={`${API_URL}/${activeImage}`}
                 alt={product.brandname}
                 w="100%"
                 h="350px"
@@ -51,7 +51,7 @@ const ProductViewModal = ({ isOpen, onClose, product }) => {
                 {product.images?.map((img, index) => (
                   <Image
                     key={index}
-                    src={img}
+                    src={`${API_URL}/${img}`}
                     alt={`thumb-${index}`}
                     w="70px"
                     h="70px"
@@ -137,8 +137,8 @@ const ProductViewModal = ({ isOpen, onClose, product }) => {
                           s.stock > 10
                             ? "green.600"
                             : s.stock > 0
-                            ? "orange.500"
-                            : "red.500"
+                              ? "orange.500"
+                              : "red.500"
                         }
                       >
                         {s.size}: {s.stock}

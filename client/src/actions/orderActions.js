@@ -471,6 +471,7 @@ export const assignOrder =
       });
     }
   };
+
 export const getInvoice = (id) => async (dispatch, getState) => {
   try {
     dispatch({ type: INVOICE_REQUEST });
@@ -504,6 +505,7 @@ export const getInvoice = (id) => async (dispatch, getState) => {
     });
   }
 };
+
 export const getIncomeByPincode = () => async (dispatch, getState) => {
   try {
     dispatch({ type: INCOME_BY_PINCODE_REQUEST });

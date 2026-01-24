@@ -26,7 +26,7 @@ const addBanner = asyncHandler(async (req, res) => {
       .json({ message: "Maximum of 3 banners allowed per product." });
   }
   const banner = {
-    image: req.file.path,
+    image: `/uploads/banners/images/${req.file.filename}`,
     title,
     subtitle,
     productId,
@@ -44,13 +44,21 @@ const deleteBanner = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   const product = await Product.findOne({ "banners._id": id });
+  const bannerToDelete = product.banners.find((b) => b._id.toString() === id);
+
+  if (bannerToDelete?.image) {
+    const imagePath = path.join(process.cwd(), bannerToDelete.image);
+    if (fs.existsSync(imagePath)) {
+      fs.unlinkSync(imagePath);
+    }
+  }
 
   if (!product) {
     return res.status(404).json({ message: "Banner not found." });
   }
 
   product.banners = product.banners.filter(
-    (banner) => banner._id.toString() !== id
+    (banner) => banner._id.toString() !== id,
   );
   await product.save();
 
@@ -68,15 +76,16 @@ const getBanners = asyncHandler(async (req, res) => {
     }).select("banners");
 
     const banners = productsWithBanners.flatMap((product) =>
-      product.banners.filter((banner) => ({
+      product.banners.map((banner) => ({
         _id: banner._id,
         image: banner.image,
         title: banner.title,
         subtitle: banner.subtitle,
         gender: banner.gender,
         productId: banner.productId,
-      }))
+      })),
     );
+
     res.status(200).json(banners);
   } catch (error) {
     res
@@ -108,7 +117,7 @@ const addvideobanner = asyncHandler(async (req, res) => {
   // ✅ Create video banner with unique ID
   const videoBanner = {
     _id: new mongoose.Types.ObjectId(), // Unique video ID
-    videoUrl: req.file.path,
+    videoUrl: `/uploads/banners/videos/${req.file.filename}`,
     uploadedAt: new Date(),
   };
 
@@ -157,7 +166,7 @@ const deletevideobanner = asyncHandler(async (req, res) => {
   }
 
   const videoIndex = product.VideoBanner.findIndex(
-    (v) => v._id.toString() === videoId
+    (v) => v._id.toString() === videoId,
   );
 
   if (videoIndex === -1) {
@@ -166,8 +175,8 @@ const deletevideobanner = asyncHandler(async (req, res) => {
 
   // Remove video file from the server
   const videoPath = path.join(
-    "uploads",
-    product.VideoBanner[videoIndex].videoUrl.split("/").pop()
+    process.cwd(),
+    product.VideoBanner[videoIndex].videoUrl,
   );
 
   if (fs.existsSync(videoPath)) {
@@ -206,7 +215,6 @@ export const addOfferBanner = asyncHandler(async (req, res) => {
   res.status(201).json(banner);
 });
 
-
 export const getActiveOfferBanner = asyncHandler(async (req, res) => {
   const banner = await OfferBanner.findOne({ isActive: true });
   res.json(banner);
@@ -236,9 +244,8 @@ export const deleteOfferBanner = asyncHandler(async (req, res) => {
   res.json({ message: "Offer banner deleted" });
 });
 export const activateOfferBanner = asyncHandler(async (req, res) => {
-    console.log("Activate Offer ID:", req.params.id);
+  console.log("Activate Offer ID:", req.params.id);
   const { id } = req.params;
-
 
   // Deactivate all offers
   await OfferBanner.updateMany({}, { isActive: false });
@@ -247,7 +254,7 @@ export const activateOfferBanner = asyncHandler(async (req, res) => {
   const banner = await OfferBanner.findByIdAndUpdate(
     id,
     { isActive: true },
-    { new: true }
+    { new: true },
   );
 
   if (!banner) {
@@ -257,8 +264,6 @@ export const activateOfferBanner = asyncHandler(async (req, res) => {
 
   res.json(banner);
 });
-
-
 
 export {
   addBanner,
