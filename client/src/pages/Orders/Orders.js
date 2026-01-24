@@ -4,14 +4,7 @@ import {
   Heading,
   Grid,
   GridItem,
-  Stack,
   Select,
-  Table,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
   Spinner,
   Image,
   Alert,
@@ -20,6 +13,10 @@ import {
   StatLabel,
   StatNumber,
   StatHelpText,
+  VStack,
+  Badge,
+  HStack,
+  Text,
 } from "@chakra-ui/react";
 import { Link } from "react-router-dom";
 import {
@@ -29,6 +26,7 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
+  ResponsiveContainer,
 } from "recharts";
 
 import { useDispatch, useSelector } from "react-redux";
@@ -147,145 +145,154 @@ const Orders = () => {
       ) : (
         <Box>
           {/* Charts Section */}
-          <Grid templateColumns="repeat(2, 1fr)" gap={10} mb={10}>
+          <Grid
+            templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }}
+            gap={10}
+            mb={10}
+          >
+            {/* Sales Chart */}
             <GridItem>
-              <Heading as="h3" size="md" mb={3} textAlign={"center"}>
+              <Heading as="h3" size="md" mb={3} textAlign="center">
                 Sales Data
               </Heading>
-              <LineChart
-                width={500}
-                height={300}
-                data={formatChartData(sales)}
-                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke="violet"
-                  strokeWidth={8}
-                />
-              </LineChart>
+
+              <Box w="100%" h={{ base: "250px", md: "300px" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={formatChartData(sales)}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Line
+                      type="monotone"
+                      dataKey="value"
+                      stroke="violet"
+                      strokeWidth={3}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </Box>
             </GridItem>
+
+            {/* Revenue Chart */}
             <GridItem>
-              <Heading as="h3" size="md" mb={3} textAlign={"center"}>
+              <Heading as="h3" size="md" mb={3} textAlign="center">
                 Revenue Data
               </Heading>
-              <LineChart
-                width={500}
-                height={300}
-                data={formatChartData(revenue)}
-                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke="yellow"
-                  strokeWidth={8}
-                />
-              </LineChart>
+
+              <Box w="100%" h={{ base: "250px", md: "300px" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={formatChartData(revenue)}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Line
+                      type="monotone"
+                      dataKey="value"
+                      stroke="gold"
+                      strokeWidth={3}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </Box>
             </GridItem>
           </Grid>
 
           {/* Latest Orders Table */}
           <Box>
-            <Heading as="h3" size="md" mb={5} textAlign={"center"}>
+            <Heading as="h3" size="md" mb={5} textAlign="center">
               Latest Orders
             </Heading>
-            <Table className="tableusers" variant="striped">
-              <Thead>
-                <Tr>
-                  <Th textAlign="center">ID</Th>
-                  <Th textAlign="center">User</Th>
-                  <Th textAlign="center">Date</Th>
-                  <Th textAlign="center">TOTAL</Th>
-                  {/* <Th textAlign="center">PAID</Th>
-                  <Th textAlign="center">Status</Th> */}
-                  <Th textAlign="center">ProductImage</Th>
-                  <Th textAlign="center">Order Details</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {orders?.map((order) => {
-                  const status = order.status;
-                  return (
-                    <Tr key={order._id}>
-                      <Td>{order._id}</Td>
-                      <Td>{order.customerName}</Td>
-                      <Td>
+
+            <VStack spacing={4} align="stretch">
+              {orders?.length > 0 ? (
+                orders.map((order) => (
+                  <Box
+                    key={order._id}
+                    borderWidth="1px"
+                    borderRadius="lg"
+                    p={4}
+                    bg="white"
+                    boxShadow="md"
+                  >
+                    {/* 🔹 Order ID */}
+                    <Box
+                      bg="gray.100"
+                      p={2}
+                      borderRadius="md"
+                      mb={3}
+                      fontWeight="bold"
+                      fontSize="sm"
+                    >
+                      Order ID : {order._id}
+                    </Box>
+
+                    {/* 🔹 Header */}
+                    <Grid
+                      templateColumns="repeat(7, 1fr)"
+                      fontSize="sm"
+                      fontWeight="bold"
+                      color="gray.600"
+                      mb={2}
+                    >
+                      <Text>User</Text>
+                      <Text>Date</Text>
+                      <Text>Total</Text>
+                      <Text>Payment</Text>
+                      <Text textAlign="center">Images</Text>
+                      <Text textAlign="center">Action</Text>
+                    </Grid>
+
+                    {/* 🔹 Data */}
+                    <Grid
+                      templateColumns="repeat(7, 1fr)"
+                      alignItems="center"
+                      fontSize="sm"
+                      gap={2}
+                    >
+                      <Text>{order.customerName || "N/A"}</Text>
+
+                      <Text>
                         {order.createdAt
                           ? order.createdAt.substring(0, 10)
                           : "N/A"}
-                      </Td>
-                     <Td>₹ {order.total}</Td>
+                      </Text>
 
-                      {/* <Td>
-                        {order.isPaid ? (
-                          <div className="paid">
-                            {order.paidAt.substring(0, 10)}
-                          </div>
-                        ) : (
-                          <div className="notpaid">NO</div>
-                        )}
-                      </Td> */}
-                      {/* <Td textAlign="center">
-                        <Button
-                          size="sm"
-                          colorScheme={status.color}
-                          borderRadius="20px"
-                          fontWeight="bold"
-                          textTransform="uppercase"
-                          px={4}
-                          py={1}
-                        >
-                          {status.label}
-                        </Button>
-                      </Td> */}
-                      <Td>
-                        {order.orderItems.map((item) => (
-                          <Stack
-                            key={item.productId}
-                            spacing={2}
-                            align="center"
-                          >
-                            {/* Display the first image from the images array */}
-                            {item.productImage.length > 0 && (
-                              <Image
-                                src={item.productImage[0]} // Access the first image
-                                alt={item.productName}
-                                boxSize="80px"
-                                objectFit="cover"
-                                borderRadius="5px"
-                              />
-                            )}
-                            {/* Product Link */}
-                            <Link to={`/product/${item.productId}`}>
-                              <Button colorScheme="blue" size="xs">
-                                View Product
-                              </Button>
-                            </Link>
-                          </Stack>
+                      <Text>₹ {order.total}</Text>
+
+                      <Text>{order.paymentMethod || "N/A"}</Text>
+
+                      {/* Images */}
+                      <HStack spacing={1} justify="center">
+                        {order.orderItems?.map((item, index) => (
+                          <Image
+                            key={index}
+                            src={item?.productImage?.[0]}
+                            boxSize="40px"
+                            objectFit="cover"
+                            borderRadius="md"
+                          />
                         ))}
-                      </Td>
-                      <Td>
+                      </HStack>
+
+                      {/* Action */}
+                      <Box textAlign="center">
                         <Link to={`/order/${order._id}`}>
-                          <Button colorScheme="teal" size="sm">
+                          <Button size="xs" colorScheme="teal">
                             Details
                           </Button>
                         </Link>
-                      </Td>
-                    </Tr>
-                  );
-                })}
-              </Tbody>
-            </Table>
+                      </Box>
+                    </Grid>
+                  </Box>
+                ))
+              ) : (
+                <Text textAlign="center" color="gray.500">
+                  No orders available
+                </Text>
+              )}
+            </VStack>
           </Box>
         </Box>
       )}

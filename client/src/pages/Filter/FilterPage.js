@@ -160,11 +160,11 @@ const FilterPage = () => {
           <Text
             cursor="pointer"
             color="red.500"
-            fontWeight="600"
+            
             mr={3}
             onClick={handleClearFilters}
           >
-            CLEAR ALL
+            Clear All
           </Text>
         </Flex>
         <Stack spacing={3}>

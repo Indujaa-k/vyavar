@@ -1,3 +1,7 @@
+body {
+  padding-top: 70px;
+}
+
 .nav {
   background-color: #09254a;
   color: white;
@@ -56,7 +60,7 @@
 
   color: #fff;
   border-radius: 50%;
-  background-color: #09254a;
+  background-color: #e50a0a;
 }
 
 .search {
@@ -231,7 +235,23 @@
   display: block; /* Ensures visibility */
   background-color: #ccc; /* Fallback */
 }
-/* Add this to Nav.css */
+.hamburger {
+  display: none;
+}
+/* Mobile */
+@media screen and (max-width: 768px) {
+  .hamburger {
+    display: block;
+  }
+}
+
+/* Tablet */
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+  .hamburger {
+    display: block;
+  }
+}
+
 @media screen and (max-width: 768px) {
   .navLinks {
     display: none;
@@ -292,5 +312,55 @@
 
   .dropdown-menu.mobile li a {
     color: #ddd;
+  }
+}
+/* ===== TABLET VIEW ===== */
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+  .navLinks {
+    display: none;
+  }
+
+  .rightComp {
+    display: none;
+  }
+
+  .search-container {
+    display: none;
+  }
+
+  .nav {
+    padding: 0 20px;
+    justify-content: space-between;
+  }
+
+  .logo img {
+    height: 80px;
+  }
+}
+
+/* ===== MOBILE + TABLET ===== */
+@media screen and (max-width: 1024px) {
+  .nav {
+    position: fixed;
+    top: 0;
+    justify-content: center; /* center logo */
+  }
+
+  .hamburger {
+    position: absolute;
+    left: 15px;
+  }
+
+  .logo {
+    margin: 0 auto;
+  }
+
+  .logo img {
+    height: 55px; /* adjust if needed */
+  }
+}
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+  .logo img {
+    height: 65px;
   }
 }

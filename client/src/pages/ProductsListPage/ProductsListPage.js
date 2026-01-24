@@ -55,7 +55,7 @@ const ProductsListPage = () => {
         keyword,
         brandname,
         sortBy,
-      })
+      }),
     );
   }, [
     dispatch,
@@ -72,7 +72,7 @@ const ProductsListPage = () => {
   };
   const handleRemoveFilter = (filterValue) => {
     const updatedFilters = selectedFilters.filter(
-      (filter) => filter.value !== filterValue
+      (filter) => filter.value !== filterValue,
     );
     setSelectedFilters(updatedFilters);
 
@@ -170,14 +170,20 @@ const ProductsListPage = () => {
             <Box
               display="grid"
               gridTemplateColumns={{
-                base: "1fr",
-                sm: "repeat(2, 1fr)",
-                md: "repeat(3, 1fr)",
+                base: "repeat(2, 1fr)", // ✅ Mobile: 2 products
+                sm: "repeat(2, 1fr)", // Tablet: 2 products
+                md: "repeat(2, 1fr)", // Desktop: 3 products
+                lg: "repeat(3, 1fr)", // Large screens: 4 products
               }}
-              gap="30px"
+              gap={{ base: "12px", md: "24px" }}
+              justifyItems="center"
             >
               {products.map((product) => (
-                <Box key={product._id} display="flex" justifyContent="center">
+                <Box
+                  key={product._id}
+                  width="100%"
+                  maxW="260px" // ✅ keeps cards aligned nicely
+                >
                   <CardProduct product={product} />
                 </Box>
               ))}

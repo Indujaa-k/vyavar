@@ -5,7 +5,7 @@ const Privatepolicy = () => {
   return (
     <div
       className="privacy-policy"
-      style={{ padding: "20px", lineHeight: "1.7" }}
+      style={{ padding: "20px", paddingTop:"40px",lineHeight: "1.7" }}
     >
       <h1>Privacy Policy</h1>
       <p>

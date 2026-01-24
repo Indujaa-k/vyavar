@@ -34,7 +34,7 @@ const TransactionTable = () => {
   // Debugging: Check transactions data
   console.log("Transactions data:", transactions);
   const sortedTransactions = [...transactions].sort(
-    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
   );
   const filteredTransactions = useMemo(() => {
     const now = new Date();
@@ -66,7 +66,7 @@ const TransactionTable = () => {
         acc.totalOrders += 1;
         return acc;
       },
-      { totalAmount: 0, totalTax: 0, totalOrders: 0 }
+      { totalAmount: 0, totalTax: 0, totalOrders: 0 },
     );
   }, [filteredTransactions]);
 
@@ -117,8 +117,8 @@ const TransactionTable = () => {
               {type === "all"
                 ? "All"
                 : type === "week"
-                ? "Last 7 Days"
-                : "This Month"}
+                  ? "Last 7 Days"
+                  : "This Month"}
             </Box>
           ))}
         </Flex>
@@ -191,41 +191,79 @@ const TransactionTable = () => {
         </Center>
       ) : (
         <TableContainer>
-          <Table variant="striped" colorScheme="blue">
+          <Table variant="striped" colorScheme="blue" size="sm">
             <Thead bg="purple.500">
               <Tr>
-                <Th color="white">📅 Date</Th>
-                <Th color="white">⏰ Time</Th>
-                <Th color="white">💳 Payment Type</Th>
-                <Th color="white">📌 Status</Th>
-                <Th color="white">💰 Price</Th>
-                <Th color="white">📦 Qty</Th>
-                <Th color="white">⚖ Tax</Th>
-                <Th color="white">🚚 Shipping</Th>
-                <Th color="white">🏷 Total</Th>
+                <Th color="white" py={2} px={3}>
+                  📅 Date
+                </Th>
+                <Th color="white" py={2} px={3}>
+                  ⏰ Time
+                </Th>
+                <Th color="white" py={2} px={3}>
+                  💳 Payment Type
+                </Th>
+                <Th color="white" py={2} px={3}>
+                  📌 Status
+                </Th>
+                <Th color="white" py={2} px={3}>
+                  💰 Price
+                </Th>
+                <Th color="white" py={2} px={3}>
+                  📦 Qty
+                </Th>
+                <Th color="white" py={2} px={3}>
+                  ⚖ Tax
+                </Th>
+                <Th color="white" py={2} px={3}>
+                  🚚 Shipping
+                </Th>
+                <Th color="white" py={2} px={3}>
+                  🏷 Total
+                </Th>
               </Tr>
             </Thead>
+
             <Tbody>
               {formattedTransactions.map((t, index) => (
                 <Tr
                   key={index}
-                  bg={index % 2 === 0 ? "gray.100" : "gray.200"} // Alternating row colors
-                  _hover={{ bg: "cyan.200" }} // Hover effect
+                  height="40px"
+                  bg={index % 2 === 0 ? "gray.100" : "gray.200"}
+                  _hover={{ bg: "cyan.200" }}
                 >
-                  <Td fontWeight="bold">{t.date}</Td>
-                  <Td fontWeight="bold">{t.time}</Td>
-                  <Td>{t.paymentType}</Td>
+                  <Td py={2} px={3} fontWeight="bold">
+                    {t.date}
+                  </Td>
+                  <Td py={2} px={3} fontWeight="bold">
+                    {t.time}
+                  </Td>
+                  <Td py={2} px={3}>
+                    {t.paymentType}
+                  </Td>
                   <Td
+                    py={2}
+                    px={3}
                     fontWeight="bold"
                     color={t.status === "✅ Paid" ? "green.500" : "red.500"}
                   >
                     {t.status}
                   </Td>
-                  <Td>₹{t.totalPrice.toFixed(2)}</Td>
-                  <Td>{t.qty}</Td>
-                  <Td>₹{t.taxPrice.toFixed(2)}</Td>
-                  <Td>₹{t.shippingPrice.toFixed(2)}</Td>
-                  <Td fontWeight="bold">₹{t.totalPrice.toFixed(2)}</Td>
+                  <Td py={2} px={3}>
+                    ₹{t.totalPrice.toFixed(2)}
+                  </Td>
+                  <Td py={2} px={3}>
+                    {t.qty}
+                  </Td>
+                  <Td py={2} px={3}>
+                    ₹{t.taxPrice.toFixed(2)}
+                  </Td>
+                  <Td py={2} px={3}>
+                    ₹{t.shippingPrice.toFixed(2)}
+                  </Td>
+                  <Td py={2} px={3} fontWeight="bold">
+                    ₹{t.totalPrice.toFixed(2)}
+                  </Td>
                 </Tr>
               ))}
             </Tbody>

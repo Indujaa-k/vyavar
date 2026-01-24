@@ -115,7 +115,7 @@ const Nav = () => {
   return (
     <>
       <nav className={`nav ${nav ? "active" : ""}`}>
-        <Box display={{ base: "block", md: "none" }}>
+        <Box className="hamburger">
           <IconButton
             icon={<GiHamburgerMenu />}
             ref={btnRef}
@@ -139,7 +139,7 @@ const Nav = () => {
                 value={searchKeyword}
                 onChange={onSearchChange}
                 ref={searchRef}
-                color="black"
+                color="white"
               />
               <InputLeftElement>
                 <Button className="search-button" type="submit" size="40">
