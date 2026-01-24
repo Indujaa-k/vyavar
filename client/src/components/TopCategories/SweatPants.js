@@ -69,7 +69,7 @@ const SweatPants = () => {
                       </div>
                     )}
                     <Image
-                      src={product.images[0]}
+                      src={`${process.env.REACT_APP_API_URL}/${product.images[0]}`}
                       alt={product.description}
                       objectFit="cover"
                       width="100%"

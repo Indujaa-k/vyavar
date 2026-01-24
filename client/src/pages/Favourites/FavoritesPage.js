@@ -17,7 +17,7 @@ const FavoritesPage = () => {
   const { userInfo } = useSelector((state) => state.userLogin);
   const dispatch = useDispatch();
   const { favoriteItems, loading, error } = useSelector(
-    (state) => state.favorites
+    (state) => state.favorites,
   );
 
   useEffect(() => {
@@ -71,7 +71,7 @@ const FavoritesPage = () => {
           <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing={6}>
             {favoriteItems.map((product) => {
               const isFavorite = favoriteItems.some(
-                (item) => item._id === product._id
+                (item) => item._id === product._id,
               );
 
               return (
@@ -104,7 +104,7 @@ const FavoritesPage = () => {
                   <Link to={`/product/${product._id}`}>
                     <Box height="380px" width="100%" overflow="hidden">
                       <Image
-                        src={product.images[0]}
+                        src={`${process.env.REACT_APP_API_URL}/${product.images[0]}`}
                         alt={product.description}
                         objectFit="cover"
                         width="100%"

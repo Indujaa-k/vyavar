@@ -31,7 +31,7 @@ const Tshirts = () => {
     .filter(
       (product) =>
         product.productdetails?.subcategory === "Shirts" &&
-        product.productdetails?.gender === gender
+        product.productdetails?.gender === gender,
     )
     .slice(0, 5);
 
@@ -73,7 +73,7 @@ const Tshirts = () => {
                   )}
 
                   <Image
-                    src={product.images[0]}
+                    src={`${process.env.REACT_APP_API_URL}/${product.images[0]}`}
                     alt={product.description}
                     objectFit="cover"
                     w="100%"
@@ -85,12 +85,7 @@ const Tshirts = () => {
               {/* Details */}
               <Box p={3}>
                 <Link to={`/product/${product._id}`}>
-                  <Text
-                    fontSize="md"
-                    fontWeight="semibold"
-                    isTruncated
-                    mb={1}
-                  >
+                  <Text fontSize="md" fontWeight="semibold" isTruncated mb={1}>
                     {product.brandname}
                   </Text>
 
@@ -123,16 +118,15 @@ const Tshirts = () => {
                     </>
                   ) : (
                     <Box display="flex" gap={2} alignItems="center">
-                      {product.oldPrice &&
-                        product.oldPrice > product.price && (
-                          <Text
-                            fontSize="xs"
-                            color="gray.500"
-                            textDecoration="line-through"
-                          >
-                            Rs. {product.oldPrice}
-                          </Text>
-                        )}
+                      {product.oldPrice && product.oldPrice > product.price && (
+                        <Text
+                          fontSize="xs"
+                          color="gray.500"
+                          textDecoration="line-through"
+                        >
+                          Rs. {product.oldPrice}
+                        </Text>
+                      )}
 
                       <Text fontSize="md" fontWeight="bold">
                         Rs. {product.price}

@@ -66,7 +66,9 @@ const ProductSpecification = ({ product }) => {
               <div className="info-item">
                 <span>Size</span>
                 <strong>
-                  {product?.productdetails?.sizes || "Not available"}
+                  {Array.isArray(product?.productdetails?.sizes)
+                    ? product.productdetails.sizes.join(", ")
+                    : product?.productdetails?.sizes || "Not available"}
                 </strong>
               </div>
             </div>
@@ -243,7 +245,7 @@ const SizeChart = ({ product }) => {
 
       <iframe
         src={`https://docs.google.com/gview?url=${encodeURIComponent(
-          product.sizeChart
+          product.sizeChart,
         )}&embedded=true`}
         width="100%"
         height="400px"

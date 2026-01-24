@@ -105,7 +105,7 @@ const Products = () => {
     ([groupId, products]) => ({
       groupId,
       products,
-    })
+    }),
   );
   const location = useLocation();
   const userLogin = useSelector((state) => state.userLogin);
@@ -270,8 +270,8 @@ const Products = () => {
                                 s.stock > 10
                                   ? "green"
                                   : s.stock > 0
-                                  ? "orange"
-                                  : "red"
+                                    ? "orange"
+                                    : "red"
                               }
                             >
                               {s.size}: {s.stock}
@@ -286,7 +286,7 @@ const Products = () => {
                       <Link to={`/product/${product._id}`}>
                         {product.images?.length > 0 ? (
                           <img
-                            src={product.images[0]}
+                            src={`${process.env.REACT_APP_API_URL}/${product.images[0]}`}
                             alt={product.brandname}
                             style={{
                               width: "70px",

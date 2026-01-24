@@ -6,10 +6,7 @@ import Product from "../models/productModel.js";
 import ProductGroup from "../models/productgroupModel.js";
 import User from "../models/userModel.js";
 import reviewnotificatioEmail from "../utils/reviewnotificationEmail.js";
-import { uploadImagesToCloudinary } from "../multer/multer.js";
-import upload from "../middleware/upload.js";
 import fs from "fs";
-import { v2 as cloudinary } from "cloudinary";
 import { applySubscriptionPrice } from "../utils/applySubscriptionPrice.js";
 
 // @desc Fetch all products
@@ -743,11 +740,6 @@ export const markReviewNotHelpful = async (req, res) => {
   await product.save();
   res.json({ message: "Marked as not helpful" });
 };
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_NAME,
-  api_key: process.env.CLOUDINARY_APIKEY,
-  api_secret: process.env.CLOUDINARY_SECRETKEY,
-});
 const uploadProducts = asyncHandler(async (req, res) => {
   if (!req.file) {
     res.status(400);
@@ -775,14 +767,13 @@ const uploadProducts = asyncHandler(async (req, res) => {
 
     // 🔹 Upload images
     let images = [];
+
     if (row.images) {
       const paths = row.images.split("|");
+
       for (const p of paths) {
         if (fs.existsSync(p)) {
-          const upload = await cloudinary.uploader.upload(p, {
-            folder: "products",
-          });
-          images.push(upload.secure_url);
+          images.push(p); // ✅ store local path directly
         }
       }
     }
@@ -1368,7 +1359,7 @@ const updateVariant = asyncHandler(async (req, res) => {
     req.files.forEach((file, i) => {
       const index = Number(imageIndexes[i]);
       if (!isNaN(index) && product.images[index]) {
-        product.images[index] = file.secure_url || file.path;
+        product.images[index] = file.path;
       }
     });
   }

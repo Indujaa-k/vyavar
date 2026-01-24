@@ -55,7 +55,12 @@ const addorderitems = asyncHandler(async (req, res) => {
   });
 
   let createdOrder = await order.save();
-
+  if (coupon?.code) {
+    await Offer.findOneAndUpdate(
+      { code: coupon.code },
+      { $inc: { usedCount: 1 } },
+    );
+  }
   createdOrder = await Order.findById(createdOrder._id).populate(
     "orderItems.product",
     "images brandname",
@@ -549,8 +554,16 @@ const createRazorpayOrder = async (req, res) => {
     let couponSnapshot = null;
 
     if (couponCode) {
-      const offer = await Offer.findOne({ code: couponCode.toUpperCase() });
+      const offer = await Offer.findOne({
+        code: couponCode.toUpperCase(),
+        isActive: true,
+      });
+
       if (!offer) throw new Error("Invalid coupon");
+
+      if (offer.usedCount >= offer.maxUses) {
+        return res.status(400).json({ message: "Coupon usage limit exceeded" });
+      }
 
       // Calculate discount on subtotal, allow decimals up to 2 places
       const rawDiscount = (subtotal * offer.offerPercentage) / 100;

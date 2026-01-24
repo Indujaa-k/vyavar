@@ -41,6 +41,7 @@ const OrdersScreen = () => {
 
   const orderList = useSelector((state) => state.orderList);
   const { loading, error, orders } = orderList;
+  const API_URL = process.env.REACT_APP_API_URL;
 
   const orderStatusUpdate = useSelector((state) => state.orderStatusUpdate);
   const { success } = orderStatusUpdate;
@@ -256,7 +257,11 @@ const OrdersScreen = () => {
                       {order.orderItems?.map((item, index) => (
                         <Image
                           key={index}
-                          src={item?.product?.images?.[0]}
+                          src={
+                            item?.product?.images?.[0]
+                              ? `${API_URL}/${item.product.images[0]}`
+                              : "/placeholder.jpg"
+                          }
                           boxSize="35px"
                           objectFit="cover"
                           borderRadius="md"

@@ -58,7 +58,7 @@ const Order = () => {
     error: invoiceError,
     invoice,
   } = invoiceDetails;
-
+ const API_URL = process.env.REACT_APP_API_URL;
   const addDecimals = (num) => {
     return (Math.round(num * 100) / 100).toFixed(2);
   };
@@ -210,53 +210,64 @@ const Order = () => {
               <Text fontSize="lg" fontWeight="bold" mt={4}>
                 Order Items
               </Text>
-              {order.orderItems.map((item) => (
-                <HStack
-                  key={item.product}
-                  justify="space-between"
-                  w="full"
-                  mb={4}
-                  wrap={{ base: "wrap", md: "nowrap" }}
-                >
-                  {/* Left side: Image and Name */}
-                  <HStack spacing={2}>
-                    {/* Product Image */}
-                    {/* <Link to={`/product/${item.product._id}`}> */}
-                    <Link to={`/product/${item.product?._id || item.product}`}>
-                      <Image
-                        src={
-                          typeof item.product === "object"
-                            ? item.product.images?.[0]
-                            : "/placeholder.jpg"
-                        }
-                        alt={item.name}
-                        boxSize={{ base: "60px", md: "80px" }}
-                        objectFit="cover"
-                        borderRadius="md"
-                      />
-                    </Link>
+              {order.orderItems.map((item) => {
+                const productId =
+                  typeof item.product === "object"
+                    ? item.product._id
+                    : item.product;
 
-                    {/* Product Name */}
-                    <Text fontWeight="bold" textAlign="center">
-                      <Link
-                        to={`/product/${item.product._id}`}
-                        style={{
-                          color: "deeppink",
-                          textDecoration: "underline",
-                        }}
-                      >
-                        {item.name}
+                const productImage =
+                  typeof item.product === "object" &&
+                  item.product.images?.length > 0
+                    ? `${API_URL}/${item.product.images[0]}`
+                    : "/placeholder.jpg";
+
+                return (
+                  <HStack
+                    key={productId}
+                    justify="space-between"
+                    w="full"
+                    mb={4}
+                    wrap={{ base: "wrap", md: "nowrap" }}
+                  >
+                    {/* Left side: Image and Name */}
+                    <HStack spacing={2}>
+                      {/* Product Image */}
+                      <Link to={`/product/${productId}`}>
+                        <Image
+                          src={productImage}
+                          alt={item.name}
+                          boxSize={{ base: "60px", md: "80px" }}
+                          objectFit="cover"
+                          borderRadius="md"
+                        />
                       </Link>
+
+                      {/* Product Name */}
+                      <Text fontWeight="bold" textAlign="center">
+                        <Link
+                          to={`/product/${productId}`}
+                          style={{
+                            color: "deeppink",
+                            textDecoration: "underline",
+                          }}
+                        >
+                          {item.name}
+                        </Link>
+                      </Text>
+                    </HStack>
+
+                    <Text fontSize="sm">
+                      Size: <strong>{item.size}</strong>
+                    </Text>
+
+                    <Text>
+                      {item.qty} x Rs. {item.price / item.qty} = Rs.{" "}
+                      {item.price}
                     </Text>
                   </HStack>
-                  <Text fontSize="sm">
-                    Size: <strong>{item.size}</strong>
-                  </Text>
-                  <Text>
-                    {item.qty} x Rs. {item.price / item.qty} = Rs. {item.price}
-                  </Text>
-                </HStack>
-              ))}
+                );
+              })}
 
               {/* invoice */}
               <Text fontSize="lg" fontWeight="bold">

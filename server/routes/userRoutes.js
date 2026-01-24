@@ -35,7 +35,7 @@ router
   .get(protect, getUserProfile)
   .put(
     protect,
-    uploadProfileImage, // 👈 ADD THIS
+    uploadProfileImage,
     updateUserProfile
   );
 
