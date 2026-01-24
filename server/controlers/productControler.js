@@ -1049,40 +1049,39 @@ const approveReview = asyncHandler(async (req, res) => {
 // @route get /api/products/pending review
 // @access Private
 const getPendingReviews = asyncHandler(async (req, res) => {
-  try {
-    // Get all products with unapproved reviews
-    const products = await Product.find({ "reviews.approved": false }).select(
-      "reviews brandname images",
-    ); // include images
+  const products = await Product.find({ "reviews.approved": false })
+    .populate({
+      path: "reviews.user",
+      select: "name profilePicture",
+    })
+    .select("reviews brandname images");
 
-    const pendingReviews = [];
+  const pendingReviews = [];
 
-    products.forEach((product) => {
-      product.reviews.forEach((review) => {
-        if (!review.approved) {
-          pendingReviews.push({
-            _id: review._id.toString(),
-            productId: product._id.toString(),
-            brandname: product.brandname,
-            image:
-              product.images && product.images.length > 0
-                ? product.images[0]
-                : null, // ✅ include first image
-            name: review.name,
-            rating: review.rating,
-            comment: review.comment,
-            photos: review.photos || [],
-            createdAt: review.createdAt,
-          });
-        }
-      });
+  products.forEach((product) => {
+    product.reviews.forEach((review) => {
+      if (!review.approved) {
+        pendingReviews.push({
+          _id: review._id,
+          productId: product._id,
+          product: {
+            name: product.brandname,
+            image: product.images?.[0] || null,
+          },
+          user: {
+            name: review.user?.name || review.name,
+            avatar: review.user?.profilePicture || null,
+          },
+          rating: review.rating,
+          comment: review.comment,
+          photos: review.photos || [],
+          createdAt: review.createdAt,
+        });
+      }
     });
+  });
 
-    res.json(pendingReviews);
-  } catch (error) {
-    console.error("Error fetching pending reviews:", error);
-    res.status(500).json({ message: "Failed to fetch pending reviews" });
-  }
+  res.json(pendingReviews);
 });
 
 // Alternative: Delete review by review ID only (searches across all products)
@@ -1404,7 +1403,6 @@ const unapproveReview = asyncHandler(async (req, res) => {
 
   res.json({ message: "Review unapproved successfully", review });
 });
-
 
 export {
   getProducts,

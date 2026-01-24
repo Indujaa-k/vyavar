@@ -30,7 +30,7 @@ import {
 } from "../../actions/bannerActions";
 import { useEffect } from "react";
 
-const AdminNavbar = () => {
+const AdminNavbar = ({ setIsSidebarOpen }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -40,7 +40,11 @@ const AdminNavbar = () => {
   const cancelRef = useRef();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { banner } = useSelector((state) => state.activeOfferBanner || {});
-
+  const handlePreview = () => {
+    dispatch(getActiveOfferBanner());
+    setIsSidebarOpen(false); // ✅ hide sidebar when Preview clicked
+    navigate("/");
+  };
   useEffect(() => {
     dispatch(getUserDetails("profile")); // 🔥 REQUIRED
   }, [dispatch]);
@@ -51,177 +55,196 @@ const AdminNavbar = () => {
   };
   const handleBack = () => {
     dispatch(clearActiveOfferBanner());
+    setIsSidebarOpen(true);
     navigate(-1);
   };
 
   return (
-    <Box
-      as="nav"
-      bg="#09254a" // ✅ background color
-      px={4}
-      py={3}
-      color="white" // ✅ text color white
-      position="fixed"
-      top={0}
-      width="100%"
-      zIndex={1000}
-      boxShadow="md"
-    >
-      <Flex align="center" justifyContent="space-between">
-        {/* Navbar Logo */}
-        <Box fontWeight="bold" fontSize="lg">
-          <NavLink to="/adminDashboard" className="logoimg">
-            <img
-              src={Logo}
-              alt="logo"
-              style={{
-                height: "px", // 🔥 size increase
-                width: "auto",
-              }}
-            />
-
-            <span className="logoimg-text">E-Commerce</span>
-          </NavLink>
-        </Box>
-
-        {/* Navbar Links */}
-        <HStack spacing={6} ms={9}>
-          <div className="ic_sett_dis">
-            <RouterLink
-              to="/profile"
-              className="user-profile"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                textDecoration: "none",
-              }}
-            >
-              {/* Profile Image */}
-              {user?.profilePicture && (
-                <img
-                  src={
-                    user.profilePicture.startsWith("http")
-                      ? user.profilePicture
-                      : `http://localhost:5000${user.profilePicture}`
-                  }
-                  alt="Profile"
-                  style={{
-                    width: "32px",
-                    height: "32px",
-                    borderRadius: "50%",
-                    objectFit: "cover",
-                  }}
-                  onError={(e) => {
-                    e.target.style.display = "none";
-                    e.target.nextSibling.style.display = "flex";
-                  }}
-                />
-              )}
-
-              {/* Default Empty Profile Icon */}
-              <CgProfile
-                size={25}
+    <>
+      <Box
+        as="nav"
+        bg="#09254a" // ✅ background color
+        px={4}
+        py={3}
+        color="white" // ✅ text color white
+        position="fixed"
+        top={0}
+        width="100%"
+        zIndex={1000}
+        boxShadow="md"
+      >
+        <Flex align="center" justifyContent="space-between">
+          {/* Navbar Logo */}
+          <Box fontWeight="bold" fontSize="lg">
+            <NavLink to="/adminDashboard" className="logoimg">
+              <img
+                src={Logo}
+                alt="logo"
                 style={{
-                  display: user?.profilePicture ? "none" : "flex",
-                  color: "white",
+                  height: "px", // 🔥 size increase
+                  width: "auto",
                 }}
               />
 
-              <span style={{ color: "white", fontWeight: "500" }}>
-                {user?.name || "Admin"}
-              </span>
-            </RouterLink>
-          </div>
+              <span className="logoimg-text">E-Commerce</span>
+            </NavLink>
+          </Box>
 
-          <button
-            onClick={() => {
-              dispatch(getActiveOfferBanner());
-              navigate("/");
-            }}
-            style={{
-              padding: "8px 16px",
-              backgroundColor: "#000",
-              color: "#fff",
-              border: "none",
-              cursor: "pointer",
-              borderRadius: "4px",
-            }}
-          >
-            Preview
-          </button>
-
-          <Button
-            colorScheme="teal"
-            variant="solid"
-            size="md"
-            borderRadius="md"
-            onClick={handleBack}
-            _hover={{ bg: "teal.600" }}
-          >
-            Back
-          </Button>
-
-          <Button bg="violet" onClick={onOpen}>
-            Logout
-          </Button>
-
-          <AlertDialog
-            isOpen={isOpen}
-            leastDestructiveRef={cancelRef}
-            onClose={onClose}
-          >
-            <AlertDialogOverlay>
-              <AlertDialogContent
-                borderRadius="12px"
-                boxShadow="lg"
-                bg="white"
-                maxW="320px"
-                height={80}
-                p={6} /* ⬅️ Added padding */
-                animation="fadeIn 0.3s ease-in-out"
+          {/* Navbar Links */}
+          <HStack spacing={6} ms={9}>
+            <div className="ic_sett_dis">
+              <RouterLink
+                to="/profile"
+                className="user-profile"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  textDecoration: "none",
+                }}
               >
-                <AlertDialogHeader
-                  fontSize="md"
-                  fontWeight="bold"
-                  textAlign="center"
-                  p={4}
+                {/* Profile Image */}
+                {user?.profilePicture && (
+                  <img
+                    src={
+                      user.profilePicture.startsWith("http")
+                        ? user.profilePicture
+                        : `http://localhost:5000${user.profilePicture}`
+                    }
+                    alt="Profile"
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                    }}
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                      e.target.nextSibling.style.display = "flex";
+                    }}
+                  />
+                )}
+
+                {/* Default Empty Profile Icon */}
+                <CgProfile
+                  size={25}
+                  style={{
+                    display: user?.profilePicture ? "none" : "flex",
+                    color: "white",
+                  }}
+                />
+
+                <span style={{ color: "white", fontWeight: "500" }}>
+                  {user?.name || "Admin"}
+                </span>
+              </RouterLink>
+            </div>
+
+            {/* <button
+              onClick={() => {
+                dispatch(getActiveOfferBanner());
+                navigate("/");
+              }}
+              style={{
+                padding: "8px 16px",
+                backgroundColor: "#000",
+                color: "#fff",
+                border: "none",
+                cursor: "pointer",
+                borderRadius: "4px",
+              }}
+            >
+              Preview
+            </button> */}
+            <Button
+              onClick={handlePreview} // ✅ now works
+              bg="black"
+              color="white"
+              px={4}
+              py={2}
+              borderRadius="4px"
+            >
+              Preview
+            </Button>
+
+            <Button
+              colorScheme="teal"
+              variant="solid"
+              size="md"
+              borderRadius="md"
+              onClick={handleBack}
+              _hover={{ bg: "teal.600" }}
+            >
+              Back
+            </Button>
+
+            <Button bg="violet" onClick={onOpen}>
+              Logout
+            </Button>
+
+            <AlertDialog
+              isOpen={isOpen}
+              leastDestructiveRef={cancelRef}
+              onClose={onClose}
+            >
+              <AlertDialogOverlay>
+                <AlertDialogContent
+                  borderRadius="12px"
+                  boxShadow="lg"
+                  bg="white"
+                  maxW="320px"
+                  height={80}
+                  p={6} /* ⬅️ Added padding */
+                  animation="fadeIn 0.3s ease-in-out"
                 >
-                  Logout Confirmation
-                </AlertDialogHeader>
-
-                <AlertDialogBody textAlign="center" fontSize="md" p={5}>
-                  Are you sure you want to log out? <br />
-                </AlertDialogBody>
-
-                <AlertDialogFooter display="flex" justifyContent="center" p={4}>
-                  <Button
-                    ref={cancelRef}
-                    onClick={onClose}
-                    borderRadius="8px"
-                    bg="gray.300"
-                    color="black"
-                    px={6}
-                    _hover={{ bg: "gray.400" }}
+                  <AlertDialogHeader
+                    fontSize="md"
+                    fontWeight="bold"
+                    textAlign="center"
+                    p={4}
                   >
-                    Cancel
-                  </Button>
-                  <Button
-                    colorScheme="red"
-                    onClick={logoutHandler}
-                    ml={3}
-                    px={6}
-                    borderRadius="8px"
-                    _hover={{ bg: "red.600" }}
+                    Logout Confirmation
+                  </AlertDialogHeader>
+
+                  <AlertDialogBody textAlign="center" fontSize="md" p={5}>
+                    Are you sure you want to log out? <br />
+                  </AlertDialogBody>
+
+                  <AlertDialogFooter
+                    display="flex"
+                    justifyContent="center"
+                    p={4}
                   >
-                    Logout
-                  </Button>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialogOverlay>
-          </AlertDialog>
-        </HStack>
-      </Flex>
+                    <Button
+                      ref={cancelRef}
+                      onClick={onClose}
+                      borderRadius="8px"
+                      bg="gray.300"
+                      color="black"
+                      px={6}
+                      _hover={{ bg: "gray.400" }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      colorScheme="red"
+                      onClick={logoutHandler}
+                      ml={3}
+                      px={6}
+                      borderRadius="8px"
+                      _hover={{ bg: "red.600" }}
+                    >
+                      Logout
+                    </Button>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialogOverlay>
+            </AlertDialog>
+          </HStack>
+        </Flex>
+      </Box>
+
+      {/* Marquee banner BELOW navbar */}
       {banner && window.location.pathname === "/" && (
         <div
           style={{
@@ -230,10 +253,10 @@ const AdminNavbar = () => {
             whiteSpace: "nowrap",
             padding: "12px 8px",
             position: "sticky",
-            top: "70px",
+            top: "64px", // adjust this to your navbar height
             zIndex: 999,
             fontWeight: "700",
-            marginTop: "8px",
+            marginTop: "64px", // optional spacing
           }}
         >
           <div
@@ -255,20 +278,20 @@ const AdminNavbar = () => {
 
           <style>
             {`
-        @keyframes marquee {
-          0% { transform: translateX(0%); }
-          100% { transform: translateX(-100%); }
-        }
+              @keyframes marquee {
+                0% { transform: translateX(0%); }
+                100% { transform: translateX(-100%); }
+              }
 
-        @keyframes shine {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
-      `}
+              @keyframes shine {
+                0% { background-position: -200% 0; }
+                100% { background-position: 200% 0; }
+              }
+            `}
           </style>
         </div>
       )}
-    </Box>
+    </>
   );
 };
 

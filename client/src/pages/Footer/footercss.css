@@ -1,34 +1,31 @@
-/* Base Footer Styles */
+/* ================= BASE FOOTER ================= */
 .footerCmp footer {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: flex-start;
-  background-color: white;
-  padding: 20px 40px; /* Reduced padding */
+  background-color: #fff;
+  padding: 20px 40px;
   color: black;
-  height: 300px; /* Set fixed height */
 }
 
-.footerCmp footer div {
+.footerCmp footer > div {
   flex: 1;
   min-width: 200px;
-  margin-bottom: 10px; /* Reduced margin for tighter layout */
+  margin-bottom: 15px;
 }
 
+/* ================= LOGO ================= */
 .footerCmp footer .logo {
   display: block;
-  height: 120px; /* Adjust height if needed */
-  width: auto;
-  margin: 0 auto 10px auto; /* Center logo */
+  height: 120px;
+  margin: 0 auto 10px;
 }
 
 .footerCmp .logoTagline {
   text-align: center;
   font-size: 16px;
   font-weight: 600;
-  margin: 5px 0; /* Reduced spacing above & below */
-  color: black;
 }
 
 .footerCmp .logoQuote {
@@ -36,113 +33,114 @@
   font-size: 12px;
   font-style: italic;
   color: gray;
-  margin: 2px 0 10px 0; /* Tight spacing */
 }
 
+/* ================= HEADINGS ================= */
 .footerCmp footer h1 {
   text-transform: uppercase;
   font-size: 16px;
   font-weight: 600;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
   text-align: center;
 }
 
+/* ================= LIST LINKS ================= */
 .footerCmp footer ul {
   list-style: none;
   padding: 0;
+  margin: 0;
   text-align: center;
 }
 
 .footerCmp footer li {
+  font-size: 14px;
   margin-bottom: 8px;
   cursor: pointer;
-  font-size: 14px;
-  transition: color 0.3s ease-in-out;
+  transition: color 0.3s ease;
 }
 
 .footerCmp footer li:hover {
   color: #808080;
 }
 
+/* ================= SOCIAL MEDIA ================= */
 .footerCmp .footerIcons {
   display: flex;
-  justify-content: center;
-  gap: 10px; /* Adjusted gap */
+  flex-direction: column;      /* one by one */
+  align-items: center;     /* desktop left */
+  gap: 10px;
   margin-top: 10px;
 }
 
-.footerCmp .footerIcons svg {
-  color: white;
-  font-size: 20px; /* Reduced icon size */
-  transition: color 0.3s ease-in-out;
+.footerCmp .footerIcons a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  color: black;
+  text-decoration: none;
+  transition: color 0.3s ease;
 }
 
-.footerCmp .footerIcons svg:hover {
-  color: #f5f5f5;
+.footerCmp .footerIcons a svg {
+  font-size: 18px;
+  color: black;
+  transition: color 0.3s ease;
 }
 
+.footerCmp .footerIcons a:hover,
+.footerCmp .footerIcons a:hover svg {
+  color: #ff4d6d;
+}
+
+/* ================= COPYRIGHT ================= */
 .footerCmp .paragraphFooter {
   width: 100%;
   text-align: center;
   font-size: 12px;
-  margin: 10px 0; /* Reduced margin */
+  margin-top: 10px;
   color: black;
+  padding-bottom: 25px;
 }
 
-/* ✅ Responsive Fixes ✅ */
-
-/* Tablet View (max-width: 992px) */
-@media screen and (max-width: 992px) {
+/* ================= TABLET ================= */
+@media (max-width: 992px) {
   .footerCmp footer {
-    flex-wrap: wrap;
     justify-content: center;
     text-align: center;
-    height: auto; /* Dynamic height */
-    padding: 20px;
   }
 
-  .footerCmp footer div {
+  .footerCmp footer > div {
     flex: 1 1 45%;
     max-width: 45%;
-    margin-bottom: 15px;
-    text-align: center;
+     padding: 10px 0; 
   }
 
   .footerCmp .footerIcons {
-    justify-content: center;
+    align-items: center;
   }
 }
 
-/* Mobile View (max-width: 768px) */
-@media screen and (max-width: 768px) {
+/* ================= MOBILE ================= */
+@media (max-width: 768px) {
   .footerCmp footer {
     flex-direction: column;
     align-items: center;
-    text-align: center;
-    height: auto; /* Dynamic height */
     padding: 15px;
   }
 
-  .footerCmp footer div {
-    flex: 1 1 100%;
+  .footerCmp footer > div {
     max-width: 100%;
     text-align: center;
   }
-.footerCmp .footerIcons svg {
-  color: white;
-  font-size: 20px;
-  transition: color 0.3s ease-in-out;
-}
-
-.footerCmp .footerIcons svg:hover {
-  color: #f5f5f5;
-}
 
   .footerCmp .footerIcons {
-    justify-content: center;
+    align-items: center;
   }
 
   .footerCmp .paragraphFooter {
     font-size: 10px;
   }
+
+
 }

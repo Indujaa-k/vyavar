@@ -608,34 +608,6 @@ const ProfileScreen = () => {
       <Box mx="auto" p={6}>
         {/* ADDRESS LIST */}
         {!showForm && (
-          // <Flex justify="space-between" mb={4}>
-          //   <Button
-          //     colorScheme="blue"
-          //     px={6}
-          //     py={2}
-          //     onClick={() => setShowForm(true)}
-          //   >
-          //     Add Address
-          //   </Button>
-          //   <Button
-          //     colorScheme="red"
-          //     onClick={() => {
-          //       setEditingAddress(null);
-          //       setNewAddress({
-          //         doorNo: "",
-          //         street: "",
-          //         nearestLandmark: "",
-          //         city: "",
-          //         state: "",
-          //         pin: "",
-          //         phoneNumber: "",
-          //         isDefault: false,
-          //       });
-          //     }}
-          //   >
-          //     Cancel
-          //   </Button>
-          // </Flex>
           <HStack w="100%" justify="space-between" mb={4}>
             <Button colorScheme="blue" onClick={() => setShowForm(true)}>
               Add Address
@@ -735,12 +707,12 @@ const ProfileScreen = () => {
               position="absolute"
               top="10px"
               right="10px"
-              zIndex={10} // ✅ IMPORTANT
-              bg="white" // ✅ clickable surface
+              zIndex={10}
+              bg="white"
               _hover={{ bg: "gray.100" }}
               aria-label="Close"
               onClick={(e) => {
-                e.stopPropagation(); // ✅ prevent parent interference
+                e.stopPropagation();
                 setShowForm(false);
                 setEditingAddress(null);
                 setNewAddress({
@@ -948,18 +920,31 @@ const ProfileScreen = () => {
                   justify="space-between"
                   align="center"
                   mb={2}
-                  display={{ base: "none", md: "flex" }} // 👈 DESKTOP ONLY
+                  display={{ base: "none", md: "flex" }} // DESKTOP ONLY
                 >
+                  {/* LEFT SIDE */}
                   <Box>
                     <Text fontSize="sm" color="gray.600">
                       Order ID: {order._id}
                     </Text>
+
                     <Text fontWeight="bold">
                       ₹{order.totalPrice.toFixed(2)} •{" "}
                       {new Date(order.createdAt).toLocaleDateString()}
                     </Text>
+
+                    {/* ✅ STATUS – LEFT SIDE */}
+                    <Text
+                      mt={1}
+                      fontSize="sm"
+                      fontWeight="600"
+                      color={getStatusColor(order.orderStatus)}
+                    >
+                      {getStatusLabel(order.orderStatus)}
+                    </Text>
                   </Box>
 
+                  {/* RIGHT SIDE */}
                   <Link to={`/order/${order._id}`}>
                     <Button size="sm" colorScheme="blue">
                       View Details
@@ -970,6 +955,7 @@ const ProfileScreen = () => {
                 <Flex
                   mt={4}
                   pt={3}
+                  mb={2}
                   borderTop="1px solid"
                   borderColor="gray.200"
                   justify="space-between"
@@ -1011,11 +997,12 @@ const ProfileScreen = () => {
                         key={item._id}
                         align="center"
                         gap={3}
-                        direction={{ base: "column", sm: "row" }}
+                        direction={{ base: "row", sm: "row" }} // 🔥 ALWAYS row
                       >
+                        {/* IMAGE */}
                         <Box w="60px" h="60px" flexShrink={0}>
                           <img
-                            src={item.product?.images?.[0]} // ← get first image from product
+                            src={item.product?.images?.[0]}
                             alt={item.name}
                             style={{
                               width: "100%",
@@ -1025,19 +1012,12 @@ const ProfileScreen = () => {
                             }}
                           />
                         </Box>
+
+                        {/* NAME + QTY */}
                         <Box flex="1">
                           <Text fontWeight="600">{item.name}</Text>
                           <Text fontSize="sm" color="gray.600">
                             Qty: {item.qty} • ₹{item.price.toFixed(2)}
-                          </Text>
-                        </Box>
-                        <Box>
-                          <Text
-                            fontSize="sm"
-                            fontWeight="600"
-                            color={getStatusColor(order.orderStatus)}
-                          >
-                            {getStatusLabel(order.orderStatus)}
                           </Text>
                         </Box>
                       </Flex>

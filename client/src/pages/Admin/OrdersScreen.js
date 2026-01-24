@@ -72,7 +72,7 @@ const OrdersScreen = () => {
   };
 
   const filteredOrders = orders
-    ?.slice() 
+    ?.slice()
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     ?.filter((order) => {
       if (!statusLower || statusLower === "allorders") return true;
@@ -136,6 +136,21 @@ const OrdersScreen = () => {
               const statusObj = getOrderStatus(order);
               const shipment = order.shipmentDetails?.[0] || {};
               const currentStatus = statusUpdates[order._id] || statusObj.label;
+              const getStatusOptions = (currentPageStatus) => {
+                if (!currentPageStatus || currentPageStatus === "allorders") {
+                  return ["CONFIRMED", "PACKED", "OUT_FOR_DELIVERY"];
+                }
+
+                if (currentPageStatus === "confirmed") {
+                  return ["PACKED", "OUT_FOR_DELIVERY"];
+                }
+
+                if (currentPageStatus === "packed") {
+                  return ["OUT_FOR_DELIVERY"];
+                }
+
+                return [];
+              };
 
               return (
                 <Box
@@ -203,14 +218,13 @@ const OrdersScreen = () => {
 
                     {/* Status */}
                     <Box>
-                      {!statusLower || statusLower === "allorders" ? (
+                      {statusLower === "dispatched" ||
+                      order.orderStatus === "OUT_FOR_DELIVERY" ? (
+                        <Badge colorScheme="blue">Dispatched</Badge>
+                      ) : (
                         <Select
                           size="sm"
-                          value={
-                            statusUpdates[order._id] ||
-                            order.orderStatus ||
-                            "CONFIRMED"
-                          }
+                          value={statusUpdates[order._id] || ""}
                           onChange={(e) =>
                             setStatusUpdates((prev) => ({
                               ...prev,
@@ -218,16 +232,22 @@ const OrdersScreen = () => {
                             }))
                           }
                         >
-                          <option value="CONFIRMED">Confirmed</option>
-                          <option value="PACKED">Packed</option>
-                          <option value="OUT_FOR_DELIVERY">Dispatched</option>
+                          {/* Default showing current page status */}
+                          <option value="" disabled>
+                            {statusLower === "confirmed" && "CONFIRMED"}
+                            {statusLower === "packed" && "PACKED"}
+                            {(!statusLower || statusLower === "allorders") &&
+                              "CONFIRMED"}
+                          </option>
+
+                          {getStatusOptions(statusLower).map((status) => (
+                            <option key={status} value={status}>
+                              {status === "OUT_FOR_DELIVERY"
+                                ? "Dispatched"
+                                : status}
+                            </option>
+                          ))}
                         </Select>
-                      ) : (
-                        <Badge colorScheme="blue">
-                          {order.orderStatus === "OUT_FOR_DELIVERY"
-                            ? "Dispatched"
-                            : order.orderStatus}
-                        </Badge>
                       )}
                     </Box>
 
@@ -246,15 +266,18 @@ const OrdersScreen = () => {
 
                     {/* Actions */}
                     <VStack spacing={1}>
-                      {(!statusLower || statusLower === "allorders") && (
-                        <Button
-                          size="xs"
-                          colorScheme="green"
-                          onClick={() => handleStatusUpdate(order._id)}
-                        >
-                          Update
-                        </Button>
-                      )}
+                      {statusLower !== "dispatched" &&
+                        order.orderStatus !== "OUT_FOR_DELIVERY" && (
+                          <Button
+                            size="xs"
+                            colorScheme="green"
+                            onClick={() => handleStatusUpdate(order._id)}
+                            
+                          >
+                            Update
+                          </Button>
+                        )}
+
                       <Button size="xs" colorScheme="blue">
                         <Link to={`/order/${order._id}`}>Details</Link>
                       </Button>

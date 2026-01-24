@@ -99,7 +99,8 @@ const AdminLayout = ({ children }) => {
   return (
     <>
       {/* Admin Navbar */}
-      <AdminNavbar />
+    <AdminNavbar setIsSidebarOpen={setIsSidebarOpen} />
+
       <Box display="flex">
         {/* Sidebar */}
         <Box
