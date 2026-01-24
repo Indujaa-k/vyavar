@@ -296,7 +296,7 @@ body {
     padding: 0;
     box-shadow: none;
   }
-
+  
   .dropdown-menu.mobile .category-contain {
     flex-direction: column;
     gap: 12px;

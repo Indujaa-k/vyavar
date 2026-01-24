@@ -40,14 +40,34 @@ const Footer = () => {
             </li>
           </ul>
         </div>
+        <div className="fooHelp socialMedia">
+          <h1>Social Media</h1>
 
-        <div className="fooHelp">
-          <h1>About Us</h1>
-          <ul>
-            <li>
-              <Link to="/about">About</Link>
-            </li>
-          </ul>
+          <div className="footerIcons">
+            <a
+              href="https://www.facebook.com/share/p/17RiMftCXv/?mibextid=qi2Omg"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <FiFacebook /> Facebook
+            </a>
+
+            <a
+              href="https://www.instagram.com/viyavarfashions?igsh=MXd3cXdyYnZkY3IwcA=="
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <FiInstagram /> Instagram
+            </a>
+
+            <a
+              href="https://www.youtube.com/@viyavarfashions"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <FiYoutube /> YouTube
+            </a>
+          </div>
         </div>
 
         <div className="fooHelp">
@@ -75,38 +95,6 @@ const Footer = () => {
             PALETTE PRODUCTION
           </a>
         </p>
-      </div>
-
-      {/* Social Media Icons */}
-      <div className="footerIcons">
-        <a
-          href="https://www.facebook.com/share/p/17RiMftCXv/?mibextid=qi2Omg"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <FiFacebook style={{ color: "black", fontSize: "20px" }} />
-        </a>
-        <a
-          href="https://www.instagram.com/viyavarfashions?igsh=MXd3cXdyYnZkY3IwcA=="
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <FiInstagram style={{ color: "black", fontSize: "20px" }} />
-        </a>
-        <a
-          href="https://www.youtube.com/@viyavarfashions"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <FiYoutube style={{ color: "black", fontSize: "20px" }} />
-        </a>
-        {/* <a
-          href="https://www.linkedin.com"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <AiFillLinkedin style={{ color: "black", fontSize: "20px" }} />
-        </a> */}
       </div>
     </div>
   );

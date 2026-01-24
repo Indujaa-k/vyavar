@@ -24,6 +24,8 @@ import {
   ModalHeader,
   ModalCloseButton,
   ModalBody,
+  Avatar,
+  Image,
 } from "@chakra-ui/react";
 
 const AdminReviewPage = () => {
@@ -129,6 +131,8 @@ const AdminReviewPage = () => {
             <Thead>
               <Tr>
                 <Th>User</Th>
+
+                <Th>Product</Th>
                 <Th>Comment</Th>
                 <Th>Rating</Th>
                 <Th>Action</Th>
@@ -138,7 +142,17 @@ const AdminReviewPage = () => {
               {pendingReviews.length > 0 ? (
                 pendingReviews.map((review) => (
                   <Tr key={review._id}>
-                    <Td>{review.name}</Td>
+                    <Td>{review.user?.name || "Unknown"}</Td>
+
+                    <Td>
+                      <Image
+                        src={review.product?.image || "/placeholder.png"}
+                        alt={review.product?.name || "Product"}
+                        boxSize="50px"
+                        objectFit="cover"
+                        borderRadius="md"
+                      />
+                    </Td>
                     <Td>{review.comment}</Td>
                     <Td>{review.rating} ⭐</Td>
                     <Td>
@@ -152,7 +166,6 @@ const AdminReviewPage = () => {
                         >
                           Approve
                         </Button>
-
                         <Button
                           colorScheme="red"
                           size="sm"
@@ -213,6 +226,8 @@ const AdminReviewPage = () => {
             <Thead>
               <Tr>
                 <Th>User</Th>
+
+                <Th>Product</Th>
                 <Th>Comment</Th>
                 <Th>Rating</Th>
                 <Th>Action</Th>
@@ -222,7 +237,16 @@ const AdminReviewPage = () => {
               {approvedReviews.length > 0 ? (
                 approvedReviews.map((review) => (
                   <Tr key={review._id}>
-                    <Td>{review.name}</Td>
+                    <Td>{review.user?.name || "Unknown"}</Td>
+                    <Td>
+                      <Image
+                        src={review.product?.image || "/placeholder.png"}
+                        alt={review.product?.name || "Product"}
+                        boxSize="50px"
+                        objectFit="cover"
+                        borderRadius="md"
+                      />
+                    </Td>
                     <Td>{review.comment}</Td>
                     <Td>{review.rating} ⭐</Td>
                     <Td>

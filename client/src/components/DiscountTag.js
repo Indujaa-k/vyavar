@@ -1,31 +1,51 @@
-import React, { useState } from "react";
-import { Box, Button, Image, Text, Link, Icon } from "@chakra-ui/react";
+import React, { useState, useEffect } from "react";
+import { Box, Button, Image, Icon } from "@chakra-ui/react";
 import { useNavigate, useLocation } from "react-router-dom";
-import DiscountImage from "../assets/discountpopup.png"; // Ensure correct path
+import DiscountImage from "../assets/discountpopup.png";
 import { FaCaretUp } from "react-icons/fa";
+
 const DiscountTag = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Extract gender from query parameters
+  // Get gender from URL
   const searchParams = new URLSearchParams(location.search);
   const gender = searchParams.get("gender");
-  // Toggle Popup
   const toggleDiscount = () => {
-    setIsOpen(!isOpen);
+    setIsOpen((prev) => !prev);
   };
 
-  // Navigate to "Upto 50%" Discount Page
+  // 🔔 Auto popup after 1 minute (for both login & non-login)
+  useEffect(() => {
+    const openTimer = setTimeout(() => {
+      setIsOpen(true);
+
+      // 👇 auto close after 2 seconds
+      const closeTimer = setTimeout(() => {
+        setIsOpen(false);
+      }, 5000);
+
+      return () => clearTimeout(closeTimer);
+    }, 5000); // popup open after 5 sec (testing)
+
+    return () => clearTimeout(openTimer);
+  }, []);
+
+  
   const handleNavigate = () => {
     if (gender === "Men") {
       navigate("/products?offerfilter=upto50&gender=Men");
     } else if (gender === "Women") {
       navigate("/products?offerfilter=upto50&gender=Women");
+    } else {
+      navigate("/products?offerfilter=upto50");
     }
   };
+
   return (
-    <Box position="fixed" top="40%" right="0" zIndex="2000" dis>
+    <Box position="fixed" top="40%" right="0" zIndex="2000">
+      {/* Side Button */}
       <Button
         onClick={toggleDiscount}
         bg="#000346"
@@ -44,13 +64,14 @@ const DiscountTag = () => {
         _hover={{ bg: "#ffb700" }}
         rightIcon={<Icon as={FaCaretUp} />}
       >
-        GET 50% OFF
+        GET 90% OFF
       </Button>
+
       {/* Popup */}
       {isOpen && (
         <Box
           position="fixed"
-          top="61%"
+          top="60%"
           right="40px"
           transform="translateY(-50%)"
           boxShadow="xl"
@@ -58,7 +79,7 @@ const DiscountTag = () => {
           zIndex="2000"
         >
           <Button onClick={handleNavigate} bg="transparent" p="0">
-            <Image src={DiscountImage} alt="Discount Offer" my="4" />
+            <Image src={DiscountImage} alt="Discount Offer" />
           </Button>
         </Box>
       )}
