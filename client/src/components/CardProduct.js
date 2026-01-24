@@ -76,37 +76,23 @@ const CardProduct = ({ product }) => {
   };
   const handlePrevImage = () => {
     setCurrentImageIndex((prev) =>
-      prev > 0 ? prev - 1 : product.images.length - 1
+      prev > 0 ? prev - 1 : product.images.length - 1,
     );
   };
 
   const handleNextImage = () => {
     setCurrentImageIndex((prev) =>
-      prev < product.images.length - 1 ? prev + 1 : 0
+      prev < product.images.length - 1 ? prev + 1 : 0,
     );
   };
 
   const discountPercent = product.subscriptionDiscountPercent || 0;
 
-  console.log("discount percent:" ,discountPercent)
+  console.log("discount percent:", discountPercent);
 
   const displayPrice = product.isSubscriptionApplied
     ? product.subscriptionPrice
     : product.price;
-
-    console.log("CARD PRODUCT DEBUG", {
-  id: product._id,
-  name: product.description,
-  price: product.price,
-  oldPrice: product.oldPrice,
-  discount: product.discount,
-  subscriptionPrice: product.subscriptionPrice,
-  subscriptionDiscountPercent: product.subscriptionDiscountPercent,
-  isSubscriptionApplied: product.isSubscriptionApplied,
-  images: product.images,
-  cartStatus: Incart,
-  favoriteStatus: isFavorite,
-});
 
   return (
     <>
@@ -138,9 +124,8 @@ const CardProduct = ({ product }) => {
 
             <Image
               className="imgProduct"
-              boxSize="450px"
-              objectFit="cover"
               src={product.images[0]}
+              alt={product.description}
             />
           </div>
           <div className="bottomcard">
@@ -148,68 +133,34 @@ const CardProduct = ({ product }) => {
               <span>{product.brandname}</span>
               <p className="productDescription">{product.description}</p>
             </Link>
-            {/* if error use this */}
-            {/* Favorite Button (Adds to Cart & Wishlist) */}
-            {/* {isFavorite ? (
-            <HiHeart className="iconFav" size="26" fill="red" />
-          ) : (
-            <HiOutlineHeart
-              className="iconFav"
-              size="26"
-              onClick={handleAddToCartAndWishlist}
-            />
-          )} */}
-
-            {/* Shopping Cart Icon */}
-            {Incart ? (
-              <HiHeart className="iconFav " size="26" fill="red" />
-            ) : (
-              <HiOutlineHeart className="iconFav" size="26" onClick={addcart} />
-            )}
-
-            {/* Price Section with Discount & Old Price */}
-            <div className="productpricecard">
-              {product.oldPrice && product.oldPrice > product.price && (
+            {/* Rating Component */}
+          </div>
+          <div className="productpricecard">
+            <span style={{ marginRight: "5px" }}>Rs.</span>
+            {product.oldPrice && product.oldPrice > product.price && (
+              <>
                 <span
                   className="oldPrice"
                   style={{
                     textDecoration: "line-through",
                     color: "#999",
-                    marginRight: "5px",
                     fontSize: "14px",
                   }}
                 >
-                  Rs. {product.oldPrice}
+                  {product.oldPrice}
                 </span>
-              )}
-              {/* <span
-                className="newPrice"
-                style={{
-                  fontSize: "16px",
-                  fontWeight: "bold",
-                  color: "#000",
-                }}
+              </>
+            )}
+            <span className="newPrice"> {displayPrice}</span>
+          </div>
+          <div>
+            {product.isSubscriptionApplied && (
+              <div
+                style={{ fontSize: "12px", color: "green", marginTop: "4px" }}
               >
-                Rs. {product.price} 
-              </span> */}
-              <span className="newPrice">Rs. {displayPrice}</span>
-
-              {product.isSubscriptionApplied && (
-                <div
-                  style={{ fontSize: "12px", color: "green", marginTop: "4px" }}
-                >
-                  {discountPercent}% OFF with subscriptions 
-                </div>
-              )}
-            </div>
-
-            {/* Rating Component */}
-            {/* <div className="Rating">
-            <Rating
-              value={product.rating}
-              text={`${product.numReviews} reviews`}
-            />
-          </div> */}
+                {discountPercent}% OFF with subscriptions
+              </div>
+            )}
           </div>
         </div>
       </Link>

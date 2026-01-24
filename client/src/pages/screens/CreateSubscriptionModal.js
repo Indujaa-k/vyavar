@@ -136,7 +136,7 @@ const CreateSubscriptionModal = ({ isOpen, onClose }) => {
 
           <VStack spacing={4} align="stretch">
             {/* ===== BASIC DETAILS ===== */}
-            <SimpleGrid columns={2} spacing={4}>
+            <SimpleGrid columns={1} spacing={4}>
               <FormControl isRequired>
                 <FormLabel>Title</FormLabel>
                 <Input
@@ -185,7 +185,7 @@ const CreateSubscriptionModal = ({ isOpen, onClose }) => {
             {/* ===== PRICING ===== */}
             <SimpleGrid columns={2} spacing={4}>
               <FormControl isRequired>
-                <FormLabel>Price</FormLabel>
+                <FormLabel>Subscription Price</FormLabel>
                 <Input
                   type="number"
                   value={price}
