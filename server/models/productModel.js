@@ -175,7 +175,6 @@ const productSchema = mongoose.Schema(
       },
       originAddress: {
         street1: { type: String, required: true },
-        street2: { type: String },
         city: { type: String, required: true },
         state: { type: String, required: true },
         zip: { type: Number, required: true },

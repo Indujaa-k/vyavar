@@ -244,7 +244,6 @@ const AdminNavbar = ({ setIsSidebarOpen }) => {
         </Flex>
       </Box>
 
-      {/* Marquee banner BELOW navbar */}
       {banner && window.location.pathname === "/" && (
         <div
           style={{

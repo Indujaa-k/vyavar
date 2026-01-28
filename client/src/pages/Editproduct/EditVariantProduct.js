@@ -32,6 +32,25 @@ const EditVariantProduct = () => {
   const dispatch = useDispatch();
   const toast = useToast();
   const fileInputRefs = useRef({});
+  const CATEGORY_DATA = [
+    {
+      name: "Topwear",
+      subcategories: ["T-Shirts", "Regular", "Oversized", "Full Sleeve"],
+    },
+    {
+      name: "Hoodies",
+      subcategories: ["Hooded Sweatshirts", "Zip Hoodies"],
+    },
+  ];
+
+  const options = {
+    gender: ["Men", "Women", "Unisex"],
+    type: ["Casual", "Formal", "Sports"],
+    ageRange: ["Kids", "Teen", "Adult"],
+    color: ["Red", "Blue", "Black", "White"],
+    fabric: ["Cotton", "Polyester", "Leather"],
+    sizes: ["S", "M", "L", "XL", "XXL"],
+  };
 
   // ================= REDUX STATES =================
   const productGroup = useSelector((state) => state.productGroup);
@@ -49,7 +68,24 @@ const EditVariantProduct = () => {
   const [commonState, setCommonState] = useState({
     brandname: "",
     description: "",
-    shippingDetails: "",
+    sizeChart: "",
+    sizeChartFile: null,
+    shippingDetails: {
+      weight: "",
+      dimensions: {
+        length: "",
+        width: "",
+        height: "",
+      },
+      originAddress: {
+        street: "",
+        city: "",
+        state: "",
+        zip: "",
+        country: "India",
+      },
+    },
+
     isFeatured: false,
     productdetails: {
       gender: "",
@@ -67,25 +103,25 @@ const EditVariantProduct = () => {
       fileInputRefs.current[variantId].click();
     }
   };
-  const options = {
-    gender: ["Men", "Women", "Unisex"],
-    category: [
-      "Clothing",
-      "Topwear",
-      "Bottomwear",
-      "Shirts",
-      "Hoodies",
-      "Innerwear",
-      "Footwear",
-      "Accessories",
-    ],
-    subcategory: ["Shirts", "Jeans", "Pants", "Shorts", "SweatPants", "Sets"],
-    type: ["Casual", "Formal", "Sports"],
-    ageRange: ["Kids", "Teen", "Adult"],
-    color: ["Red", "Blue", "Black", "White"],
-    fabric: ["Cotton", "Polyester", "Leather"],
-    sizes: ["S", "M", "L", "XL", "XXL"],
-  };
+  // const options = {
+  //   gender: ["Men", "Women", "Unisex"],
+  //   category: [
+  //     "Clothing",
+  //     "Topwear",
+  //     "Bottomwear",
+  //     "Shirts",
+  //     "Hoodies",
+  //     "Innerwear",
+  //     "Footwear",
+  //     "Accessories",
+  //   ],
+  //   subcategory: ["Shirts", "Jeans", "Pants", "Shorts", "SweatPants", "Sets"],
+  //   type: ["Casual", "Formal", "Sports"],
+  //   ageRange: ["Kids", "Teen", "Adult"],
+  //   color: ["Red", "Blue", "Black", "White"],
+  //   fabric: ["Cotton", "Polyester", "Leather"],
+  //   sizes: ["S", "M", "L", "XL", "XXL"],
+  // };
   const calculatePrice = (oldPrice, discount) => {
     if (!oldPrice || discount < 0) return 0;
     if (discount > 100) discount = 100;
@@ -116,7 +152,7 @@ const EditVariantProduct = () => {
         if (sizes.includes(size)) {
           if (stockValue > 0) {
             const confirmRemove = window.confirm(
-              `Stock for size ${size} is ${stockValue}. Remove this size and reset stock?`
+              `Stock for size ${size} is ${stockValue}. Remove this size and reset stock?`,
             );
             if (!confirmRemove) return v;
           }
@@ -140,7 +176,7 @@ const EditVariantProduct = () => {
             stockBySize: [...stockBySize, { size, stock: 0 }],
           },
         };
-      })
+      }),
     );
   };
   const [activeImage, setActiveImage] = useState({
@@ -159,7 +195,18 @@ const EditVariantProduct = () => {
       setCommonState({
         brandname: common.brandname || "",
         description: common.description || "",
-        shippingDetails: common.shippingDetails || "",
+        shippingDetails: common.shippingDetails || {
+          weight: "",
+          dimensions: { length: "", width: "", height: "" },
+          originAddress: {
+            street: "",
+            city: "",
+            state: "",
+            zip: "",
+            country: "India",
+          },
+        },
+        sizeChart: common.sizeChart || "",
         isFeatured: common.isFeatured || false,
         productdetails: {
           gender: common.productdetails?.gender || "",
@@ -202,7 +249,7 @@ const EditVariantProduct = () => {
 
     if (variantUpdateSuccess) {
       toast({ title: "Variant updated successfully", status: "success" });
-      setSavingVariantId(null); // ✅ HERE
+      setSavingVariantId(null);
     }
 
     if (variantUpdateError) {
@@ -216,16 +263,60 @@ const EditVariantProduct = () => {
     variantUpdateError,
     toast,
   ]);
+  useEffect(() => {
+    if (productGroup?.common) {
+      setCommonState((prev) => ({
+        ...prev,
+        sizeChart: productGroup.common.sizeChart || "",
+      }));
+    }
+  }, [productGroup]);
 
   // ================= GROUP UPDATE =================
   const updateGroupHandler = () => {
-    dispatch(updateProductGroupCommon(groupId, commonState));
+    const formData = new FormData();
+
+    formData.append("brandname", commonState.brandname);
+    formData.append("description", commonState.description);
+    formData.append("isFeatured", commonState.isFeatured);
+
+    formData.append(
+      "shippingDetails",
+      JSON.stringify(commonState.shippingDetails),
+    );
+
+    formData.append(
+      "productdetails",
+      JSON.stringify({
+        ...commonState.productdetails,
+        sizeChart: undefined,
+      }),
+    );
+
+    if (commonState.sizeChartFile) {
+      formData.append("sizeChart", commonState.sizeChartFile);
+    }
+    dispatch(
+      updateProductGroupCommon(groupId, {
+        brandname: commonState.brandname,
+        description: commonState.description,
+        shippingDetails: commonState.shippingDetails,
+        isFeatured: commonState.isFeatured,
+
+        gender: commonState.productdetails.gender,
+        category: commonState.productdetails.category,
+        subcategory: commonState.productdetails.subcategory,
+        type: commonState.productdetails.type,
+        fabric: commonState.productdetails.fabric,
+        ageRange: commonState.productdetails.ageRange,
+      }),
+    );
   };
 
   // ================= VARIANT HELPERS =================
   const updateVariantField = (id, field, value) => {
     setVariantState((prev) =>
-      prev.map((v) => (v._id === id ? { ...v, [field]: value } : v))
+      prev.map((v) => (v._id === id ? { ...v, [field]: value } : v)),
     );
   };
 
@@ -240,8 +331,8 @@ const EditVariantProduct = () => {
                 [field]: value,
               },
             }
-          : v
-      )
+          : v,
+      ),
     );
   };
   const updateStockBySize = (variantId, size, value) => {
@@ -250,7 +341,7 @@ const EditVariantProduct = () => {
         if (v._id !== variantId) return v;
 
         const stockBySize = v.productdetails.stockBySize.map((item) =>
-          item.size === size ? { ...item, stock: value } : item
+          item.size === size ? { ...item, stock: value } : item,
         );
 
         return {
@@ -260,10 +351,10 @@ const EditVariantProduct = () => {
             stockBySize,
           },
         };
-      })
+      }),
     );
   };
-
+  const API = process.env.REACT_APP_API_URL;
   // ================= SAVE VARIANT =================
   const saveVariantHandler = (variant) => {
     setSavingVariantId(variant._id); // 👈 ADD THIS
@@ -278,7 +369,7 @@ const EditVariantProduct = () => {
     formData.append("sizes", JSON.stringify(variant.productdetails.sizes));
     formData.append(
       "stockBySize",
-      JSON.stringify(variant.productdetails.stockBySize)
+      JSON.stringify(variant.productdetails.stockBySize),
     );
 
     if (variant.replacedImages) {
@@ -325,6 +416,7 @@ const EditVariantProduct = () => {
           Edit Product Group
         </Heading>
 
+        {/* ===== BASIC DETAILS ===== */}
         <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={6}>
           <FormControl>
             <FormLabel>Brand Name :</FormLabel>
@@ -347,15 +439,184 @@ const EditVariantProduct = () => {
           </FormControl>
 
           <FormControl>
-            <FormLabel>Gender :</FormLabel>
+            <FormLabel>Gender</FormLabel>
+            <Input as="select" value={commonState.productdetails.gender}>
+              <option value="">Select Gender</option>
+              {options.gender.map((g) => (
+                <option key={g}>{g}</option>
+              ))}
+            </Input>
+          </FormControl>
+
+          <FormControl>
+            <FormLabel>Category</FormLabel>
+            <Input as="select" value={commonState.productdetails.category}>
+              <option value="">Select Category</option>
+              {CATEGORY_DATA.map((cat) => (
+                <option key={cat.name}>{cat.name}</option>
+              ))}
+            </Input>
+          </FormControl>
+
+          <FormControl>
+            <FormLabel>Subcategory</FormLabel>
+            <Input as="select" value={commonState.productdetails.subcategory}>
+              <option value="">Select Subcategory</option>
+            </Input>
+          </FormControl>
+
+          <FormControl>
+            <FormLabel>Type</FormLabel>
+            <Input as="select" value={commonState.productdetails.type}>
+              <option value="">Select Type</option>
+              {options.type.map((t) => (
+                <option key={t}>{t}</option>
+              ))}
+            </Input>
+          </FormControl>
+
+          <FormControl>
+            <FormLabel>Age Range</FormLabel>
+            <Input as="select" value={commonState.productdetails.ageRange}>
+              <option value="">Select Age Range</option>
+              {options.ageRange.map((a) => (
+                <option key={a}>{a}</option>
+              ))}
+            </Input>
+          </FormControl>
+
+          <FormControl>
+            <FormLabel>Fabric</FormLabel>
+            <Input as="select" value={commonState.productdetails.fabric}>
+              <option value="">Select Fabric</option>
+              {options.fabric.map((f) => (
+                <option key={f}>{f}</option>
+              ))}
+            </Input>
+          </FormControl>
+
+          {/* ===== SIZE CHART FULL WIDTH ===== */}
+          <FormControl gridColumn="1 / -1">
+            <FormLabel>Size Chart</FormLabel>
+
+            {commonState.sizeChart && (
+              <Box mb={3}>
+                <iframe
+                  src={`${process.env.REACT_APP_API_URL}/${commonState.sizeChart}`}
+                  width="100%"
+                  height="250"
+                  style={{ border: "1px solid #ccc", borderRadius: "8px" }}
+                />
+              </Box>
+            )}
+
+            <Input type="file" />
+          </FormControl>
+        </SimpleGrid>
+
+        <Heading size="md" mt={6} mb={3}>
+          🚚 Shipping Details
+        </Heading>
+
+        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+          <FormControl>
+            <FormLabel>Weight (kg)</FormLabel>
             <Input
-              value={commonState.productdetails.gender}
+              type="number"
+              value={commonState.shippingDetails.weight}
               onChange={(e) =>
                 setCommonState({
                   ...commonState,
-                  productdetails: {
-                    ...commonState.productdetails,
-                    gender: e.target.value,
+                  shippingDetails: {
+                    ...commonState.shippingDetails,
+                    weight: e.target.value,
+                  },
+                })
+              }
+            />
+          </FormControl>
+
+          <SimpleGrid columns={3} spacing={3}>
+            <FormControl>
+              <FormLabel>Length (cm)</FormLabel>
+              <Input
+                type="number"
+                value={commonState.shippingDetails.dimensions.length}
+                onChange={(e) =>
+                  setCommonState({
+                    ...commonState,
+                    shippingDetails: {
+                      ...commonState.shippingDetails,
+                      dimensions: {
+                        ...commonState.shippingDetails.dimensions,
+                        length: e.target.value,
+                      },
+                    },
+                  })
+                }
+              />
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Width (cm)</FormLabel>
+              <Input
+                type="number"
+                value={commonState.shippingDetails.dimensions.width}
+                onChange={(e) =>
+                  setCommonState({
+                    ...commonState,
+                    shippingDetails: {
+                      ...commonState.shippingDetails,
+                      dimensions: {
+                        ...commonState.shippingDetails.dimensions,
+                        width: e.target.value,
+                      },
+                    },
+                  })
+                }
+              />
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Height (cm)</FormLabel>
+              <Input
+                type="number"
+                value={commonState.shippingDetails.dimensions.height}
+                onChange={(e) =>
+                  setCommonState({
+                    ...commonState,
+                    shippingDetails: {
+                      ...commonState.shippingDetails,
+                      dimensions: {
+                        ...commonState.shippingDetails.dimensions,
+                        height: e.target.value,
+                      },
+                    },
+                  })
+                }
+              />
+            </FormControl>
+          </SimpleGrid>
+        </SimpleGrid>
+
+        <Heading size="md" mt={6} mb={3}>
+          📍 Origin Address
+        </Heading>
+
+        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+          <FormControl>
+            <FormLabel>City</FormLabel>
+            <Input
+              value={commonState.shippingDetails.originAddress.city}
+              onChange={(e) =>
+                setCommonState({
+                  ...commonState,
+                  shippingDetails: {
+                    ...commonState.shippingDetails,
+                    originAddress: {
+                      ...commonState.shippingDetails.originAddress,
+                      city: e.target.value,
+                    },
                   },
                 })
               }
@@ -363,15 +624,18 @@ const EditVariantProduct = () => {
           </FormControl>
 
           <FormControl>
-            <FormLabel>Category :</FormLabel>
+            <FormLabel>State</FormLabel>
             <Input
-              value={commonState.productdetails.category}
+              value={commonState.shippingDetails.originAddress.state}
               onChange={(e) =>
                 setCommonState({
                   ...commonState,
-                  productdetails: {
-                    ...commonState.productdetails,
-                    category: e.target.value,
+                  shippingDetails: {
+                    ...commonState.shippingDetails,
+                    originAddress: {
+                      ...commonState.shippingDetails.originAddress,
+                      state: e.target.value,
+                    },
                   },
                 })
               }
@@ -379,63 +643,18 @@ const EditVariantProduct = () => {
           </FormControl>
 
           <FormControl>
-            <FormLabel>Subcategory :</FormLabel>
+            <FormLabel>ZIP</FormLabel>
             <Input
-              value={commonState.productdetails.subcategory}
+              value={commonState.shippingDetails.originAddress.zip}
               onChange={(e) =>
                 setCommonState({
                   ...commonState,
-                  productdetails: {
-                    ...commonState.productdetails,
-                    subcategory: e.target.value,
-                  },
-                })
-              }
-            />
-          </FormControl>
-
-          <FormControl>
-            <FormLabel>Type :</FormLabel>
-            <Input
-              value={commonState.productdetails.type}
-              onChange={(e) =>
-                setCommonState({
-                  ...commonState,
-                  productdetails: {
-                    ...commonState.productdetails,
-                    type: e.target.value,
-                  },
-                })
-              }
-            />
-          </FormControl>
-
-          <FormControl>
-            <FormLabel>Age Range :</FormLabel>
-            <Input
-              value={commonState.productdetails.ageRange}
-              onChange={(e) =>
-                setCommonState({
-                  ...commonState,
-                  productdetails: {
-                    ...commonState.productdetails,
-                    ageRange: e.target.value,
-                  },
-                })
-              }
-            />
-          </FormControl>
-
-          <FormControl>
-            <FormLabel>Fabric :</FormLabel>
-            <Input
-              value={commonState.productdetails.fabric}
-              onChange={(e) =>
-                setCommonState({
-                  ...commonState,
-                  productdetails: {
-                    ...commonState.productdetails,
-                    fabric: e.target.value,
+                  shippingDetails: {
+                    ...commonState.shippingDetails,
+                    originAddress: {
+                      ...commonState.shippingDetails.originAddress,
+                      zip: e.target.value,
+                    },
                   },
                 })
               }
@@ -503,7 +722,7 @@ const EditVariantProduct = () => {
                   {(variant.images || []).slice(0, 5).map((img, index) => (
                     <Image
                       key={index}
-                      src={img}
+                      src={`${API}/${img}`}
                       boxSize="70px"
                       objectFit="cover"
                       borderRadius="md"
@@ -556,7 +775,7 @@ const EditVariantProduct = () => {
                             [activeImage.index]: file, // 👈 track by index
                           },
                         };
-                      })
+                      }),
                     );
                   }}
                 />
@@ -572,7 +791,7 @@ const EditVariantProduct = () => {
                         updateVariantDetails(
                           variant._id,
                           "color",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                     />
@@ -594,7 +813,7 @@ const EditVariantProduct = () => {
                         updateVariantField(
                           variant._id,
                           "price",
-                          calculatePrice(oldPrice, discount)
+                          calculatePrice(oldPrice, discount),
                         );
                       }}
                     />
@@ -617,7 +836,7 @@ const EditVariantProduct = () => {
                         updateVariantField(
                           variant._id,
                           "price",
-                          calculatePrice(oldPrice, discount)
+                          calculatePrice(oldPrice, discount),
                         );
                       }}
                     />
@@ -639,7 +858,7 @@ const EditVariantProduct = () => {
                         updateVariantField(
                           variant._id,
                           "discount",
-                          calculateDiscount(oldPrice, price)
+                          calculateDiscount(oldPrice, price),
                         );
                       }}
                     />
@@ -655,7 +874,7 @@ const EditVariantProduct = () => {
                         <Checkbox
                           key={size}
                           isChecked={variant.productdetails.sizes.includes(
-                            size
+                            size,
                           )}
                           onChange={() => toggleSize(variant._id, size)}
                         >
@@ -681,7 +900,7 @@ const EditVariantProduct = () => {
                               updateStockBySize(
                                 variant._id,
                                 item.size,
-                                Number(e.target.value)
+                                Number(e.target.value),
                               )
                             }
                           />
