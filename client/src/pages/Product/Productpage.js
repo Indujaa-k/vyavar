@@ -1126,7 +1126,7 @@ const Productpage = () => {
           my={8}
         >
           <Heading as="h3" size="sm" mb={4} ml={20}>
-            RECOMMENDED
+            Recommended Products
           </Heading>
           {relatedLoading ? (
             <HashLoader color={"#36D7B7"} />

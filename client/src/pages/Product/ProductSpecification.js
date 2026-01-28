@@ -22,7 +22,7 @@ const ProductSpecification = ({ product }) => {
 
   return (
     <>
-      <Tabs className="product-info-table">
+      <Tabs className="product-info-table" isFitted={false} variant="unstyled">
         <TabList>
           <Tab className="product-info-header">SPECIFICATION</Tab>
           <Tab className="product-info-header">DESCRIPTION</Tab>
