@@ -22,20 +22,16 @@ const storage = multer.diskStorage({
     if (file.fieldname === "profilePicture") {
       dir = "uploads/profiles";
     } else if (file.fieldname === "images") {
-
-    /* ✅ PRODUCT IMAGES */
+      /* ✅ PRODUCT IMAGES */
       dir = "uploads/products/images";
     } else if (file.fieldname === "photos") {
-
-    /* ✅ REVIEW IMAGES */
+      /* ✅ REVIEW IMAGES */
       dir = "uploads/reviews";
     } else if (file.mimetype.startsWith("video")) {
-
-    /* ✅ BANNER VIDEOS */
+      /* ✅ BANNER VIDEOS */
       dir = "uploads/banners/videos";
     } else if (file.mimetype === "application/pdf") {
-
-    /* ✅ PDF FILES */
+      /* ✅ PDF FILES */
       dir = "uploads/pdfs";
     }
 
@@ -59,6 +55,8 @@ const fileFilter = (req, file, cb) => {
     "image/jpeg",
     "image/png",
     "image/jpg",
+    "image/webp",
+    "image/avif",
     "video/mp4",
     "video/avi",
     "application/pdf",

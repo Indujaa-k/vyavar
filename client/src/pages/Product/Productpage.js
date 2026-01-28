@@ -624,25 +624,50 @@ const Productpage = () => {
                     <HStack spacing={2} mt={2}>
                       {availableSizes.map((size) => (
                         <Button
-                          key={size}
-                          onClick={() => setSelectedSize(size)}
-                          border="2px solid"
-                          borderColor="#039cc3ff"
-                          bg={selectedSize === size ? "#039cc3ff" : "white"}
-                          color={selectedSize === size ? "white" : "#039cc3ff"}
-                          _hover={{
-                            bg:
-                              selectedSize === size ? "#039cc3ff" : "gray.100",
-                          }}
-                          px={5}
-                          py={3}
-                          minW="30px"
-                          minH="50px"
-                          fontSize="lg"
-                          disabled={sizeStock[size] === 0} // 🔹 Disable if out of stock
-                        >
-                          {size} {sizeStock[size] === 0 && "(Out of Stock)"}
-                        </Button>
+  key={size}
+  onClick={() => setSelectedSize(size)}
+  position="relative"
+  border="2px solid"
+  borderColor="#039cc3ff"
+  bg={selectedSize === size ? "#039cc3ff" : "white"}
+  color={selectedSize === size ? "white" : "#039cc3ff"}
+  px={5}
+  py={3}
+  minW="30px"
+  minH="50px"
+  fontSize="lg"
+  disabled={sizeStock[size] === 0}
+>
+  {size}
+
+  {/* Desktop only text */}
+  {sizeStock[size] === 0 && (
+    <Text
+      as="span"
+      display={{ base: "none", lg: "inline" }}
+      ml={1}
+      fontSize="sm"
+    >
+      (Out of Stock)
+    </Text>
+  )}
+
+  {/* 🔥 FULL WIDTH STRIKE (Mobile only) */}
+  {sizeStock[size] === 0 && (
+    <Box
+      position="absolute"
+      top="50%"
+      left="5px"
+      right="5px"
+      height="2px"
+      bg="gray.500"
+      display={{ base: "block", lg: "none" }}
+      transform="translateY(-50%)"
+      pointerEvents="none"
+    />
+  )}
+</Button>
+
                       ))}
                     </HStack>
                     <Divider my={3} />

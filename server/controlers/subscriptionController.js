@@ -2,10 +2,29 @@ import asyncHandler from "express-async-handler";
 import Subscription from "../models/subscriptionModel.js";
 
 // GET all subscriptions (Admin)
+// const getSubscriptions = asyncHandler(async (req, res) => {
+//   const subscriptions = await Subscription.find({}).sort({ createdAt: -1 });
+//   res.json(subscriptions);
+// });
+
 const getSubscriptions = asyncHandler(async (req, res) => {
+  const today = new Date();
+
+  // Auto-expire subscriptions
+  await Subscription.updateMany(
+    {
+      isActive: true,
+      endDate: { $lt: today },
+    },
+    {
+      $set: { isActive: false },
+    }
+  );
+
   const subscriptions = await Subscription.find({}).sort({ createdAt: -1 });
   res.json(subscriptions);
 });
+
 
 // CREATE subscription (Admin)
 const createSubscription = asyncHandler(async (req, res) => {
@@ -81,6 +100,50 @@ const updateSubscription = asyncHandler(async (req, res) => {
 });
 
 // TOGGLE subscription (Admin)
+// const toggleSubscriptionStatus = asyncHandler(async (req, res) => {
+//   const subscription = await Subscription.findById(req.params.id);
+
+//   if (!subscription) {
+//     res.status(404);
+//     throw new Error("Subscription not found");
+//   }
+
+//   const today = new Date();
+
+//   // 🚫 BLOCK if subscription period is over
+//   if (
+//     !subscription.isActive &&
+//     subscription.endDate < today
+//   ) {
+//     res.status(400);
+//     throw new Error(
+//       "Subscription period is expired. Please create a new subscription."
+//     );
+//   }
+
+//   // 🔴 If activating
+//   if (!subscription.isActive) {
+//     // Deactivate other active plans
+//     await Subscription.updateMany(
+//       { isActive: true },
+//       { $set: { isActive: false } }
+//     );
+
+//     subscription.isActive = true;
+//   } else {
+//     subscription.isActive = false;
+//   }
+
+//   await subscription.save();
+
+//   res.json({
+//     message: `Subscription ${
+//       subscription.isActive ? "activated" : "deactivated"
+//     }`,
+//     subscription,
+//   });
+// });
+
 const toggleSubscriptionStatus = asyncHandler(async (req, res) => {
   const subscription = await Subscription.findById(req.params.id);
 
@@ -91,25 +154,23 @@ const toggleSubscriptionStatus = asyncHandler(async (req, res) => {
 
   const today = new Date();
 
-  // 🚫 BLOCK if subscription period is over
-  if (
-    !subscription.isActive &&
-    subscription.endDate < today
-  ) {
+  // 🔴 FORCE EXPIRE
+  if (subscription.endDate < today) {
+    subscription.isActive = false;
+    await subscription.save();
+
     res.status(400);
     throw new Error(
       "Subscription period is expired. Please create a new subscription."
     );
   }
 
-  // 🔴 If activating
+  // 🟢 Activate
   if (!subscription.isActive) {
-    // Deactivate other active plans
     await Subscription.updateMany(
       { isActive: true },
       { $set: { isActive: false } }
     );
-
     subscription.isActive = true;
   } else {
     subscription.isActive = false;
@@ -124,6 +185,7 @@ const toggleSubscriptionStatus = asyncHandler(async (req, res) => {
     subscription,
   });
 });
+
 
 // GET active subscription (Public)
 const getActiveSubscription = asyncHandler(async (req, res) => {
