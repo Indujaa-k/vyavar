@@ -572,6 +572,9 @@ const createProduct = asyncHandler(async (req, res) => {
       typeof shippingDetails === "string"
         ? JSON.parse(shippingDetails)
         : shippingDetails;
+    if (parsedShippingDetails?.originAddress?.street2 !== undefined) {
+      delete parsedShippingDetails.originAddress.street2;
+    }
 
     // 🔥 GROUP ID
     const productGroupId = new mongoose.Types.ObjectId().toString();
@@ -684,7 +687,13 @@ const updateProduct = asyncHandler(async (req, res) => {
   }
 
   if (req.body.shippingDetails) {
-    product.shippingDetails = JSON.parse(req.body.shippingDetails);
+    const shipping = JSON.parse(req.body.shippingDetails);
+
+    if (shipping?.originAddress?.street2 !== undefined) {
+      delete shipping.originAddress.street2;
+    }
+
+    product.shippingDetails = shipping;
   }
 
   // Images (optional replace)
@@ -1024,11 +1033,11 @@ const approveReview = asyncHandler(async (req, res) => {
   review.approved = true; // ✅ Mark review as approved
 
   try {
-    console.log("✅ Before Saving:", product.reviews); // ✅ Debugging before saving
+    console.log("✅ Before Saving:", product.reviews);
 
-    await product.save(); // ✅ Save changes to database
+    await product.save();
 
-    console.log("✅ After Saving:", product.reviews); // ✅ Debugging after saving
+    console.log("✅ After Saving:", product.reviews);
     res.json({ message: "Review approved" });
   } catch (error) {
     console.error("❌ ERROR Saving Review:", error);
@@ -1135,13 +1144,19 @@ const getProductFullById = asyncHandler(async (req, res) => {
 });
 
 const updateGroupCommonFields = asyncHandler(async (req, res) => {
-  const products = await Product.updateMany(
+  const shipping = req.body.shippingDetails;
+
+  if (shipping?.originAddress?.street2 !== undefined) {
+    delete shipping.originAddress.street2;
+  }
+
+  await Product.updateMany(
     { productGroupId: req.params.groupId },
     {
       $set: {
         brandname: req.body.brandname,
         description: req.body.description,
-        shippingDetails: req.body.shippingDetails,
+        shippingDetails: shipping,
         isFeatured: req.body.isFeatured,
         "productdetails.gender": req.body.gender,
         "productdetails.category": req.body.category,
@@ -1149,6 +1164,7 @@ const updateGroupCommonFields = asyncHandler(async (req, res) => {
         "productdetails.type": req.body.type,
         "productdetails.fabric": req.body.fabric,
         "productdetails.ageRange": req.body.ageRange,
+        sizeChart: req.body.sizeChart,
       },
     },
   );
@@ -1325,6 +1341,7 @@ const getProductGroup = asyncHandler(async (req, res) => {
         type: base.productdetails.type,
         fabric: base.productdetails.fabric,
         ageRange: base.productdetails.ageRange,
+        sizeChart: base.sizeChart,
       },
     },
     variants: products,

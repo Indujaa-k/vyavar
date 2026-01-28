@@ -13,6 +13,7 @@ import {
   Stack,
   Badge,
 } from "@chakra-ui/react";
+const API_URL = process.env.REACT_APP_API_URL;
 
 const ProductViewModal = ({ isOpen, onClose, product }) => {
   const [activeImage, setActiveImage] = useState("");

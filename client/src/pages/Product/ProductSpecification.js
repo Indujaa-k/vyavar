@@ -10,6 +10,12 @@ import {
   Collapse,
   Box,
   Text,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
 } from "@chakra-ui/react";
 import { useState } from "react";
 import { ChevronUpIcon, ChevronDownIcon } from "@chakra-ui/icons";
@@ -237,20 +243,22 @@ const SizeChart = ({ product }) => {
     return <Text fontWeight="bold">Size Chart: Not Available</Text>;
   }
 
+  const API_URL = process.env.REACT_APP_API_URL;
+
+  const fileUrl = `${API_URL}/${product.sizeChart.replace(/\\/g, "/")}`;
+
   return (
-    <Box mt={4}>
-      <Text fontSize="lg" fontWeight="bold" mb={3}>
+    <Box mt={4} border="1px solid #e2e8f0" borderRadius="md" overflow="hidden">
+      <Box bg="black" color="white" p={3} fontWeight="bold">
         Size Chart
-      </Text>
+      </Box>
 
       <iframe
-        src={`https://docs.google.com/gview?url=${encodeURIComponent(
-          product.sizeChart,
-        )}&embedded=true`}
+        src={fileUrl}
         width="100%"
-        height="400px"
-        style={{ border: "1px solid #ccc", borderRadius: "8px" }}
-        title="Size Chart"
+        height="500px"
+        style={{ border: "none" }}
+        title="Size Chart PDF"
       />
     </Box>
   );
