@@ -104,7 +104,7 @@ const IncomeByPincode = () => {
     );
 
   return (
-    <Flex direction="column" align="center" mt={10} px={4}>
+    <Flex direction="column" align="center" mt={0} px={4}>
       <h1 className="titlepanel">Income by Pincode</h1>
 
       <Box

@@ -58,14 +58,14 @@ const AdminNavbar = ({ setIsSidebarOpen }) => {
     setIsSidebarOpen(true);
     navigate(-1);
   };
-
+  const API = process.env.REACT_APP_API_URL;
   return (
     <>
       <Box
         as="nav"
         bg="#09254a" // ✅ background color
         px={4}
-        py={3}
+        py={4}
         color="white" // ✅ text color white
         position="fixed"
         top={0}
@@ -109,7 +109,7 @@ const AdminNavbar = ({ setIsSidebarOpen }) => {
                     src={
                       user.profilePicture.startsWith("http")
                         ? user.profilePicture
-                        : `http://localhost:5000${user.profilePicture}`
+                        : `${API}${user.profilePicture}`
                     }
                     alt="Profile"
                     style={{
@@ -253,10 +253,10 @@ const AdminNavbar = ({ setIsSidebarOpen }) => {
             whiteSpace: "nowrap",
             padding: "12px 8px",
             position: "sticky",
-            top: "64px", // adjust this to your navbar height
+            // top: "64px",
             zIndex: 999,
             fontWeight: "700",
-            marginTop: "64px", // optional spacing
+            // marginTop: "8px",
           }}
         >
           <div

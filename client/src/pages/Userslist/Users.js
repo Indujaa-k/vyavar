@@ -45,6 +45,13 @@ const Users = () => {
 
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedUser, setSelectedUser] = React.useState(null);
+  const {
+    isOpen: isDeleteOpen,
+    onOpen: onDeleteOpen,
+    onClose: onDeleteClose,
+  } = useDisclosure();
+
+  const [userToDelete, setUserToDelete] = React.useState(null);
 
   const openViewModal = (user) => {
     setSelectedUser(user);
@@ -59,11 +66,19 @@ const Users = () => {
     }
   }, [dispatch, navigate, successDelete, userInfo]);
 
-  const deletehandler = (id) => {
-    if (window.confirm("Are You Sure?")) {
-      dispatch(DeleteUser(id));
+  const openDeleteModal = (user) => {
+    setUserToDelete(user);
+    onDeleteOpen();
+  };
+
+  const confirmDelete = () => {
+    if (userToDelete) {
+      dispatch(DeleteUser(userToDelete._id));
+      onDeleteClose();
+      setUserToDelete(null);
     }
   };
+
   return (
     <>
       <div className="Users">
@@ -193,7 +208,7 @@ const Users = () => {
                             colorScheme="red"
                             leftIcon={<AiFillDelete size="16" />}
                             size="xs"
-                            onClick={() => deletehandler(user._id)}
+                            onClick={() => openDeleteModal(user)}
                           >
                             DELETE
                           </Button>
@@ -322,6 +337,31 @@ const Users = () => {
               </Stack>
             )}
           </ModalBody>
+        </ModalContent>
+      </Modal>
+
+      <Modal isOpen={isDeleteOpen} onClose={onDeleteClose} isCentered>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader color="red.500">Confirm Deletion</ModalHeader>
+          <ModalCloseButton />
+
+          <ModalBody>
+            <Text>
+              Are you sure you want to delete{" "}
+              <strong>{userToDelete?.name}</strong>?
+            </Text>
+            <Text fontSize="sm" color="gray.500" mt={2}>
+              This action cannot be undone.
+            </Text>
+          </ModalBody>
+
+          <Stack direction="row" justify="flex-end" p={4} spacing={3}>
+            <Button onClick={onDeleteClose}>Cancel</Button>
+            <Button colorScheme="red" onClick={confirmDelete}>
+              Delete
+            </Button>
+          </Stack>
         </ModalContent>
       </Modal>
     </>

@@ -15,6 +15,7 @@ import {
   Text,
   Center,
 } from "@chakra-ui/react";
+import { px } from "framer-motion";
 
 const TransactionTable = () => {
   const dispatch = useDispatch();
@@ -87,7 +88,7 @@ const TransactionTable = () => {
   });
 
   return (
-    <Box p={6} minH="100vh" m={10}>
+    <Box p={6} minH="100vh" m={10} mt={0} mb={0}>
       {/* Loading & Error Handling */}
       <Flex
         justify="space-between"
