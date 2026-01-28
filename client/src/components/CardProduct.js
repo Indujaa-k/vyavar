@@ -128,7 +128,6 @@ const CardProduct = ({ product }) => {
               objectFit="cover"
               src={`${process.env.REACT_APP_API_URL}/${product.images[0]}`}
             />
-            
           </div>
           <div className="bottomcard">
             <Link to={`/product/${product._id}`} exact>

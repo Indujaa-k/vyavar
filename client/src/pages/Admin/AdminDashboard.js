@@ -20,7 +20,7 @@ const AdminDashboard = () => {
   }, [dispatch, user]);
 
   return (
-    <Box mt={20} p="5">
+    <Box p="5">
       <Text fontWeight="lg" fontSize="lg">
         Welcome Admin..!
       </Text>

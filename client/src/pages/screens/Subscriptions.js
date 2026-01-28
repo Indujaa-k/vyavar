@@ -73,7 +73,7 @@ const Subscriptions = () => {
   };
 
   return (
-    <Box p={6} mt={6}>
+    <Box p={6} >
       <Flex justify="space-between" mb={5}>
         <Text fontSize="2xl" fontWeight="bold">
           Subscriptions

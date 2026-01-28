@@ -161,7 +161,7 @@ const OfferManagementScreen = () => {
   };
 
   return (
-    <Box p={6} mt={10}>
+    <Box>
       <Card shadow="md">
         <CardHeader>
           <HStack justify="space-between">

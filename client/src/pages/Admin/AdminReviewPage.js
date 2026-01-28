@@ -115,7 +115,7 @@ const AdminReviewPage = () => {
   const approvedReviews = localReviews.filter((r) => r.approved);
 
   return (
-    <Box mt={20} p={10} borderWidth={1} borderRadius="lg" boxShadow="lg">
+    <Box  p={10} borderWidth={1} borderRadius="lg" boxShadow="lg">
       <h1 className="titlepanel">Reviews</h1>
 
       {loading ? (
@@ -123,7 +123,7 @@ const AdminReviewPage = () => {
       ) : (
         <>
           {/* Pending Reviews */}
-          <Text fontSize="2xl" mt={5} mb={3}>
+          <Text fontSize="2xl" mb={3}>
             Pending Reviews
           </Text>
 

@@ -76,7 +76,7 @@ const OrdersScreen = () => {
     ?.slice()
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     ?.filter((order) => {
-      if (!statusLower || statusLower === "allorders") return true;
+      if (!statusLower || statusLower === "all orders") return true;
 
       if (statusLower === "confirmed") return order.orderStatus === "CONFIRMED";
 
@@ -102,17 +102,17 @@ const OrdersScreen = () => {
   };
 
   return (
-    <Box p={8}>
+    <Box p={8} pt={0}>
       <Box
         display="flex"
         justifyContent="space-between"
         alignItems="center"
         mb={4}
-        mt={8}
+        mt={0}
         w="100%"
       >
         <Heading fontSize="lg">
-          {statusLower ? `${statusLower.toUpperCase()} Orders` : "All Orders"}
+          {statusLower ? `${statusLower.toUpperCase()} ` : "All Orders"}
         </Heading>
 
         <Box maxW="200px" flexShrink={0}>

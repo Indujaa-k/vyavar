@@ -44,7 +44,7 @@ const Orders = () => {
   // Redux states
   const salesDataState = useSelector((state) => state.sales);
   const { loading: loadingSales, sales, error: errorSales } = salesDataState;
-
+  const API_URL = process.env.REACT_APP_API_URL;
   const revenueDataState = useSelector((state) => state.revenue);
   const {
     loading: loadingRevenue,
@@ -230,26 +230,27 @@ const Orders = () => {
 
                     {/* 🔹 Header */}
                     <Grid
-                      templateColumns="repeat(7, 1fr)"
+                      templateColumns="1fr 1fr 1fr 1fr 3fr 1fr"
+                      alignItems="center"
                       fontSize="sm"
-                      fontWeight="bold"
-                      color="gray.600"
-                      mb={2}
+                      justifyContent="space-between"
+                      columnGap={1}
                     >
                       <Text>User</Text>
                       <Text>Date</Text>
                       <Text>Total</Text>
-                      <Text>Payment</Text>
+                      <Text>Status</Text>
                       <Text textAlign="center">Images</Text>
                       <Text textAlign="center">Action</Text>
                     </Grid>
 
                     {/* 🔹 Data */}
                     <Grid
-                      templateColumns="repeat(7, 1fr)"
+                      templateColumns="1fr 1fr 1fr 1fr 3fr 1fr"
                       alignItems="center"
                       fontSize="sm"
-                      gap={2}
+                      justifyContent="space-between"
+                      columnGap={2}
                     >
                       <Text>{order.customerName || "N/A"}</Text>
 
@@ -261,19 +262,57 @@ const Orders = () => {
 
                       <Text>₹ {order.total}</Text>
 
-                      <Text>{order.paymentMethod || "N/A"}</Text>
+                      <Badge
+                        display="inline-flex"
+                        alignItems="center"
+                        width="fit-content"
+                        px={2}
+                        py={1}
+                        borderRadius="md"
+                        colorScheme={
+                          order.orderStatus === "OUT_FOR_DELIVERY"
+                            ? "blue"
+                            : order.orderStatus === "PACKED"
+                              ? "orange"
+                              : "green"
+                        }
+                      >
+                        {order.orderStatus || "CONFIRMED"}
+                      </Badge>
 
                       {/* Images */}
+
                       <HStack spacing={1} justify="center">
-                        {order.orderItems?.map((item, index) => (
+                        {order.orderItems?.slice(0, 6).map((item, index) => (
                           <Image
                             key={index}
-                            src={item?.productImage?.[0]}
+                            src={
+                              item?.productImage?.[0]
+                                ? `${API_URL}/${item.productImage[0]}`
+                                : "/placeholder.png"
+                            }
+                            alt="product"
                             boxSize="40px"
                             objectFit="cover"
                             borderRadius="md"
                           />
                         ))}
+
+                        {order.orderItems?.length > 3 && (
+                          <Box
+                            boxSize="40px"
+                            bg="gray.200"
+                            borderRadius="md"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                            fontSize="xs"
+                            fontWeight="bold"
+                            color="gray.700"
+                          >
+                            +{order.orderItems.length - 3}
+                          </Box>
+                        )}
                       </HStack>
 
                       {/* Action */}

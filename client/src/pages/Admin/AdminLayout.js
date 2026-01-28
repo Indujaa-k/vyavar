@@ -46,7 +46,7 @@ const AdminLayout = ({ children }) => {
   // Order Status Categories
   const orderStatusList = [
     {
-      label: "AllOrders",
+      label: "All Orders",
       key: "allOrders",
       icon: FaListAlt,
       color: "purple.500",
@@ -110,7 +110,7 @@ const AdminLayout = ({ children }) => {
           width={isSidebarOpen ? "280px" : "60px"}
           height="calc(100vh - 56px)" // Adjust height to account for navbar
           position="fixed"
-          top="63px"
+          top="71px"
           transition="width 0.3s ease-in-out"
           overflowX="hidden"
           overflowY="auto"

@@ -25,7 +25,7 @@ import { useNavigate } from "react-router-dom";
 const CATEGORY_DATA = [
   {
     name: "Topwear",
-    subcategories: ["T-Shirts", "Regular", "Oversized", "Full Sleeve"],
+    subcategories: ["Regular", "Oversized", "Full Sleeve"],
   },
   {
     name: "Hoodies",
@@ -105,7 +105,7 @@ const CreateProductPage = () => {
 
   const validateImages = (variants) => {
     const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
-    const maxSize = 2 * 1024 * 1024; // 2MB
+    const maxSize = 100 * 1024 * 1024;
 
     for (let i = 0; i < variants.length; i++) {
       const images = variants[i].images;
@@ -375,7 +375,7 @@ const CreateProductPage = () => {
         className="form-container"
       >
         <FormControl isRequired>
-          <FormLabel>Brand Name</FormLabel>
+          <FormLabel>Name of The Product</FormLabel>
           <Input
             type="text"
             value={brandname}
@@ -398,15 +398,7 @@ const CreateProductPage = () => {
           Mark as Featured Product
         </Checkbox>
         <Divider my={4} />
-        {/* <FormControl isRequired>
-          <FormLabel>Stock Count</FormLabel>
-          <Input
-            type="number"
-            value={countInStock}
-            placeholder="Enter stock count"
-            onChange={(e) => setcountInStock(e.target.value)}
-          />
-        </FormControl> */}
+       
         <FormControl>
           <FormLabel>Description</FormLabel>
           <Stack direction="column" spacing={4}>

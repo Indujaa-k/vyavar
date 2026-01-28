@@ -634,10 +634,10 @@ const Productpage = () => {
                             bg:
                               selectedSize === size ? "#039cc3ff" : "gray.100",
                           }}
-                          px={6}
-                          py={4}
-                          minW="60px"
-                          minH="60px"
+                          px={5}
+                          py={3}
+                          minW="30px"
+                          minH="50px"
                           fontSize="lg"
                           disabled={sizeStock[size] === 0} // 🔹 Disable if out of stock
                         >

@@ -481,9 +481,14 @@ const razorpay = new Razorpay({
 // CREATE ORDER
 const createRazorpayOrder = async (req, res) => {
   try {
-    let { couponCode } = req.body;
+    let couponCode = null;
 
-    couponCode = couponCode?.trim();
+    if (req.body.coupon?.code) {
+      couponCode = req.body.coupon.code.trim();
+    } else if (req.body.couponCode) {
+      couponCode = req.body.couponCode.trim();
+    }
+
     if (couponCode === "") couponCode = null;
 
     console.log("COUPON:", couponCode, typeof couponCode);
@@ -549,32 +554,30 @@ const createRazorpayOrder = async (req, res) => {
     let shippingAmount = parseFloat(stateRule.cost.toFixed(2));
 
     // Coupon
-    // Coupon
     let discountAmount = 0;
     let couponSnapshot = null;
-
+    console.log("🔍 Coupon Search:", couponCode.toUpperCase());
     if (couponCode) {
       const offer = await Offer.findOne({
-        code: couponCode.toUpperCase(),
-        isActive: true,
+        code: { $regex: `^${couponCode}$`, $options: "i" },
       });
 
-      if (!offer) throw new Error("Invalid coupon");
+      console.log("🎟 Offer Found:", offer);
+      if (!offer) {
+        return res.status(400).json({ message: "Invalid coupon" });
+      }
 
       if (offer.usedCount >= offer.maxUses) {
         return res.status(400).json({ message: "Coupon usage limit exceeded" });
       }
 
-      // Calculate discount on subtotal, allow decimals up to 2 places
       const rawDiscount = (subtotal * offer.offerPercentage) / 100;
 
-      // Ensure discount does not exceed (subtotal + tax + shipping - 1)
       discountAmount = Math.min(
         rawDiscount,
         subtotal + taxAmount + shippingAmount - 1,
       );
 
-      // Round to 2 decimal places (allow fractional discounts)
       discountAmount = parseFloat(discountAmount.toFixed(2));
 
       couponSnapshot = {
@@ -582,14 +585,6 @@ const createRazorpayOrder = async (req, res) => {
         percentage: offer.offerPercentage,
         discountAmount,
       };
-
-      console.log("🧮 PRICE CALCULATION", {
-        subtotal,
-        taxAmount,
-        shippingAmount,
-        discountAmount,
-        finalAmount: subtotal + taxAmount + shippingAmount - discountAmount,
-      });
     }
 
     // Final total
