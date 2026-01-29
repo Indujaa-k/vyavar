@@ -26,6 +26,7 @@ import {
   updateVariant,
   createProductReview,
   unapproveReview,
+   getAllReviews
   
 } from "../controlers/productControler.js";
 
@@ -117,6 +118,13 @@ router.put(
 router
   .route("/:id/reviews/:reviewId/unapprove")
   .put(protect, adminOrSeller, unapproveReview);
+  router.get(
+  "/reviews/all",
+  protect,
+  adminOrSeller,
+  getAllReviews
+);
+
 
 export default router;
       

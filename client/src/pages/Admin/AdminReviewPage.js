@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  listPendingReviews,
+  listAllReviews,
   unapproveReview,
   approveReview,
   deleteReview,
@@ -37,14 +37,24 @@ const AdminReviewPage = () => {
   const [localReviews, setLocalReviews] = useState([]);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedReview, setSelectedReview] = useState(null);
+  const API_URL = process.env.REACT_APP_API_URL;
 
   // Sync Redux reviews to local state
   useEffect(() => {
     setLocalReviews(reviews);
+
+    // ✅ LOG to check what Redux is sending
+    console.log("🔹 All reviews from Redux:", reviews);
+
+    const pending = reviews.filter((r) => !r.approved);
+    const approved = reviews.filter((r) => r.approved);
+
+    console.log("🔹 Pending Reviews:", pending);
+    console.log("🔹 Approved Reviews:", approved);
   }, [reviews]);
 
   useEffect(() => {
-    dispatch(listPendingReviews());
+    dispatch(listAllReviews());
   }, [dispatch]);
 
   const openDeleteModal = (review) => {
@@ -115,7 +125,7 @@ const AdminReviewPage = () => {
   const approvedReviews = localReviews.filter((r) => r.approved);
 
   return (
-    <Box  p={10} borderWidth={1} borderRadius="lg" boxShadow="lg">
+    <Box p={10} borderWidth={1} borderRadius="lg" boxShadow="lg">
       <h1 className="titlepanel">Reviews</h1>
 
       {loading ? (
@@ -146,7 +156,11 @@ const AdminReviewPage = () => {
 
                     <Td>
                       <Image
-                        src={review.product?.image || "/placeholder.png"}
+                        src={
+                          review.product?.image
+                            ? `${API_URL}/${review.product.image.replace(/\\/g, "/")}`
+                            : "/placeholder.png"
+                        }
                         alt={review.product?.name || "Product"}
                         boxSize="50px"
                         objectFit="cover"
