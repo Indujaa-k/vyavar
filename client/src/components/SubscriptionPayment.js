@@ -138,7 +138,7 @@ const SubscriptionPayment = () => {
 
   /* ================= UI ================= */
   return (
-    <Box bg="#1a2b33" minH="100vh" py={20} px={10}>
+    <Box bg="#1a2b33" minH="70vh" py={10} px={10}>
       <Flex
         maxW="1200px"
         mx="auto"

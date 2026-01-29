@@ -103,6 +103,7 @@ import {
 import {
   subscriptionConfirmReducer,
   subscriptionCreateReducer,
+  subscriptionDeleteReducer,
   subscriptionListReducer,
   subscriptionOrderReducer,
   subscriptionToggleReducer,
@@ -175,6 +176,7 @@ const reducer = combineReducers({
   subscriptionToggle: subscriptionToggleReducer,
   subscriptionOrder: subscriptionOrderReducer,
   subscriptionConfirm: subscriptionConfirmReducer,
+  subscriptionDelete: subscriptionDeleteReducer,
 
   orderStatusUpdate: orderStatusUpdateReducer,
   orderStatuses: orderStatusReducer,

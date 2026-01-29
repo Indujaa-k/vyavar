@@ -19,6 +19,10 @@ import {
   SUBSCRIPTION_CONFIRM_REQUEST,
   SUBSCRIPTION_CONFIRM_SUCCESS,
   SUBSCRIPTION_CONFIRM_FAIL,
+  SUBSCRIPTION_DELETE_REQUEST,
+  SUBSCRIPTION_DELETE_SUCCESS,
+  SUBSCRIPTION_DELETE_RESET,
+  SUBSCRIPTION_DELETE_FAIL,
 } from "../constants/subscriptionConstants";
 
 /* =======================
@@ -136,3 +140,24 @@ export const subscriptionConfirmReducer = (state = {}, action) => {
 };
 
 
+/* =======================
+   DELETE SUBSCRIPTION
+======================= */
+export const subscriptionDeleteReducer = (state = {}, action) => {
+  switch (action.type) {
+    case SUBSCRIPTION_DELETE_REQUEST:
+      return { loading: true };
+
+    case SUBSCRIPTION_DELETE_SUCCESS:
+      return { loading: false, success: true };
+
+    case SUBSCRIPTION_DELETE_FAIL:
+      return { loading: false, error: action.payload };
+
+    case SUBSCRIPTION_DELETE_RESET:
+      return {};
+
+    default:
+      return state;
+  }
+};
