@@ -205,10 +205,29 @@ const getActiveSubscription = asyncHandler(async (req, res) => {
   res.json(subscription);
 });
 
+ const deleteSubscription = asyncHandler(async (req, res) => {
+  const subscription = await Subscription.findById(req.params.id);
+
+  if (!subscription) {
+    res.status(404);
+    throw new Error("Subscription not found");
+  }
+
+  if (subscription.isActive) {
+    res.status(400);
+    throw new Error("Active subscription cannot be deleted");
+  }
+
+  await subscription.deleteOne();
+  res.json({ message: "Subscription deleted successfully" });
+});
+
+
 export {
   getSubscriptions,
   createSubscription,
   updateSubscription,
   toggleSubscriptionStatus,
   getActiveSubscription,
+  deleteSubscription
 };

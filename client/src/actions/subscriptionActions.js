@@ -18,6 +18,9 @@ import {
   SUBSCRIPTION_CONFIRM_REQUEST,
   SUBSCRIPTION_CONFIRM_SUCCESS,
   SUBSCRIPTION_CONFIRM_FAIL,
+  SUBSCRIPTION_DELETE_REQUEST,
+  SUBSCRIPTION_DELETE_SUCCESS,
+  SUBSCRIPTION_DELETE_FAIL,
 } from "../constants/subscriptionConstants";
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -80,7 +83,7 @@ export const updateSubscription =
       const { data } = await axios.put(
         `${API_URL}/api/subscriptions/${id}`,
         payload,
-        { headers: { Authorization: `Bearer ${userInfo.token}` } }
+        { headers: { Authorization: `Bearer ${userInfo.token}` } },
       );
 
       dispatch({ type: SUBSCRIPTION_UPDATE_SUCCESS, payload: data });
@@ -104,7 +107,7 @@ export const toggleSubscription = (id) => async (dispatch, getState) => {
     const { data } = await axios.put(
       `${API_URL}/api/subscriptions/${id}/toggle`,
       {},
-      { headers: { Authorization: `Bearer ${userInfo.token}` } }
+      { headers: { Authorization: `Bearer ${userInfo.token}` } },
     );
 
     dispatch({ type: SUBSCRIPTION_TOGGLE_SUCCESS, payload: data });
@@ -128,7 +131,7 @@ export const createSubscriptionOrder = (id) => async (dispatch, getState) => {
     const { data } = await axios.post(
       `${API_URL}/api/subscriptions/order/${id}`,
       {},
-      { headers: { Authorization: `Bearer ${userInfo.token}` } }
+      { headers: { Authorization: `Bearer ${userInfo.token}` } },
     );
 
     dispatch({
@@ -156,7 +159,7 @@ export const confirmSubscriptionPayment =
       const { data } = await axios.post(
         `${API_URL}/api/subscriptions/confirm`,
         paymentData,
-        { headers: { Authorization: `Bearer ${userInfo.token}` } }
+        { headers: { Authorization: `Bearer ${userInfo.token}` } },
       );
 
       dispatch({
@@ -171,14 +174,11 @@ export const confirmSubscriptionPayment =
     }
   };
 
-
-  export const getActiveSubscription = () => async (dispatch) => {
+export const getActiveSubscription = () => async (dispatch) => {
   try {
     dispatch({ type: SUBSCRIPTION_LIST_REQUEST });
 
-    const { data } = await axios.get(
-      `${API_URL}/api/subscriptions/active`
-    );
+    const { data } = await axios.get(`${API_URL}/api/subscriptions/active`);
 
     dispatch({
       type: SUBSCRIPTION_LIST_SUCCESS,
@@ -188,6 +188,29 @@ export const confirmSubscriptionPayment =
     dispatch({
       type: SUBSCRIPTION_LIST_FAIL,
       payload: error.response?.data?.message || error.message,
+    });
+  }
+};
+
+export const deleteSubscription = (id) => async (dispatch, getState) => {
+  try {
+    dispatch({ type: SUBSCRIPTION_DELETE_REQUEST });
+
+    const {
+      userLogin: { userInfo },
+    } = getState();
+
+    await axios.delete(`${API_URL}/api/subscriptions/${id}`, {
+      headers: {
+        Authorization: `Bearer ${userInfo.token}`,
+      },
+    });
+
+    dispatch({ type: SUBSCRIPTION_DELETE_SUCCESS });
+  } catch (error) {
+    dispatch({
+      type: SUBSCRIPTION_DELETE_FAIL,
+      payload: error.response?.data?.message || "Failed to delete subscription",
     });
   }
 };

@@ -5,6 +5,7 @@ import {
   updateSubscription,
   toggleSubscriptionStatus,
   getActiveSubscription,
+  deleteSubscription,
 } from "../controlers/subscriptionController.js";
 import {
   createSubscriptionOrder,
@@ -20,6 +21,8 @@ router
   .post(protect, adminOnly, createSubscription);
 router.route("/:id").put(protect, adminOnly, updateSubscription);
 router.route("/:id/toggle").put(protect, adminOnly, toggleSubscriptionStatus);
+router.delete("/:id", protect, adminOnly, deleteSubscription);
+
 
 router.post("/order/:id", protect, createSubscriptionOrder);
 router.post("/confirm", protect, confirmSubscriptionPayment);
