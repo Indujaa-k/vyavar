@@ -78,7 +78,7 @@ const EditVariantProduct = () => {
         height: "",
       },
       originAddress: {
-        street: "",
+        street1: "",
         city: "",
         state: "",
         zip: "",
@@ -192,6 +192,8 @@ const EditVariantProduct = () => {
   // ================= SET DATA FROM REDUX =================
   useEffect(() => {
     if (common) {
+      console.log("🟢 COMMON DATA FROM REDUX:", common);
+      console.log("📦 VARIANTS FROM REDUX:", variants);
       setCommonState({
         brandname: common.brandname || "",
         description: common.description || "",
@@ -440,57 +442,145 @@ const EditVariantProduct = () => {
 
           <FormControl>
             <FormLabel>Gender</FormLabel>
-            <Input as="select" value={commonState.productdetails.gender}>
+            <Input
+              as="select"
+              value={commonState.productdetails.gender}
+              onChange={(e) =>
+                setCommonState({
+                  ...commonState,
+                  productdetails: {
+                    ...commonState.productdetails,
+                    gender: e.target.value,
+                  },
+                })
+              }
+            >
               <option value="">Select Gender</option>
               {options.gender.map((g) => (
-                <option key={g}>{g}</option>
+                <option key={g} value={g}>
+                  {g}
+                </option>
               ))}
             </Input>
           </FormControl>
 
           <FormControl>
             <FormLabel>Category</FormLabel>
-            <Input as="select" value={commonState.productdetails.category}>
+            <Input
+              as="select"
+              value={commonState.productdetails.category}
+              onChange={(e) =>
+                setCommonState({
+                  ...commonState,
+                  productdetails: {
+                    ...commonState.productdetails,
+                    category: e.target.value,
+                    subcategory: "", // category change aana subcategory reset
+                  },
+                })
+              }
+            >
               <option value="">Select Category</option>
               {CATEGORY_DATA.map((cat) => (
-                <option key={cat.name}>{cat.name}</option>
+                <option key={cat.name} value={cat.name}>
+                  {cat.name}
+                </option>
               ))}
             </Input>
           </FormControl>
 
           <FormControl>
             <FormLabel>Subcategory</FormLabel>
-            <Input as="select" value={commonState.productdetails.subcategory}>
+            <Input
+              as="select"
+              value={commonState.productdetails.subcategory}
+              onChange={(e) =>
+                setCommonState({
+                  ...commonState,
+                  productdetails: {
+                    ...commonState.productdetails,
+                    subcategory: e.target.value,
+                  },
+                })
+              }
+            >
               <option value="">Select Subcategory</option>
+              {CATEGORY_DATA.find(
+                (c) => c.name === commonState.productdetails.category,
+              )?.subcategories.map((sub) => (
+                <option key={sub} value={sub}>
+                  {sub}
+                </option>
+              ))}
             </Input>
           </FormControl>
 
           <FormControl>
             <FormLabel>Type</FormLabel>
-            <Input as="select" value={commonState.productdetails.type}>
+            <Input
+              as="select"
+              value={commonState.productdetails.type}
+              onChange={(e) =>
+                setCommonState({
+                  ...commonState,
+                  productdetails: {
+                    ...commonState.productdetails,
+                    type: e.target.value,
+                  },
+                })
+              }
+            >
               <option value="">Select Type</option>
               {options.type.map((t) => (
-                <option key={t}>{t}</option>
+                <option key={t} value={t}>
+                  {t}
+                </option>
               ))}
             </Input>
           </FormControl>
-
           <FormControl>
             <FormLabel>Age Range</FormLabel>
-            <Input as="select" value={commonState.productdetails.ageRange}>
+            <Input
+              as="select"
+              value={commonState.productdetails.ageRange}
+              onChange={(e) =>
+                setCommonState({
+                  ...commonState,
+                  productdetails: {
+                    ...commonState.productdetails,
+                    ageRange: e.target.value,
+                  },
+                })
+              }
+            >
               <option value="">Select Age Range</option>
-              {options.ageRange.map((a) => (
-                <option key={a}>{a}</option>
+              {options.ageRange.map((age) => (
+                <option key={age} value={age}>
+                  {age}
+                </option>
               ))}
             </Input>
           </FormControl>
-
           <FormControl>
             <FormLabel>Fabric</FormLabel>
-            <Input as="select" value={commonState.productdetails.fabric}>
+            <Input
+              as="select"
+              value={commonState.productdetails.fabric}
+              onChange={(e) =>
+                setCommonState({
+                  ...commonState,
+                  productdetails: {
+                    ...commonState.productdetails,
+                    fabric: e.target.value,
+                  },
+                })
+              }
+            >
               <option value="">Select Fabric</option>
-              {options.fabric.map((f) => (
-                <option key={f}>{f}</option>
+              {options.fabric.map((fabric) => (
+                <option key={fabric} value={fabric}>
+                  {fabric}
+                </option>
               ))}
             </Input>
           </FormControl>
@@ -510,7 +600,16 @@ const EditVariantProduct = () => {
               </Box>
             )}
 
-            <Input type="file" />
+            <Input
+              type="file"
+              accept="application/pdf,image/*"
+              onChange={(e) =>
+                setCommonState({
+                  ...commonState,
+                  sizeChartFile: e.target.files[0],
+                })
+              }
+            />
           </FormControl>
         </SimpleGrid>
 
@@ -604,6 +703,25 @@ const EditVariantProduct = () => {
         </Heading>
 
         <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+          <FormControl>
+            <FormLabel>Street</FormLabel>
+            <Input
+              value={commonState.shippingDetails.originAddress.street1}
+              onChange={(e) =>
+                setCommonState({
+                  ...commonState,
+                  shippingDetails: {
+                    ...commonState.shippingDetails,
+                    originAddress: {
+                      ...commonState.shippingDetails.originAddress,
+                      street1: e.target.value,
+                    },
+                  },
+                })
+              }
+            />
+          </FormControl>
+
           <FormControl>
             <FormLabel>City</FormLabel>
             <Input
@@ -722,7 +840,7 @@ const EditVariantProduct = () => {
                   {(variant.images || []).slice(0, 5).map((img, index) => (
                     <Image
                       key={index}
-                      src={`${API}/${img}`}
+                      src={`${API}/${img.replace(/\\/g, "/")}`}
                       boxSize="70px"
                       objectFit="cover"
                       borderRadius="md"

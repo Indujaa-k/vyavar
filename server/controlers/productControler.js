@@ -1150,6 +1150,12 @@ const updateGroupCommonFields = asyncHandler(async (req, res) => {
     delete shipping.originAddress.street2;
   }
 
+  let sizeChartPath = req.body.sizeChart || null;
+
+  if (req.files?.sizeChart?.length > 0) {
+    sizeChartPath = req.files.sizeChart[0].path;
+  }
+
   await Product.updateMany(
     { productGroupId: req.params.groupId },
     {
@@ -1164,7 +1170,7 @@ const updateGroupCommonFields = asyncHandler(async (req, res) => {
         "productdetails.type": req.body.type,
         "productdetails.fabric": req.body.fabric,
         "productdetails.ageRange": req.body.ageRange,
-        sizeChart: req.body.sizeChart,
+        ...(sizeChartPath && { sizeChart: sizeChartPath }),
       },
     },
   );
@@ -1334,6 +1340,7 @@ const getProductGroup = asyncHandler(async (req, res) => {
       description: base.description,
       shippingDetails: base.shippingDetails,
       isFeatured: base.isFeatured,
+      sizeChart: base.sizeChart,
       productdetails: {
         gender: base.productdetails.gender,
         category: base.productdetails.category,
@@ -1341,7 +1348,6 @@ const getProductGroup = asyncHandler(async (req, res) => {
         type: base.productdetails.type,
         fabric: base.productdetails.fabric,
         ageRange: base.productdetails.ageRange,
-        sizeChart: base.sizeChart,
       },
     },
     variants: products,
@@ -1411,6 +1417,45 @@ const unapproveReview = asyncHandler(async (req, res) => {
 
   res.json({ message: "Review unapproved successfully", review });
 });
+// @desc Get all reviews (admin)
+// @route GET /api/products/reviews/all
+// @access Private/Admin
+// @desc Get all reviews (pending + approved)
+// @route GET /api/products/all-reviews
+// @access Private/Admin
+const getAllReviews = asyncHandler(async (req, res) => {
+  const products = await Product.find()
+    .populate({ path: "reviews.user", select: "name profilePicture" })
+    .select("reviews brandname images");
+
+  const allReviews = [];
+
+  products.forEach((product) => {
+    product.reviews.forEach((review) => {
+      allReviews.push({
+        _id: review._id,
+        approved: review.approved,
+        productId: product._id,
+        product: {
+          name: product.brandname,
+          image: product.images?.[0] || null,
+        },
+        user: {
+          name: review.user?.name || review.name,
+          avatar: review.user?.profilePicture || null,
+        },
+        rating: review.rating,
+        comment: review.comment,
+        photos: review.photos || [],
+        createdAt: review.createdAt,
+      });
+    });
+  });
+
+  console.log("🔹 All reviews from backend:", allReviews.length);
+
+  res.json(allReviews);
+});
 
 export {
   getProducts,
@@ -1436,4 +1481,5 @@ export {
   updateVariant,
   createProductReview,
   unapproveReview,
+  getAllReviews,
 };

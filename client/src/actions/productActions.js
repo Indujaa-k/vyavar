@@ -842,3 +842,34 @@ export const unapproveReview =
       });
     }
   };
+// Fetch all reviews (Admin)
+export const listAllReviews = () => async (dispatch, getState) => {
+  try {
+    dispatch({ type: REVIEW_LIST_REQUEST });
+
+    const {
+      userLogin: { userInfo },
+    } = getState();
+
+    const config = {
+      headers: {
+        Authorization: `Bearer ${userInfo.token}`,
+      },
+    };
+
+    const { data } = await axios.get(
+      `${API_URL}/api/products/reviews/all`, // make sure this endpoint exists in your backend
+      config
+    );
+
+    dispatch({
+      type: REVIEW_LIST_SUCCESS,
+      payload: Array.isArray(data) ? data : [], // safety
+    });
+  } catch (error) {
+    dispatch({
+      type: REVIEW_LIST_FAIL,
+      payload: error.response?.data?.message || error.message,
+    });
+  }
+};
