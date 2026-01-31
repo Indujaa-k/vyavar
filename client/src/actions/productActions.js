@@ -531,18 +531,24 @@ export const getProductsByGroupId = (groupId) => async (dispatch, getState) => {
 
 // Update common fields
 export const updateGroupCommonFields =
-  (groupId, updateData) => async (dispatch, getState) => {
+  (groupId, formData) => async (dispatch, getState) => {
     try {
       dispatch({ type: PRODUCT_GROUP_UPDATE_REQUEST });
 
       const {
         userLogin: { userInfo },
       } = getState();
-      const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+
+      const config = {
+        headers: {
+          Authorization: `Bearer ${userInfo.token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      };
 
       const { data } = await axios.put(
         `${API_URL}/api/products/group/${groupId}/common`,
-        updateData,
+        formData,
         config,
       );
 
@@ -783,7 +789,7 @@ export const updateProductGroupCommon =
             Authorization: `Bearer ${userInfo.token}`,
             "Content-Type": "multipart/form-data", // ✅
           },
-        }
+        },
       );
 
       dispatch({ type: PRODUCT_GROUP_UPDATE_SUCCESS });
@@ -861,7 +867,7 @@ export const listAllReviews = () => async (dispatch, getState) => {
 
     const { data } = await axios.get(
       `${API_URL}/api/products/reviews/all`, // make sure this endpoint exists in your backend
-      config
+      config,
     );
 
     dispatch({

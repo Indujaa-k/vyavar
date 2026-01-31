@@ -44,7 +44,7 @@ const CartPage = () => {
     (cartItemId) => {
       dispatch(removeFromCart(cartItemId));
     },
-    [dispatch]
+    [dispatch],
   );
   if (initialLoading) {
     return (
@@ -83,7 +83,7 @@ const CartPage = () => {
 
                 const stock =
                   item.product?.productdetails?.stockBySize?.find(
-                    (s) => s.size === selectedSize
+                    (s) => s.size === selectedSize,
                   )?.stock || 0;
 
                 const availableSizes =
@@ -108,7 +108,7 @@ const CartPage = () => {
                     >
                       <Link to={`/product/${item.product._id}`}>
                         <Image
-                          src={item.product.images?.[0]}
+                          src={`${process.env.REACT_APP_API_URL}/${item.product.images?.[0]}`}
                           alt={item.product.name}
                           objectFit="cover"
                           w="full"
@@ -139,7 +139,7 @@ const CartPage = () => {
                                 qty: item.qty, // ✅ keep same quantity
                                 size: e.target.value, // ✅ change size
                                 action: "set",
-                              })
+                              }),
                             )
                           }
                           w="80px"
@@ -148,7 +148,7 @@ const CartPage = () => {
                           {item.product.productdetails?.sizes?.map((size) => {
                             const sizeStock =
                               item.product.productdetails.stockBySize?.find(
-                                (s) => s.size === size
+                                (s) => s.size === size,
                               )?.stock || 0;
 
                             return (
@@ -172,7 +172,7 @@ const CartPage = () => {
                                 qty: Number(e.target.value), // ✅ absolute quantity
                                 size: item.size,
                                 action: "set",
-                              })
+                              }),
                             )
                           }
                           w="80px"
@@ -181,8 +181,8 @@ const CartPage = () => {
                           {[
                             ...Array(
                               item.product.productdetails.stockBySize?.find(
-                                (s) => s.size === item.size
-                              )?.stock || 0
+                                (s) => s.size === item.size,
+                              )?.stock || 0,
                             ).keys(),
                           ].map((x) => (
                             <option key={x + 1} value={x + 1}>
@@ -221,7 +221,7 @@ const CartPage = () => {
                             Subscriber OFF
                           </Text>
                         )}
-                      </Flex> 
+                      </Flex>
                     </Box>
 
                     {/* REMOVE */}

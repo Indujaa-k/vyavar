@@ -88,7 +88,7 @@ const Contactus = () => {
       <div className="card-contact">
         <div className="sendMsg">
           <h4>Send Us A Message</h4>
-          <div className="inputContact">
+          <div className="inputContact" style={{ marginBottom: "10px" }}>
             <InputGroup width="450px">
               <InputLeftElement
                 pointerEvents="none"
