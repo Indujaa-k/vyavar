@@ -289,12 +289,12 @@ const EditVariantProduct = () => {
 
     formData.append(
       "productdetails",
-      JSON.stringify({
-        ...commonState.productdetails,
-        sizeChart: undefined,
-      }),
+      JSON.stringify(commonState.productdetails),
     );
 
+    console.log("🚀 Size Chart File to upload:", commonState.sizeChartFile);
+
+    // ✅ IMPORTANT
     if (commonState.sizeChartFile) {
       formData.append("sizeChart", commonState.sizeChartFile);
     }
@@ -591,24 +591,33 @@ const EditVariantProduct = () => {
 
             {commonState.sizeChart && (
               <Box mb={3}>
-                <iframe
-                  src={`${process.env.REACT_APP_API_URL}/${commonState.sizeChart}`}
-                  width="100%"
-                  height="250"
-                  style={{ border: "1px solid #ccc", borderRadius: "8px" }}
-                />
+                <Text fontSize="sm" color="gray.600">
+                  Uploaded Size Chart:
+                </Text>
+
+                <Text fontWeight="bold">
+                  {
+                    commonState.sizeChartFile
+                      ? commonState.sizeChartFile.name // show newly selected file name
+                      : commonState.sizeChart.split("/").pop() // existing file from backend
+                  }
+                </Text>
               </Box>
             )}
 
             <Input
               type="file"
               accept="application/pdf,image/*"
-              onChange={(e) =>
-                setCommonState({
-                  ...commonState,
-                  sizeChartFile: e.target.files[0],
-                })
-              }
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                setCommonState((prev) => ({
+                  ...prev,
+                  sizeChartFile: file,
+                  sizeChart: URL.createObjectURL(file),
+                }));
+              }}
             />
           </FormControl>
         </SimpleGrid>

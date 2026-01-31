@@ -767,7 +767,7 @@ export const getProductGroup = (groupId) => async (dispatch, getState) => {
   }
 };
 export const updateProductGroupCommon =
-  (groupId, commonData) => async (dispatch, getState) => {
+  (groupId, formData) => async (dispatch, getState) => {
     try {
       dispatch({ type: PRODUCT_GROUP_UPDATE_REQUEST });
 
@@ -777,12 +777,13 @@ export const updateProductGroupCommon =
 
       await axios.put(
         `${API_URL}/api/products/group/${groupId}/common`,
-        commonData,
+        formData,
         {
           headers: {
             Authorization: `Bearer ${userInfo.token}`,
+            "Content-Type": "multipart/form-data", // ✅
           },
-        },
+        }
       );
 
       dispatch({ type: PRODUCT_GROUP_UPDATE_SUCCESS });
@@ -793,6 +794,7 @@ export const updateProductGroupCommon =
       });
     }
   };
+
 export const checkHasCombo = () => async (dispatch) => {
   try {
     dispatch({ type: PRODUCT_HAS_COMBO_REQUEST });
