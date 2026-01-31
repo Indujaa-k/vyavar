@@ -580,6 +580,7 @@ const createProduct = asyncHandler(async (req, res) => {
     const productGroupId = new mongoose.Types.ObjectId().toString();
 
     const sizeChart = req.files?.sizeChart?.[0]?.path || "";
+    console.log("🚀 [createProduct] Size Chart received:", sizeChart);
     const allImages = req.files?.images || [];
 
     //     // ✅ TOTAL IMAGE VALIDATION
@@ -704,6 +705,7 @@ const updateProduct = asyncHandler(async (req, res) => {
   // Size chart (optional)
   if (req.files?.sizeChart?.length > 0) {
     product.sizeChart = req.files.sizeChart[0].path;
+    console.log("🚀 [updateProduct] Size Chart received:", product.sizeChart);
   }
 
   const updatedProduct = await product.save();
@@ -1150,32 +1152,42 @@ const updateGroupCommonFields = asyncHandler(async (req, res) => {
     delete shipping.originAddress.street2;
   }
 
-  let sizeChartPath = req.body.sizeChart || null;
+  let sizeChartPath = null;
 
   if (req.files?.sizeChart?.length > 0) {
-    sizeChartPath = req.files.sizeChart[0].path;
+    sizeChartPath = req.files.sizeChart[0].path.replace(/\\/g, "/");
+    console.log(
+      "🚀 [updateGroupCommonFields] Size Chart received:",
+      sizeChartPath,
+    );
   }
 
-  await Product.updateMany(
+  const updateFields = {
+    brandname: req.body.brandname,
+    description: req.body.description,
+    shippingDetails: shipping,
+    isFeatured: req.body.isFeatured,
+    "productdetails.gender": req.body.gender,
+    "productdetails.category": req.body.category,
+    "productdetails.subcategory": req.body.subcategory,
+    "productdetails.type": req.body.type,
+    "productdetails.fabric": req.body.fabric,
+    "productdetails.ageRange": req.body.ageRange,
+  };
+
+  if (sizeChartPath !== null) {
+    updateFields.sizeChart = sizeChartPath;
+  }
+
+  const result = await Product.updateMany(
     { productGroupId: req.params.groupId },
-    {
-      $set: {
-        brandname: req.body.brandname,
-        description: req.body.description,
-        shippingDetails: shipping,
-        isFeatured: req.body.isFeatured,
-        "productdetails.gender": req.body.gender,
-        "productdetails.category": req.body.category,
-        "productdetails.subcategory": req.body.subcategory,
-        "productdetails.type": req.body.type,
-        "productdetails.fabric": req.body.fabric,
-        "productdetails.ageRange": req.body.ageRange,
-        ...(sizeChartPath && { sizeChart: sizeChartPath }),
-      },
-    },
+    { $set: updateFields },
   );
 
-  res.json({ message: "Common fields updated" });
+  res.json({
+    message: "Common fields updated",
+    updatedCount: result.modifiedCount,
+  });
 });
 
 const addVariantToGroup = asyncHandler(async (req, res) => {

@@ -245,21 +245,33 @@ const SizeChart = ({ product }) => {
 
   const API_URL = process.env.REACT_APP_API_URL;
 
-  const fileUrl = `${API_URL}/${product.sizeChart.replace(/\\/g, "/")}`;
+  const fileUrl = `${API_URL}/${product.sizeChart.replace(/\\/g, "/")}#toolbar=0&navpanes=0&scrollbar=1`;
 
   return (
-    <Box mt={4} border="1px solid #e2e8f0" borderRadius="md" overflow="hidden">
+    <Box
+      mt={4}
+      border="1px solid #e2e8f0"
+      borderRadius="md"
+      overflow="hidden"
+      height="600px"
+    >
       <Box bg="black" color="white" p={3} fontWeight="bold">
         Size Chart
       </Box>
 
-      <iframe
-        src={fileUrl}
-        width="100%"
-        height="500px"
-        style={{ border: "none" }}
-        title="Size Chart PDF"
-      />
+      <Box height="100%" className="pdf-scroll-container">
+        {" "}
+        {/* 🔴 SCROLL ENABLE */}
+        <iframe
+          src={fileUrl}
+          width="100%"
+          height="100%"
+          style={{
+            border: "none",
+          }}
+          title="Size Chart PDF"
+        />
+      </Box>
     </Box>
   );
 };
