@@ -556,7 +556,10 @@ const createRazorpayOrder = async (req, res) => {
     // Coupon
     let discountAmount = 0;
     let couponSnapshot = null;
-    console.log("🔍 Coupon Search:", couponCode.toUpperCase());
+    if (couponCode) {
+      console.log("🔍 Coupon Search:", couponCode.toUpperCase());
+    }
+
     if (couponCode) {
       const offer = await Offer.findOne({
         code: { $regex: `^${couponCode}$`, $options: "i" },
@@ -624,8 +627,11 @@ const createRazorpayOrder = async (req, res) => {
       coupon: couponSnapshot,
     });
   } catch (err) {
-    console.error("❌ Razorpay error:", err);
-    res.status(500).json({ message: "Razorpay order failed" });
+    console.error("❌ Razorpay FULL ERROR:", err);
+    res.status(500).json({
+      message: err.message,
+      stack: err.stack,
+    });
   }
 };
 
