@@ -41,14 +41,16 @@ const sendEmail = async ({ email, status, order }) => {
     default:
       subject = "📢 Order Update";
   }
-
+  const BASE_URL = process.env.BACKEND_URL;
   const productRows = order.orderItems
     .map((item) => {
       const imagePath = item.product.images?.[0];
-      const imageUrl = imagePath?.startsWith("http")
-        ? imagePath
-        : `${process.env.BACKEND_URL}${imagePath}`;
 
+      if (!imagePath) return "";
+
+      const imageUrl = imagePath.startsWith("http")
+        ? imagePath
+        : `${BASE_URL}/${imagePath.replace(/\\/g, "/")}`;
       return `
       <tr>
         <td style="padding:10px">

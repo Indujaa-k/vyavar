@@ -849,7 +849,11 @@ const EditVariantProduct = () => {
                   {(variant.images || []).slice(0, 5).map((img, index) => (
                     <Image
                       key={index}
-                      src={`${API}/${img.replace(/\\/g, "/")}`}
+                      src={
+                        img.startsWith("blob:")
+                          ? img
+                          : `${API}/${img.replace(/\\/g, "/")}`
+                      }
                       boxSize="70px"
                       objectFit="cover"
                       borderRadius="md"
