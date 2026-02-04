@@ -12,7 +12,7 @@ const UserVideoBanner = () => {
   useEffect(() => {
     dispatch(listUserVideoBanners()); // Fetch all videos
   }, [dispatch]);
-
+  const API_URL = process.env.REACT_APP_API_URL;
   return (
     <Box p={0} w="87vw" mx="auto" mt="20">
       {" "}
@@ -46,7 +46,7 @@ const UserVideoBanner = () => {
                 height: "80vh",
               }}
             >
-              <source src={video.videoUrl} type="video/mp4" />
+              <source src={`${API_URL}${video.videoUrl}`} type="video/mp4" />
               Your browser does not support the video tag.
             </video>
           </Box>

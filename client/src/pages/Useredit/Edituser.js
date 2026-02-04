@@ -24,6 +24,8 @@ const Edituser = () => {
   const [isAdmin, setisAdmin] = useState(false);
   const [message, setMessage] = useState(null);
   const [isDelivery, setIsDelivery] = useState(false);
+  const userLogin = useSelector((state) => state.userLogin);
+  const { userInfo } = userLogin;
 
   const dispatch = useDispatch();
 
@@ -41,6 +43,11 @@ const Edituser = () => {
 
   useEffect(() => {
     if (successUpdate) {
+      // ✅ If editing logged-in user, update navbar name
+      if (userInfo && userInfo._id === userId) {
+        dispatch(getUserDetails("profile")); // refresh logged-in user
+      }
+
       dispatch({ type: USER_UPDATE_RESET });
       navigate("/admin/userlist");
     } else {
@@ -54,14 +61,12 @@ const Edituser = () => {
         setisSeller(user.isSeller);
       }
     }
-
-    return () => {};
-  }, [dispatch, userId, navigate, user, successUpdate]);
+  }, [dispatch, userId, navigate, user, successUpdate, userInfo]);
 
   const submitHandler = (e) => {
     e.preventDefault();
     dispatch(
-      updateUser({ _id: userId, name, email, isAdmin, isDelivery, isSeller })
+      updateUser({ _id: userId, name, email, isAdmin, isDelivery, isSeller }),
     );
   };
 

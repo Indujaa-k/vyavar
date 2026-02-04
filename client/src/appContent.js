@@ -66,8 +66,7 @@ import ShippingCost from "./pages/Delivery/ShippingCost";
 // import ProtectedRoute from "./pages/ProtectedRoutes";
 const appContent = () => {
   const { userInfo } = useSelector((state) => state.userLogin);
-  const hideFooterRoutes = ["/login"];
-  const hideArrowRoutes = ["/login"];
+ 
 
   return (
     <>
@@ -220,8 +219,8 @@ const appContent = () => {
 
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
-          {!hideArrowRoutes.includes(location.pathname) && <ScrollButtons />}
-          {!hideFooterRoutes.includes(location.pathname) && <Footer />}
+          <ScrollButtons />
+         <Footer />
           {/* path="/products/:category" */}
         </>
       )}

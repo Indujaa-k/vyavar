@@ -23,7 +23,7 @@ import { NavLink } from "react-router-dom";
 import { CgProfile } from "react-icons/cg";
 import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
-import { getUserDetails } from "../../actions/userActions";
+import { getMyProfile } from "../../actions/userActions";
 import {
   getActiveOfferBanner,
   clearActiveOfferBanner,
@@ -34,8 +34,10 @@ const AdminNavbar = ({ setIsSidebarOpen }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const userDetails = useSelector((state) => state.userDetails);
-  const { loading, error, user } = userDetails;
+  const userLogin = useSelector((state) => state.userLogin);
+  const { userInfo } = userLogin;
+  const userProfile = useSelector((state) => state.userProfile);
+  const { user } = userProfile;
 
   const cancelRef = useRef();
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -45,9 +47,6 @@ const AdminNavbar = ({ setIsSidebarOpen }) => {
     setIsSidebarOpen(false); // ✅ hide sidebar when Preview clicked
     navigate("/");
   };
-  useEffect(() => {
-    dispatch(getUserDetails("profile")); // 🔥 REQUIRED
-  }, [dispatch]);
 
   const logoutHandler = () => {
     dispatch(logout());
@@ -59,6 +58,10 @@ const AdminNavbar = ({ setIsSidebarOpen }) => {
     navigate(-1);
   };
   const API = process.env.REACT_APP_API_URL;
+  useEffect(() => {
+    dispatch(getMyProfile());
+  }, [dispatch]);
+
   return (
     <>
       <Box
@@ -118,10 +121,6 @@ const AdminNavbar = ({ setIsSidebarOpen }) => {
                       borderRadius: "50%",
                       objectFit: "cover",
                     }}
-                    onError={(e) => {
-                      e.target.style.display = "none";
-                      e.target.nextSibling.style.display = "flex";
-                    }}
                   />
                 )}
 
@@ -130,12 +129,13 @@ const AdminNavbar = ({ setIsSidebarOpen }) => {
                   size={25}
                   style={{
                     display: user?.profilePicture ? "none" : "flex",
+
                     color: "white",
                   }}
                 />
 
                 <span style={{ color: "white", fontWeight: "500" }}>
-                  {user?.name || "Admin"}
+                  {userInfo?.name || "Admin"}
                 </span>
               </RouterLink>
             </div>

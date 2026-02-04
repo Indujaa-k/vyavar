@@ -19,7 +19,7 @@ import { AiFillStar } from "react-icons/ai";
 import HashLoader from "react-spinners/HashLoader";
 import { Helmet } from "react-helmet";
 import { Link } from "react-router-dom";
-
+const API_URL = process.env.REACT_APP_API_URL;
 const AdminProduct = () => {
   const dispatch = useDispatch();
 
@@ -94,7 +94,11 @@ const AdminProduct = () => {
                   <Card borderWidth="1px" borderRadius="md" p={3}>
                     <Flex align="center" gap={3}>
                       <Image
-                        src={product.images?.[0] || "/placeholder-image.jpg"}
+                        src={
+                          product.images?.[0]
+                            ? `${API_URL}/${product.images[0]}`
+                            : "/placeholder-image.jpg"
+                        }
                         alt={product.brandname}
                         borderRadius="md"
                         boxSize="50px"
@@ -140,7 +144,11 @@ const AdminProduct = () => {
                   >
                     <Flex align="center" gap={3}>
                       <Image
-                        src={product.images?.[0] || "/placeholder-image.jpg"}
+                        src={
+                          product.images?.[0]
+                            ? `${API_URL}/${product.images[0]}`
+                            : "/placeholder-image.jpg"
+                        }
                         alt={product.brandname}
                         borderRadius="md"
                         boxSize="50px"
@@ -175,7 +183,7 @@ const AdminProduct = () => {
                 >
                   <Flex align="center" gap={3}>
                     <Image
-                      src={brand.image}
+                      src={`${API_URL}/${brand.image}`}
                       alt={brand.brandname}
                       borderRadius="md"
                       boxSize="50px"

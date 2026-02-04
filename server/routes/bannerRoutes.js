@@ -31,7 +31,7 @@ router
   .post(protect, adminOrSeller, uploadSingleVideo, addvideobanner);
 router.route("/getvideobanner").get(getvideobanner);
 router
-  .route("/deletevideobanner/:productId/:videoId")
+  .route("/deletevideobanner/:videoId")
   .delete(protect, adminOrSeller, deletevideobanner);
 router.route("/getuservideobanners").get(getUserVideoBanners);
 
@@ -46,6 +46,6 @@ router.put(
   "/offerbanner/activate/:id",
   protect,
   adminOrSeller,
-  activateOfferBanner
+  activateOfferBanner,
 );
 export default router;

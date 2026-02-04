@@ -69,6 +69,7 @@ import {
   verifyOtpReducer,
   forgotPasswordReducer,
   resetPasswordReducer,
+  userProfileReducer,
 } from "./reducers/userReducers";
 
 import {
@@ -131,6 +132,7 @@ const reducer = combineReducers({
   userList: userListReducer,
   userDelete: userDeleteReducer,
   userUpdate: userUpdateReducer,
+  userProfile: userProfileReducer,
   orderCreate: CreateOrderReducers,
   orderDetails: OrderDetailsreducer,
   orderPay: OrderPayreducer,
