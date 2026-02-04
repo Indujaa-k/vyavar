@@ -10,33 +10,62 @@ import mongoose from "mongoose";
 // @desc Create add banners
 // @route POST /api/banners
 // @access Private / Admin
+
 const addBanner = asyncHandler(async (req, res) => {
   const { title, subtitle, productId, gender } = req.body;
+
+  // ✅ 1. Basic validation
   if (!req.file || !title || !subtitle || !productId || !gender) {
-    return res.status(400).json({ message: "All fields are required." });
+    return res.status(400).json({
+      message: "All fields are required.",
+    });
   }
 
-  const product = await Product.findById(productId);
+  // ✅ 2. Trim productId (FIX for ObjectId cast error)
+  const trimmedProductId = productId.trim();
+
+  // ✅ 3. Validate MongoDB ObjectId
+  if (!mongoose.Types.ObjectId.isValid(trimmedProductId)) {
+    return res.status(400).json({
+      message: "Invalid Product ID format.",
+    });
+  }
+
+  // ✅ 4. Find product safely
+  const product = await Product.findById(trimmedProductId);
+
   if (!product) {
-    return res.status(404).json({ message: "Product not found." });
+    return res.status(404).json({
+      message: "Product not found.",
+    });
   }
-  if (product.banners.length >= 4) {
-    return res
-      .status(400)
-      .json({ message: "Maximum of 3 banners allowed per product." });
+
+  // ✅ 5. Correct banner limit check (MAX = 3)
+  if (product.banners.length >= 3) {
+    return res.status(400).json({
+      message: "Maximum of 3 banners allowed per product.",
+    });
   }
+
+  // ✅ 6. Create banner object
   const banner = {
     image: `/uploads/banners/images/${req.file.filename}`,
-    title,
-    subtitle,
-    productId,
-    gender,
+    title: title.trim(),
+    subtitle: subtitle.trim(),
+    productId: trimmedProductId,
+    gender: gender.trim(),
   };
+
+  // ✅ 7. Push banner & save
   product.banners.push(banner);
   await product.save();
-  res.status(201).json({ message: "Banner added successfully.", banner });
-});
 
+  // ✅ 8. Success response
+  res.status(201).json({
+    message: "Banner added successfully.",
+    banner,
+  });
+});
 // @desc deleteBanner
 // @route delete /api/banners/:id
 // @access Private/admin
