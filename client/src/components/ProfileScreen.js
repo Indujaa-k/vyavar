@@ -81,6 +81,7 @@ const ProfileScreen = () => {
   // const [errors, setErrors] = useState({});
   const [orderTab, setOrderTab] = useState("all");
   const [showForm, setShowForm] = useState(false);
+  const API_URL = process.env.REACT_APP_API_URL;
 
   const toast = useToast();
   const dispatch = useDispatch();
@@ -437,11 +438,17 @@ const ProfileScreen = () => {
                   src={
                     profilePicture instanceof File
                       ? URL.createObjectURL(profilePicture)
-                      : user?.profilePicture ||
-                        "https://via.placeholder.com/150"
+                      : user?.profilePicture
+                        ? user.profilePicture.startsWith("http")
+                          ? user.profilePicture.trim()
+                          : `${API_URL}${user.profilePicture.trim()}`
+                        : "https://via.placeholder.com/150"
                   }
                   alt="Profile"
                   style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  onError={(e) => {
+                    e.target.src = "https://via.placeholder.com/150";
+                  }}
                 />
               ) : user?.profilePicture &&
                 user.profilePicture !== "/images/default-profile.png" ? (
@@ -1002,13 +1009,22 @@ const ProfileScreen = () => {
                         {/* IMAGE */}
                         <Box w="60px" h="60px" flexShrink={0}>
                           <img
-                            src={item.product?.images?.[0]}
+                            src={
+                              item.product?.images?.[0]
+                                ? item.product.images[0].startsWith("http")
+                                  ? item.product.images[0]
+                                  : `${API_URL}${item.product.images[0]}`
+                                : "https://via.placeholder.com/150"
+                            }
                             alt={item.name}
                             style={{
                               width: "100%",
                               height: "100%",
                               objectFit: "cover",
                               borderRadius: "6px",
+                            }}
+                            onError={(e) => {
+                              e.target.src = "https://via.placeholder.com/150";
                             }}
                           />
                         </Box>
