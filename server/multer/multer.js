@@ -21,17 +21,26 @@ const storage = multer.diskStorage({
     /* ✅ PROFILE IMAGE */
     if (file.fieldname === "profilePicture") {
       dir = "uploads/profiles";
-    } else if (file.fieldname === "images") {
+
+      /* ✅ BANNER IMAGES */
+    } else if (file.fieldname === "bannerImage") {
+      dir = "uploads/banners/images";
+
       /* ✅ PRODUCT IMAGES */
+    } else if (file.fieldname === "images") {
       dir = "uploads/products/images";
-    } else if (file.fieldname === "photos") {
+
       /* ✅ REVIEW IMAGES */
-      dir = "uploads/reviews";
+    } else if (
+      file.fieldname === "image" &&
+      req.originalUrl.includes("/api/banners")
+    ) {
+      dir = "uploads/banners/images";
     } else if (file.mimetype.startsWith("video")) {
-      /* ✅ BANNER VIDEOS */
       dir = "uploads/banners/videos";
-    } else if (file.mimetype === "application/pdf") {
+
       /* ✅ PDF FILES */
+    } else if (file.mimetype === "application/pdf") {
       dir = "uploads/pdfs";
     }
 

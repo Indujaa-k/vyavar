@@ -71,6 +71,8 @@ const AdminBannerScreen = () => {
     dispatch(deleteBanner(id));
   };
 
+  const API_URL = process.env.REACT_APP_API_URL;
+
   return (
     <Box p={14} bg="white">
       <h1 className="titlepanel">Image Banners</h1>
@@ -163,45 +165,7 @@ const AdminBannerScreen = () => {
                 >
                   <HStack spacing={4} align="center">
                     <Image
-                      src={banner.image}
-                      alt={banner.title}
-                      boxSize="100px"
-                      objectFit="cover"
-                      borderRadius="md"
-                    />
-                    <Box flex={1}>
-                      <Heading size="sm">{banner.title}</Heading>
-                      <Text fontSize="sm" color="gray.600">
-                        {banner.subtitle}
-                      </Text>
-                    </Box>
-                    <Button
-                      colorScheme="red"
-                      onClick={() => handleDeleteBanner(banner._id)}
-                    >
-                      Delete
-                    </Button>
-                  </HStack>
-                </Box>
-              ))}
-          </VStack>
-
-          <VStack spacing={6} align="stretch">
-            {banners
-              .filter((banner) => banner.gender === "female")
-              .map((banner) => (
-                <Box
-                  key={banner._id}
-                  p={4}
-                  bg="white"
-                  borderRadius="md"
-                  boxShadow="md"
-                  border="1px solid"
-                  borderColor="gray.200"
-                >
-                  <HStack spacing={4} align="center">
-                    <Image
-                      src={banner.image}
+                      src={`${API_URL}${banner.image}`}
                       alt={banner.title}
                       boxSize="100px"
                       objectFit="cover"

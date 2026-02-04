@@ -78,7 +78,7 @@ export const addBanner = (bannerData) => async (dispatch, getState) => {
     const { data } = await axios.post(
       `${API_URL}/api/banners/banner`,
       bannerData,
-      config
+      config,
     );
     console.log("bannerData", bannerData);
     dispatch({ type: BANNER_ADD_SUCCESS, payload: data });
@@ -139,7 +139,7 @@ export const uploadVideoBanner = (formData) => async (dispatch, getState) => {
     const { data } = await axios.post(
       `${API_URL}/api/banners/addvideobanner`,
       formData,
-      config
+      config,
     );
     console.log("Sending Form Data:", formData);
 
@@ -153,58 +153,65 @@ export const uploadVideoBanner = (formData) => async (dispatch, getState) => {
   }
 };
 //list video banner
-export const listVideoBanners =
-  (productId = "") =>
-  async (dispatch, getState) => {
-    try {
-      dispatch({ type: VIDEO_BANNER_LIST_REQUEST });
-      const {
-        userLogin: { userInfo },
-      } = getState();
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      };
-      const { data } = await axios.get(
-        `${API_URL}/api/banners/getvideobanner?productId=${productId}`,
-        config
-      );
-      dispatch({ type: VIDEO_BANNER_LIST_SUCCESS, payload: data });
-    } catch (error) {
-      dispatch({
-        type: VIDEO_BANNER_LIST_FAIL,
-        payload: error.response?.data?.message || error.message,
-      });
-    }
-  };
+export const listVideoBanners = () => async (dispatch, getState) => {
+  try {
+    dispatch({ type: VIDEO_BANNER_LIST_REQUEST });
 
-// delete videobanner
-export const deleteVideoBanner =
-  (productId, videoId) => async (dispatch, getState) => {
-    try {
-      dispatch({ type: VIDEO_BANNER_DELETE_REQUEST });
-      const {
-        userLogin: { userInfo },
-      } = getState();
-      const config = {
-        headers: {
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      };
-      await axios.delete(
-        `${API_URL}/api/banners/deletevideobanner/${productId}/${videoId}`,
-        config
-      );
-      dispatch({ type: VIDEO_BANNER_DELETE_SUCCESS, payload: videoId });
-    } catch (error) {
-      dispatch({
-        type: VIDEO_BANNER_DELETE_FAIL,
-        payload: error.response?.data?.message || error.message,
-      });
-    }
-  };
+    const {
+      userLogin: { userInfo },
+    } = getState();
+
+    const config = {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${userInfo.token}`,
+      },
+    };
+
+    const { data } = await axios.get(
+      `${API_URL}/api/banners/getvideobanner`,
+      config,
+    );
+
+    dispatch({
+      type: VIDEO_BANNER_LIST_SUCCESS,
+      payload: data,
+    });
+  } catch (error) {
+    dispatch({
+      type: VIDEO_BANNER_LIST_FAIL,
+      payload: error.response?.data?.message || error.message,
+    });
+  }
+};
+
+export const deleteVideoBanner = (videoId) => async (dispatch, getState) => {
+  try {
+    dispatch({ type: VIDEO_BANNER_DELETE_REQUEST });
+
+    const {
+      userLogin: { userInfo },
+    } = getState();
+
+    const config = {
+      headers: {
+        Authorization: `Bearer ${userInfo.token}`,
+      },
+    };
+
+    await axios.delete(
+      `${API_URL}/api/banners/deletevideobanner/${videoId}`,
+      config,
+    );
+
+    dispatch({ type: VIDEO_BANNER_DELETE_SUCCESS, payload: videoId });
+  } catch (error) {
+    dispatch({
+      type: VIDEO_BANNER_DELETE_FAIL,
+      payload: error.response?.data?.message || error.message,
+    });
+  }
+};
 
 export const listUserVideoBanners = () => async (dispatch) => {
   try {
@@ -220,7 +227,7 @@ export const listUserVideoBanners = () => async (dispatch) => {
     };
     const { data } = await axios.get(
       `${API_URL}/api/banners/getuservideobanners`,
-      config
+      config,
     );
 
     dispatch({ type: USER_VIDEO_BANNER_LIST_SUCCESS, payload: data });
@@ -245,7 +252,10 @@ export const listOfferBanners = () => async (dispatch, getState) => {
       },
     };
 
-    const { data } = await axios.get(`${API_URL}/api/banners/offerbanners`, config);
+    const { data } = await axios.get(
+      `${API_URL}/api/banners/offerbanners`,
+      config,
+    );
 
     dispatch({
       type: OFFER_BANNER_LIST_SUCCESS,
@@ -254,8 +264,7 @@ export const listOfferBanners = () => async (dispatch, getState) => {
   } catch (error) {
     dispatch({
       type: OFFER_BANNER_LIST_FAIL,
-      payload:
-        error.response?.data.message || error.message,
+      payload: error.response?.data.message || error.message,
     });
   }
 };
@@ -277,7 +286,7 @@ export const addOfferBanner = (bannerData) => async (dispatch, getState) => {
     const { data } = await axios.post(
       `${API_URL}/api/banners/offerbanner`,
       bannerData,
-      config
+      config,
     );
 
     dispatch({
@@ -287,44 +296,43 @@ export const addOfferBanner = (bannerData) => async (dispatch, getState) => {
   } catch (error) {
     dispatch({
       type: OFFER_BANNER_ADD_FAIL,
-      payload:
-        error.response?.data.message || error.message,
+      payload: error.response?.data.message || error.message,
     });
   }
 };
-export const updateOfferBanner = (id, bannerData) => async (dispatch, getState) => {
-  try {
-    dispatch({ type: OFFER_BANNER_UPDATE_REQUEST });
+export const updateOfferBanner =
+  (id, bannerData) => async (dispatch, getState) => {
+    try {
+      dispatch({ type: OFFER_BANNER_UPDATE_REQUEST });
 
-    const {
-      userLogin: { userInfo },
-    } = getState();
+      const {
+        userLogin: { userInfo },
+      } = getState();
 
-    const config = {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${userInfo.token}`,
-      },
-    };
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
 
-    const { data } = await axios.put(
-      `${API_URL}/api/banners/offerbanner/${id}`,
-      bannerData,
-      config
-    );
+      const { data } = await axios.put(
+        `${API_URL}/api/banners/offerbanner/${id}`,
+        bannerData,
+        config,
+      );
 
-    dispatch({
-      type: OFFER_BANNER_UPDATE_SUCCESS,
-      payload: data,
-    });
-  } catch (error) {
-    dispatch({
-      type: OFFER_BANNER_UPDATE_FAIL,
-      payload:
-        error.response?.data.message || error.message,
-    });
-  }
-};
+      dispatch({
+        type: OFFER_BANNER_UPDATE_SUCCESS,
+        payload: data,
+      });
+    } catch (error) {
+      dispatch({
+        type: OFFER_BANNER_UPDATE_FAIL,
+        payload: error.response?.data.message || error.message,
+      });
+    }
+  };
 export const deleteOfferBanner = (id) => async (dispatch, getState) => {
   try {
     dispatch({ type: OFFER_BANNER_DELETE_REQUEST });
@@ -345,8 +353,7 @@ export const deleteOfferBanner = (id) => async (dispatch, getState) => {
   } catch (error) {
     dispatch({
       type: OFFER_BANNER_DELETE_FAIL,
-      payload:
-        error.response?.data.message || error.message,
+      payload: error.response?.data.message || error.message,
     });
   }
 };
@@ -363,8 +370,7 @@ export const getActiveOfferBanner = () => async (dispatch) => {
   } catch (error) {
     dispatch({
       type: OFFER_BANNER_ACTIVE_FAIL,
-      payload:
-        error.response?.data.message || error.message,
+      payload: error.response?.data.message || error.message,
     });
   }
 };
@@ -374,7 +380,3 @@ export const clearActiveOfferBanner = () => {
     type: CLEAR_ACTIVE_OFFER_BANNER,
   };
 };
-
-
-
-

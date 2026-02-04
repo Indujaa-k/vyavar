@@ -134,7 +134,7 @@ const CreateProductPage = () => {
 
   const removeColorVariant = (removeIndex) => {
     setColorVariants((prev) =>
-      prev.filter((_, index) => index !== removeIndex)
+      prev.filter((_, index) => index !== removeIndex),
     );
   };
 
@@ -183,6 +183,18 @@ const CreateProductPage = () => {
   //     }));
   //   }
   // }, [productType]);
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error",
+        description: error,
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+        position: "top-right",
+      });
+    }
+  }, [error, toast]);
 
   const [colorVariants, setColorVariants] = useState([
     {
@@ -196,7 +208,7 @@ const CreateProductPage = () => {
   ]);
 
   const [stockBySize, setStockBySize] = useState(
-    options.sizes.map((size) => ({ size, stock: 0 }))
+    options.sizes.map((size) => ({ size, stock: 0 })),
   );
   const calculateVariantPrice = (oldPrice, discount = 0) => {
     const op = Number(oldPrice);
@@ -289,13 +301,13 @@ const CreateProductPage = () => {
               color: v.color || "Combo",
               sizes: v.sizes,
               stockBySize: v.stockBySize.filter((s) =>
-                v.sizes.includes(s.size)
+                v.sizes.includes(s.size),
               ),
               category: "Combo",
               subcategory: "Combo",
             },
-          }))
-        )
+          })),
+        ),
       );
     } else {
       // ✅ SINGLE PRODUCT VARIANTS
@@ -314,11 +326,11 @@ const CreateProductPage = () => {
               color: v.color,
               sizes: v.sizes,
               stockBySize: v.stockBySize.filter((s) =>
-                v.sizes.includes(s.size)
+                v.sizes.includes(s.size),
               ),
             },
-          }))
-        )
+          })),
+        ),
       );
     }
 
@@ -368,7 +380,6 @@ const CreateProductPage = () => {
         </select>
       </FormControl>
 
-      {error && <Text color="red.500">{error}</Text>}
       <form
         onSubmit={submitHandler}
         encType="multipart/form-data"
@@ -398,7 +409,6 @@ const CreateProductPage = () => {
           Mark as Featured Product
         </Checkbox>
         <Divider my={4} />
-       
         <FormControl>
           <FormLabel>Description</FormLabel>
           <Stack direction="column" spacing={4}>
@@ -467,7 +477,7 @@ const CreateProductPage = () => {
             >
               <option value="">Select Subcategory</option>
               {CATEGORY_DATA.find(
-                (cat) => cat.name === productdetails.category
+                (cat) => cat.name === productdetails.category,
               )?.subcategories.map((sub) => (
                 <option key={sub} value={sub}>
                   {sub}
@@ -583,8 +593,8 @@ const CreateProductPage = () => {
                     const safe = isNaN(num) ? 0 : num; // ✅ always safe
                     setColorVariants((prev) =>
                       prev.map((v, idx) =>
-                        idx === index ? { ...v, oldPrice: safe } : v
-                      )
+                        idx === index ? { ...v, oldPrice: safe } : v,
+                      ),
                     );
                   }}
                 />
@@ -603,8 +613,8 @@ const CreateProductPage = () => {
                     const safe = isNaN(num) ? 0 : num; // ✅ always safe
                     setColorVariants((prev) =>
                       prev.map((v, idx) =>
-                        idx === index ? { ...v, discount: safe } : v
-                      )
+                        idx === index ? { ...v, discount: safe } : v,
+                      ),
                     );
                   }}
                 />
@@ -616,7 +626,7 @@ const CreateProductPage = () => {
                   type="number"
                   value={calculateVariantPrice(
                     variant.oldPrice,
-                    variant.discount
+                    variant.discount,
                   )}
                   readOnly
                 />
@@ -659,7 +669,7 @@ const CreateProductPage = () => {
                       (stk) =>
                         stk.size === size
                           ? { ...stk, stock: Number(e.target.value) }
-                          : stk
+                          : stk,
                     );
                     setColorVariants(updated);
                   }}

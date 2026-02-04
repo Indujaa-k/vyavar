@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   listVideoBanners,
@@ -17,73 +17,82 @@ import {
   useToast,
   Flex,
   IconButton,
+  useDisclosure,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
 } from "@chakra-ui/react";
 import { MdDelete } from "react-icons/md";
 
 const AdminVideoBanner = () => {
   const dispatch = useDispatch();
   const toast = useToast();
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const cancelRef = useRef();
+  const [deleteVideoId, setDeleteVideoId] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Renamed state variables for clarity
-  const [inputProductId, setInputProductId] = useState("");
   const [selectedVideoFile, setSelectedVideoFile] = useState(null);
 
-  // Redux States
+  // Redux states
   const {
     loading,
     error,
     videos = [],
-  } = useSelector((state) => state.getvideoBanners) || {};
+  } = useSelector((state) => state.getvideoBanners);
+
   const {
     loading: uploading,
     error: uploadError,
     success: uploadSuccess,
   } = useSelector((state) => state.addvideoBanners);
+  const [productId, setProductId] = useState("");
+
   const { success: deleteSuccess } = useSelector(
-    (state) => state.deletevideoBanners
+    (state) => state.deletevideoBanners,
   );
 
-  // Helper for current ID
-  const trimmedProductId = inputProductId.trim();
+  // ✅ Only one video allowed
+  const isVideoExists = videos.length > 0;
 
-  // 1. Toast & Cleanup Effect
+  // Fetch all videos
   useEffect(() => {
-    if (uploadSuccess) {
+    dispatch(listVideoBanners());
+  }, [dispatch, uploadSuccess, deleteSuccess]);
+
+  // Toasts
+  useEffect(() => {
+    if (uploadSuccess && isSubmitting) {
       toast({
         title: "Success",
-        description: "Video banner uploaded successfully!",
+        description: "Video uploaded successfully",
         status: "success",
         duration: 3000,
         isClosable: true,
       });
-      // Clear state on success
+
       setSelectedVideoFile(null);
-      setInputProductId("");
+      setProductId("");
+      setIsSubmitting(false); // reset
     }
 
-    if (uploadError) {
+    if (uploadError && isSubmitting) {
       toast({
         title: "Upload Failed",
         description: uploadError,
         status: "error",
-        duration: 5000,
+        duration: 4000,
         isClosable: true,
       });
+
+      setIsSubmitting(false); // reset
     }
-  }, [uploadSuccess, uploadError, toast]);
+  }, [uploadSuccess, uploadError, isSubmitting, toast]);
 
-  // 2. Re-fetch Effect
-  useEffect(() => {
-    if (uploadSuccess || deleteSuccess) {
-      // Use the trimmed ID to refresh the list if we have an ID
-      if (trimmedProductId) {
-        dispatch(listVideoBanners(trimmedProductId));
-      }
-    }
-  }, [dispatch, uploadSuccess, deleteSuccess, trimmedProductId]);
-
-  // --- Handlers ---
-
+  // Handlers
   const uploadHandler = (e) => {
     setSelectedVideoFile(e.target.files[0]);
   };
@@ -91,10 +100,21 @@ const AdminVideoBanner = () => {
   const submitHandler = (e) => {
     e.preventDefault();
 
-    if (!selectedVideoFile || !trimmedProductId) {
+    if (!productId.trim()) {
       toast({
         title: "Error",
-        description: "Please enter a Product ID and select a video file.",
+        description: "Please enter a Product ID",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    if (!selectedVideoFile) {
+      toast({
+        title: "Error",
+        description: "Please select a video file",
         status: "warning",
         duration: 3000,
         isClosable: true,
@@ -104,63 +124,45 @@ const AdminVideoBanner = () => {
 
     const formData = new FormData();
     formData.append("video", selectedVideoFile);
-    formData.append("productId", trimmedProductId);
-
+    formData.append("productId", productId); // ✅ important
+    setIsSubmitting(true);
     dispatch(uploadVideoBanner(formData));
   };
 
-  const deleteHandler = (videoId) => {
-    if (window.confirm("Are you sure you want to delete this video?")) {
-      dispatch(deleteVideoBanner(trimmedProductId, videoId));
-    }
+  const openDeleteConfirm = (videoId) => {
+    setDeleteVideoId(videoId);
+    onOpen();
   };
 
-  const handleFetchVideos = () => {
-    if (trimmedProductId) {
-      dispatch(listVideoBanners(trimmedProductId));
-    } else {
-      toast({
-        title: "Error",
-        description: "Please enter a Product ID to fetch videos.",
-        status: "warning",
-        duration: 3000,
-        isClosable: true,
-      });
-    }
+  const confirmDelete = () => {
+    dispatch(deleteVideoBanner(deleteVideoId));
+    setDeleteVideoId(null);
+    onClose();
   };
-
-  // 🎯 CORE LOGIC: Button is disabled if either state is missing
-  const isUploadDisabled = !trimmedProductId || !selectedVideoFile;
-
-  // --- Render ---
-
+const API_URL = process.env.REACT_APP_API_URL;
+  // Render
   return (
     <Box mt={10} p={6} maxW="800px" mx="auto">
-      <h1 className="titlepanel">Video Banners</h1>
-
-      {/* Product ID Input (CONTROLLED) */}
-      <FormControl mb={4}>
-        <FormLabel>Enter Product ID</FormLabel>
+      <h1 className="titlepanel">Video Banner</h1>
+      <FormControl mb={3} isRequired>
+        <FormLabel>Product ID</FormLabel>
         <Input
           type="text"
           placeholder="Enter Product ID"
-          value={inputProductId} // ⬅️ Controlled State
-          onChange={(e) => setInputProductId(e.target.value)} // ⬅️ Updates State (guaranteed re-render)
+          value={productId}
+          onChange={(e) => setProductId(e.target.value)}
         />
-        <Button mt={2} colorScheme="blue" onClick={handleFetchVideos}>
-          Fetch Videos
-        </Button>
       </FormControl>
 
-      {/* Upload Form */}
+      {/* Upload */}
       <Box bg="gray.100" p={4} borderRadius="md" mb={6}>
         <form onSubmit={submitHandler}>
           <FormControl>
             <FormLabel>
-              Upload Video (MP4, AVI, MOV)
+              Upload Video
               {selectedVideoFile && (
                 <Text fontSize="sm" color="green.600">
-                  : **{selectedVideoFile.name}** selected
+                  : {selectedVideoFile.name}
                 </Text>
               )}
             </FormLabel>
@@ -168,24 +170,31 @@ const AdminVideoBanner = () => {
               type="file"
               accept="video/mp4,video/avi,video/mov"
               onChange={uploadHandler}
-              // Key ensures visual reset on file input when state is cleared
-              key={selectedVideoFile || "fileInputKey"}
+              key={selectedVideoFile || "video-input"}
             />
           </FormControl>
+
           <Button
             mt={4}
             colorScheme="blue"
             type="submit"
             isLoading={uploading}
             loadingText="Uploading..."
-            disabled={isUploadDisabled} // ⬅️ Uses the combined state check
+            disabled={isVideoExists || isSubmitting}
           >
             Upload Video
           </Button>
+
+          {isVideoExists && (
+            <Text mt={2} fontSize="sm" color="red.500">
+              Only one video is allowed. Delete existing video to upload a new
+              one.
+            </Text>
+          )}
         </form>
       </Box>
 
-      {/* Errors */}
+      {/* Error */}
       {error && <Text color="red.500">{error}</Text>}
 
       {/* Video List */}
@@ -203,18 +212,18 @@ const AdminVideoBanner = () => {
               borderRadius="md"
             >
               <video width="100%" controls>
-                <source src={video.videoUrl} type="video/mp4" />
+                <source src={`${API_URL}${video.videoUrl}`} type="video/mp4" />
               </video>
               <Flex justify="space-between" mt={2}>
                 <Text fontSize="sm" color="gray.600">
-                  Uploaded on: {new Date(video.createdAt).toLocaleDateString()}
+                  Uploaded on {new Date(video.createdAt).toLocaleDateString()}
                 </Text>
                 <IconButton
                   aria-label="Delete Video"
                   icon={<MdDelete />}
                   colorScheme="red"
                   size="sm"
-                  onClick={() => deleteHandler(video._id)}
+                  onClick={() => openDeleteConfirm(video._id)}
                 />
               </Flex>
             </Box>
@@ -222,10 +231,36 @@ const AdminVideoBanner = () => {
         </VStack>
       ) : (
         <Text color="gray.500" mt={4}>
-          No videos found for this Product ID. **Click "Fetch Videos" to load
-          them.**
+          No videos found
         </Text>
       )}
+      <AlertDialog
+        isOpen={isOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={onClose}
+        isCentered
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Delete Video Banner
+            </AlertDialogHeader>
+
+            <AlertDialogBody>
+              Are you sure? This action cannot be undone.
+            </AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={onClose}>
+                Cancel
+              </Button>
+              <Button colorScheme="red" onClick={confirmDelete} ml={3}>
+                Delete
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </Box>
   );
 };

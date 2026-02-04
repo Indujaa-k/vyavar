@@ -43,23 +43,33 @@ const addBanner = asyncHandler(async (req, res) => {
 const deleteBanner = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
+  // 1️⃣ Find product containing this banner
   const product = await Product.findOne({ "banners._id": id });
-  const bannerToDelete = product.banners.find((b) => b._id.toString() === id);
-
-  if (bannerToDelete?.image) {
-    const imagePath = path.join(process.cwd(), bannerToDelete.image);
-    if (fs.existsSync(imagePath)) {
-      fs.unlinkSync(imagePath);
-    }
-  }
 
   if (!product) {
     return res.status(404).json({ message: "Banner not found." });
   }
 
+  // 2️⃣ Find banner object
+  const bannerToDelete = product.banners.find((b) => b._id.toString() === id);
+
+  // 3️⃣ Delete image file from server
+  if (bannerToDelete?.image) {
+    // If image is like: /uploads/banners/images/xxx.jpg
+    const relativePath = bannerToDelete.image.replace(/^https?:\/\/[^/]+/, "");
+
+    const imagePath = path.join(process.cwd(), relativePath);
+
+    if (fs.existsSync(imagePath)) {
+      fs.unlinkSync(imagePath);
+    }
+  }
+
+  // 4️⃣ Remove banner from DB
   product.banners = product.banners.filter(
     (banner) => banner._id.toString() !== id,
   );
+
   await product.save();
 
   res.status(200).json({ message: "Banner deleted successfully." });
@@ -108,20 +118,30 @@ const addvideobanner = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "No video uploaded." });
   }
 
+  // 🚫 GLOBAL SINGLE VIDEO CHECK
+  const existingVideo = await Product.findOne({
+    "VideoBanner.0": { $exists: true },
+  });
+
+  if (existingVideo) {
+    return res.status(400).json({
+      message: "Only one video banner is allowed in the entire system.",
+    });
+  }
+
   // ✅ Check product exists
   const product = await Product.findById(productId);
   if (!product) {
     return res.status(404).json({ message: "Product not found" });
   }
 
-  // ✅ Create video banner with unique ID
+  // ✅ Create video banner
   const videoBanner = {
-    _id: new mongoose.Types.ObjectId(), // Unique video ID
+    _id: new mongoose.Types.ObjectId(),
     videoUrl: `/uploads/banners/videos/${req.file.filename}`,
     uploadedAt: new Date(),
   };
 
-  // ✅ Push to product's VideoBanner array
   product.VideoBanner.push(videoBanner);
   await product.save();
 
@@ -136,59 +156,65 @@ const addvideobanner = asyncHandler(async (req, res) => {
 // @route get /api/videobanners
 // @access Private
 const getvideobanner = asyncHandler(async (req, res) => {
-  const { productId } = req.query; // Get productId from request body
-  if (productId) {
-    const product = await Product.findById(productId);
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-    console.log("Video banners fetched:", product.VideoBanner); // Log output
-    return res.json(product.VideoBanner);
+  // ✅ Find product that has a video banner
+  const productWithVideo = await Product.findOne(
+    { "VideoBanner.0": { $exists: true } },
+    { VideoBanner: 1 },
+  );
+
+  if (!productWithVideo) {
+    return res.json([]); // No video uploaded yet
   }
 
-  // If no productId, fetch all video banners
-  const products = await Product.find({}, "VideoBanner");
-  const allVideoBanners = products.flatMap((product) => product.VideoBanner);
-
-  res.json(allVideoBanners);
+  res.json(productWithVideo.VideoBanner);
 });
+
 // @desc deletevideoBanner
 // @route delete /api/videobanners/:id
 // @access Private/admin
 
 const deletevideobanner = asyncHandler(async (req, res) => {
-  const { productId, videoId } = req.params; // Get productId & videoId from URL params
+  const { videoId } = req.params;
 
-  const product = await Product.findById(productId);
+  // 1️⃣ Find product containing this video
+  const product = await Product.findOne({
+    "VideoBanner._id": videoId,
+  });
 
   if (!product) {
-    return res.status(404).json({ message: "Product not found" });
+    return res.status(404).json({ message: "Video not found" });
   }
 
-  const videoIndex = product.VideoBanner.findIndex(
-    (v) => v._id.toString() === videoId,
+  // 2️⃣ Find video object
+  const video = product.VideoBanner.find((v) => v._id.toString() === videoId);
+
+  if (!video) {
+    return res.status(404).json({ message: "Video not found" });
+  }
+
+  // 3️⃣ Convert URL → local file path
+  // URL: http://localhost:3001/uploads/banners/videos/xxx.mp4
+  const relativePath = video.videoUrl.replace(/^https?:\/\/[^/]+/, "");
+
+  const filePath = path.join(process.cwd(), relativePath);
+
+  // 4️⃣ Delete file from server
+  fs.unlink(filePath, (err) => {
+    if (err) {
+      console.error("Video file delete failed:", err.message);
+    }
+  });
+
+  // 5️⃣ Remove from DB
+  product.VideoBanner = product.VideoBanner.filter(
+    (v) => v._id.toString() !== videoId,
   );
 
-  if (videoIndex === -1) {
-    return res.status(404).json({ message: "Video banner not found" });
-  }
-
-  // Remove video file from the server
-  const videoPath = path.join(
-    process.cwd(),
-    product.VideoBanner[videoIndex].videoUrl,
-  );
-
-  if (fs.existsSync(videoPath)) {
-    fs.unlinkSync(videoPath);
-  }
-
-  // Remove the video from the array
-  product.VideoBanner.splice(videoIndex, 1);
   await product.save();
 
   res.json({ message: "Video banner deleted successfully" });
 });
+
 // @desc getallvideoBanners
 // @route get /api/allvideobanners
 // @access Private

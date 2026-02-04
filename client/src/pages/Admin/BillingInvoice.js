@@ -21,7 +21,7 @@ import {
 } from "@chakra-ui/react";
 import { fetchBillingInvoice } from "../../actions/billingInvoiceActions";
 import { DeleteIcon } from "@chakra-ui/icons";
-import Logo from "../../assets/kids logo.png";
+import Logo from "../../assets/vyavarlogo.jpg";
 import { createBillingInvoice } from "../../actions/billingInvoiceActions";
 import InvoicePDF from "./InvoicePDF";
 
