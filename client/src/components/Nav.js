@@ -521,7 +521,7 @@ const Nav = () => {
             >
               {banner
                 ? `${banner.offerText} • ${banner.offerText} • ${banner.offerText}`
-                : "Loading offers..."}
+                : "Stay tuned for exciting offers!• Stay tuned for exciting offers!• Stay tuned for exciting offers!"}
             </div>
 
             <style>

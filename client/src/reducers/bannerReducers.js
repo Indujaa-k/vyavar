@@ -36,6 +36,21 @@ import {
   OFFER_BANNER_ACTIVE_SUCCESS,
   OFFER_BANNER_ACTIVE_FAIL,
   CLEAR_ACTIVE_OFFER_BANNER,
+  TOP_OFFER_LIST_REQUEST,
+  TOP_OFFER_LIST_SUCCESS,
+  TOP_OFFER_LIST_FAIL,
+  TOP_OFFER_CREATE_REQUEST,
+  TOP_OFFER_CREATE_SUCCESS,
+  TOP_OFFER_CREATE_FAIL,
+  TOP_OFFER_UPDATE_REQUEST,
+  TOP_OFFER_UPDATE_SUCCESS,
+  TOP_OFFER_UPDATE_FAIL,
+  TOP_OFFER_DELETE_REQUEST,
+  TOP_OFFER_DELETE_SUCCESS,
+  TOP_OFFER_DELETE_FAIL,
+  TOP_OFFER_ACTIVATE_REQUEST,
+  TOP_OFFER_ACTIVATE_SUCCESS,
+  TOP_OFFER_ACTIVATE_FAIL,
 } from "../constants/bannerConstants";
 
 export const bannerListReducer = (state = { banners: [] }, action) => {
@@ -130,7 +145,7 @@ export const userVideoBannerListReducer = (state = { videos: [] }, action) => {
 };
 export const offerBannerListReducer = (
   state = { offerBanners: [] },
-  action
+  action,
 ) => {
   switch (action.type) {
     case OFFER_BANNER_LIST_REQUEST:
@@ -203,6 +218,48 @@ export const activeOfferBannerReducer = (state = { banner: null }, action) => {
       return { loading: false, error: action.payload };
     case CLEAR_ACTIVE_OFFER_BANNER:
       return {};
+
+    default:
+      return state;
+  }
+};
+
+export const topOfferListReducer = (state = { offers: [] }, action) => {
+  switch (action.type) {
+    case TOP_OFFER_LIST_REQUEST:
+      return { loading: true, offers: [] };
+
+    case TOP_OFFER_LIST_SUCCESS:
+      return { loading: false, offers: action.payload };
+
+    case TOP_OFFER_LIST_FAIL:
+      return { loading: false, error: action.payload };
+
+    default:
+      return state;
+  }
+};
+
+/* ACTION REDUCER */
+export const topOfferActionReducer = (state = {}, action) => {
+  switch (action.type) {
+    case TOP_OFFER_CREATE_REQUEST:
+    case TOP_OFFER_UPDATE_REQUEST:
+    case TOP_OFFER_DELETE_REQUEST:
+    case TOP_OFFER_ACTIVATE_REQUEST:
+      return { loading: true };
+
+    case TOP_OFFER_CREATE_SUCCESS:
+    case TOP_OFFER_UPDATE_SUCCESS:
+    case TOP_OFFER_DELETE_SUCCESS:
+    case TOP_OFFER_ACTIVATE_SUCCESS:
+      return { loading: false, success: true };
+
+    case TOP_OFFER_CREATE_FAIL:
+    case TOP_OFFER_UPDATE_FAIL:
+    case TOP_OFFER_DELETE_FAIL:
+    case TOP_OFFER_ACTIVATE_FAIL:
+      return { loading: false, error: action.payload };
 
     default:
       return state;
