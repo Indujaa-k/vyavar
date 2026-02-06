@@ -111,7 +111,7 @@ const AdminOfferBannerScreen = () => {
       await axios.put(
         `/api/banners/offerbanner/${editingId}`,
         { offerText: editingText },
-        config
+        config,
       );
 
       toast({
@@ -215,7 +215,7 @@ const AdminOfferBannerScreen = () => {
                         const { data } = await axios.put(
                           `/api/banners/offerbanner/activate/${offer._id}`,
                           {}, // PUT body can be empty
-                          config
+                          config,
                         );
                         toast({
                           title: "Offer activated",
@@ -229,7 +229,7 @@ const AdminOfferBannerScreen = () => {
                       } catch (err) {
                         console.error(
                           "Activate offer error:",
-                          err.response?.data || err.message
+                          err.response?.data || err.message,
                         ); // 🔹 Step 3: More info
                         toast({
                           title: "Failed to activate offer",
@@ -265,14 +265,14 @@ const AdminOfferBannerScreen = () => {
                     Edit
                   </Button>
                   {editingId === offer._id && (
-  <Button
-    size="sm"
-    colorScheme="green"
-    onClick={editOfferHandler}
-  >
-    Update
-  </Button>
-)}
+                    <Button
+                      size="sm"
+                      colorScheme="green"
+                      onClick={editOfferHandler}
+                    >
+                      Update
+                    </Button>
+                  )}
 
                   <Button
                     colorScheme="red"

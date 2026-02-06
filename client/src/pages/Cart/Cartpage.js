@@ -164,32 +164,62 @@ const CartPage = () => {
                         </Select>
 
                         {/* QTY */}
-                        <Select
-                          value={item.qty}
-                          onChange={(e) =>
-                            dispatch(
-                              addToCart(item.product._id, {
-                                qty: Number(e.target.value), // ✅ absolute quantity
-                                size: item.size,
-                                action: "set",
-                              }),
-                            )
-                          }
-                          w="80px"
-                          size="sm"
+                        {/* QTY */}
+                        <Flex
+                          align="center"
+                          border="1px solid"
+                          borderColor="gray.300"
+                          borderRadius="md"
+                          overflow="hidden"
+                          height="32px"
                         >
-                          {[
-                            ...Array(
-                              item.product.productdetails.stockBySize?.find(
-                                (s) => s.size === item.size,
-                              )?.stock || 0,
-                            ).keys(),
-                          ].map((x) => (
-                            <option key={x + 1} value={x + 1}>
-                              {x + 1}
-                            </option>
-                          ))}
-                        </Select>
+                          {/* DECREASE */}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            isDisabled={item.qty <= 1}
+                            onClick={() =>
+                              dispatch(
+                                addToCart(item.product._id, {
+                                  cartItemId: item._id,
+                                  qty: item.qty - 1,
+                                  size: item.size,
+                                  action: "set",
+                                }),
+                              )
+                            }
+                          >
+                            −
+                          </Button>
+
+                          {/* QTY DISPLAY */}
+                          <Text
+                            minW="32px"
+                            textAlign="center"
+                            fontWeight="medium"
+                          >
+                            {item.qty}
+                          </Text>
+
+                          {/* INCREASE */}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            isDisabled={item.qty >= stock}
+                            onClick={() =>
+                              dispatch(
+                                addToCart(item.product._id, {
+                                  cartItemId: item._id,
+                                  qty: item.qty + 1,
+                                  size: item.size,
+                                  action: "set",
+                                }),
+                              )
+                            }
+                          >
+                            +
+                          </Button>
+                        </Flex>
                       </Flex>
                       {/* PRICE */}
                       <Flex mt={2} align="center" gap={2}>

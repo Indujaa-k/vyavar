@@ -90,10 +90,10 @@ const ProductsListPage = () => {
     <Box bg="white">
       <Flex direction={{ base: "column", md: "row" }}>
         {/* Left Side - Filter Section */}
-        <Box mt={20} width={{ base: "100%", md: "25%" }}>
+        <Box mt={5} width={{ base: "100%", md: "25%" }}>
           <FilterPage />
         </Box>
-        <Box flex="1" mt={20}>
+        <Box flex="1" mt={5}>
           {/* Right Side - Product List */}
           <Flex
             justify="space-between"
@@ -189,7 +189,7 @@ const ProductsListPage = () => {
               ))}
             </Box>
           ) : (
-            <Text>No products found.</Text>
+            <Text>Our products will be available soon. Stay tuned...!</Text>
           )}
         </Box>
       </Flex>

@@ -138,14 +138,15 @@ const FilterPage = () => {
     <Flex direction={{ base: "column", md: "row" }}>
       <Box
         bg="white"
+        m="0"
         width={{ base: "100%", md: "300px" }}
-        borderRight="1px solid "
+        borderRight="1px solid"
         borderColor="gray.200"
       >
         <Flex
           justifyContent="space-between"
           alignItems="center"
-          p={3}
+          p={0}
           bg="white"
           border="1px solid "
           borderColor="gray.200"
@@ -160,7 +161,6 @@ const FilterPage = () => {
           <Text
             cursor="pointer"
             color="red.500"
-            
             mr={3}
             onClick={handleClearFilters}
           >
