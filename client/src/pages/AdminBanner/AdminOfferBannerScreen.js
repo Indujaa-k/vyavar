@@ -35,12 +35,12 @@ const AdminOfferBannerScreen = () => {
       Authorization: `Bearer ${userInfo.token}`,
     },
   };
-
+const API_URL = process.env.REACT_APP_API_URL;
   /* FETCH ALL OFFERS (ADMIN) */
   const fetchOffers = async () => {
     try {
       setLoading(true);
-      const { data } = await axios.get("/api/banners/offerbanners", config);
+      const { data } = await axios.get(`${API_URL}/api/banners/offerbanners`, config);
 
       setOffers(data);
       setLoading(false);
@@ -68,7 +68,7 @@ const AdminOfferBannerScreen = () => {
     }
 
     try {
-      await axios.post("/api/banners/offerbanner", { offerText }, config);
+      await axios.post(`${API_URL}/api/banners/offerbanner`, { offerText }, config);
 
       toast({
         title: "Offer added successfully",
@@ -109,7 +109,7 @@ const AdminOfferBannerScreen = () => {
 
     try {
       await axios.put(
-        `/api/banners/offerbanner/${editingId}`,
+        `${API_URL}/api/banners/offerbanner/${editingId}`,
         { offerText: editingText },
         config,
       );
@@ -139,7 +139,7 @@ const AdminOfferBannerScreen = () => {
   /* DELETE OFFER */
   const deleteOfferHandler = async (id) => {
     try {
-      await axios.delete(`/api/banners/offerbanner/${id}`, config);
+      await axios.delete(`${API_URL}/api/banners/offerbanner/${id}`, config);
 
       toast({
         title: "Offer deleted successfully",
@@ -213,7 +213,7 @@ const AdminOfferBannerScreen = () => {
                     onChange={async () => {
                       try {
                         const { data } = await axios.put(
-                          `/api/banners/offerbanner/activate/${offer._id}`,
+                          `${API_URL}/api/banners/offerbanner/activate/${offer._id}`,
                           {}, // PUT body can be empty
                           config,
                         );
