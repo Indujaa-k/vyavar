@@ -16,8 +16,8 @@ const Slider = () => {
     genderParam?.toLowerCase() === "men"
       ? "male"
       : genderParam?.toLowerCase() === "women"
-      ? "female"
-      : null;
+        ? "female"
+        : null;
 
   const bannerList = useSelector((state) => state.bannerList);
   const { loading, error, banners } = bannerList;
@@ -25,10 +25,10 @@ const Slider = () => {
   const [auto, setAuto] = useState(true);
   const intervalTime = 6000;
   let slideInterval;
-
+  const API_URl = process.env.REACT_APP_API_URL;
   // Filter banners based on gender
   const filteredBanners = banners?.filter(
-    (banner) => !gender || banner.gender.toLowerCase() === gender.toLowerCase()
+    (banner) => !gender || banner.gender.toLowerCase() === gender.toLowerCase(),
   );
 
   const length = filteredBanners?.length || 0;
@@ -68,7 +68,7 @@ const Slider = () => {
           key={banner._id}
           className={index === current ? "slide current" : "slide"}
           style={{
-            background: `url(${banner.image}) no-repeat center top/cover`,
+            background: `url(${API_URl}${banner.image}) no-repeat center top/cover`,
           }}
         >
           <h1 className="titleslider">{banner.title}</h1>
