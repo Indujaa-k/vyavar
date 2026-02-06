@@ -15,48 +15,36 @@ import {
   Radio,
   useToast,
 } from "@chakra-ui/react";
-import axios from "axios";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+
+import {
+  fetchTopOffers,
+  createTopOffer,
+  updateTopOffer,
+  deleteTopOffer,
+  activateTopOffer,
+} from "../../actions/bannerActions";
 
 const AdminOfferBannerScreen = () => {
+  const dispatch = useDispatch();
   const toast = useToast();
+
   const [offerText, setOfferText] = useState("");
-  const [offers, setOffers] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const userLogin = useSelector((state) => state.userLogin);
-  const { userInfo } = userLogin;
   const [editingId, setEditingId] = useState(null);
   const [editingText, setEditingText] = useState("");
 
-  const config = {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${userInfo.token}`,
-    },
-  };
-const API_URL = process.env.REACT_APP_API_URL;
-  /* FETCH ALL OFFERS (ADMIN) */
-  const fetchOffers = async () => {
-    try {
-      setLoading(true);
-      const { data } = await axios.get(`${API_URL}/api/banners/offerbanners`, config);
+  /* ONLY ONE SELECTOR */
+  const topOfferList = useSelector((state) => state.topOfferList);
+  const { loading, error, offers = [] } = topOfferList;
 
-      setOffers(data);
-      setLoading(false);
-    } catch (err) {
-      setError("Failed to load offers");
-      setLoading(false);
-    }
-  };
-
+  /* FETCH ON LOAD */
   useEffect(() => {
-    fetchOffers();
-  }, []);
+    dispatch(fetchTopOffers());
+  }, [dispatch]);
 
   /* ADD OFFER */
-  const addOfferHandler = async () => {
-    if (!offerText) {
+  const addOfferHandler = () => {
+    if (!offerText.trim()) {
       toast({
         title: "Enter offer text",
         status: "warning",
@@ -67,98 +55,59 @@ const API_URL = process.env.REACT_APP_API_URL;
       return;
     }
 
-    try {
-      await axios.post(`${API_URL}/api/banners/offerbanner`, { offerText }, config);
-
-      toast({
-        title: "Offer added successfully",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-        position: "bottom-right",
-      });
-
-      // setOfferText("");
-      // fetchOffers();
-    } catch (err) {
-      toast({
-        title: "Failed to add offer",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-        position: "bottom-right",
-      });
-    }
-
+    dispatch(createTopOffer(offerText));
     setOfferText("");
-    fetchOffers();
+
+    toast({
+      title: "Offer added",
+      status: "success",
+      duration: 2000,
+      isClosable: true,
+      position: "bottom-right",
+    });
   };
 
   /* UPDATE OFFER */
-  const editOfferHandler = async () => {
-    if (!editingText.trim()) {
-      toast({
-        title: "Offer text cannot be empty",
-        status: "warning",
-        duration: 3000,
-        isClosable: true,
-        position: "bottom-right",
-      });
-      return;
-    }
+  const updateOfferHandler = () => {
+    if (!editingText.trim()) return;
 
-    try {
-      await axios.put(
-        `${API_URL}/api/banners/offerbanner/${editingId}`,
-        { offerText: editingText },
-        config,
-      );
+    dispatch(updateTopOffer(editingId, editingText));
+    setEditingId(null);
+    setEditingText("");
 
-      toast({
-        title: "Offer updated successfully",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-        position: "bottom-right",
-      });
-
-      setEditingId(null);
-      setEditingText("");
-      fetchOffers();
-    } catch (err) {
-      toast({
-        title: "Failed to update offer",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-        position: "bottom-right",
-      });
-    }
+    toast({
+      title: "Offer updated",
+      status: "success",
+      duration: 2000,
+      isClosable: true,
+      position: "bottom-right",
+    });
   };
 
   /* DELETE OFFER */
-  const deleteOfferHandler = async (id) => {
-    try {
-      await axios.delete(`${API_URL}/api/banners/offerbanner/${id}`, config);
+  const deleteOfferHandler = (id) => {
+    dispatch(deleteTopOffer(id));
 
-      toast({
-        title: "Offer deleted successfully",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-        position: "bottom-right",
-      });
+    toast({
+      title: "Offer deleted",
+      status: "success",
+      duration: 2000,
+      isClosable: true,
+      position: "bottom-right",
+    });
+  };
 
-      fetchOffers();
-    } catch (err) {
-      toast({
-        title: "Failed to delete offer",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-        position: "bottom-right",
-      });
-    }
+  /* ACTIVATE OFFER */
+  const activateOfferHandler = (id) => {
+    dispatch(activateTopOffer(id));
+
+    toast({
+      title: "Offer activated",
+      status: "success",
+      duration: 2000,
+      isClosable: true,
+      position: "bottom-right",
+    });
   };
 
   return (
@@ -204,47 +153,18 @@ const API_URL = process.env.REACT_APP_API_URL;
               borderRadius="md"
               boxShadow="sm"
             >
-              <HStack justify="space-between" align="center" w="100%">
-                {/* Left side: Radio + text */}
+              <HStack justify="space-between">
+                {/* LEFT */}
                 <HStack spacing={3}>
                   <Radio
-                    name="activeOffer"
                     isChecked={offer.isActive}
-                    onChange={async () => {
-                      try {
-                        const { data } = await axios.put(
-                          `${API_URL}/api/banners/offerbanner/activate/${offer._id}`,
-                          {}, // PUT body can be empty
-                          config,
-                        );
-                        toast({
-                          title: "Offer activated",
-                          status: "success",
-                          duration: 2000,
-                          isClosable: true,
-                          position: "bottom-right",
-                        });
-
-                        fetchOffers();
-                      } catch (err) {
-                        console.error(
-                          "Activate offer error:",
-                          err.response?.data || err.message,
-                        ); // 🔹 Step 3: More info
-                        toast({
-                          title: "Failed to activate offer",
-                          status: "error",
-                          duration: 3000,
-                          isClosable: true,
-                          position: "bottom-right",
-                        });
-                      }
-                    }}
+                    onChange={() => activateOfferHandler(offer._id)}
                   />
+
                   {editingId === offer._id ? (
                     <Input
-                      value={editingText}
                       size="sm"
+                      value={editingText}
                       onChange={(e) => setEditingText(e.target.value)}
                     />
                   ) : (
@@ -252,11 +172,11 @@ const API_URL = process.env.REACT_APP_API_URL;
                   )}
                 </HStack>
 
-                {/* Right side: Buttons */}
+                {/* RIGHT */}
                 <HStack spacing={2}>
                   <Button
-                    colorScheme="yellow"
                     size="sm"
+                    colorScheme="yellow"
                     onClick={() => {
                       setEditingId(offer._id);
                       setEditingText(offer.offerText);
@@ -264,19 +184,20 @@ const API_URL = process.env.REACT_APP_API_URL;
                   >
                     Edit
                   </Button>
+
                   {editingId === offer._id && (
                     <Button
                       size="sm"
                       colorScheme="green"
-                      onClick={editOfferHandler}
+                      onClick={updateOfferHandler}
                     >
                       Update
                     </Button>
                   )}
 
                   <Button
-                    colorScheme="red"
                     size="sm"
+                    colorScheme="red"
                     onClick={() => deleteOfferHandler(offer._id)}
                   >
                     Delete

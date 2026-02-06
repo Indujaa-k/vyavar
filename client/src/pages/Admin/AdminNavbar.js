@@ -272,7 +272,9 @@ const AdminNavbar = ({ setIsSidebarOpen }) => {
               WebkitBackgroundClip: "text",
             }}
           >
-            {`${banner.offerText} • ${banner.offerText} • ${banner.offerText}`}
+            {banner
+              ? `${banner.offerText} • ${banner.offerText} • ${banner.offerText}`
+              : "Stay tuned for exciting offers!• Stay tuned for exciting offers!• Stay tuned for exciting offers!"}
           </div>
 
           <style>

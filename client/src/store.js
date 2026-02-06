@@ -20,7 +20,7 @@ import {
   productGroupReducer,
   productGroupUpdateReducer,
   productVariantUpdateReducer,
-   reviewUnapproveReducer,
+  reviewUnapproveReducer,
 } from "./reducers/productReducers";
 import { contactSendReducer } from "./reducers/contactReducers";
 import {
@@ -89,6 +89,8 @@ import {
   videoBannerDeleteReducer,
   userVideoBannerListReducer,
   activeOfferBannerReducer,
+  topOfferListReducer,
+  topOfferActionReducer,
 } from "./reducers/bannerReducers";
 import {
   deliveryDepositReducer,
@@ -119,7 +121,7 @@ const reducer = combineReducers({
   productBulkUpload: productBulkUploadReducer,
   productUpdate: productUpdateReducer,
   productReviewCreate: productreviewCreateReducer,
-   reviewUnapprove: reviewUnapproveReducer,
+  reviewUnapprove: reviewUnapproveReducer,
   cart: cartReducer,
   sendOtp: sendOtpReducer,
   verifyOtp: verifyOtpReducer,
@@ -206,6 +208,8 @@ const reducer = combineReducers({
   adminShipping: shippingReducers,
   contactSend: contactSendReducer,
   topCustomers: topCustomersReducer,
+  topOfferList: topOfferListReducer,
+  topOfferAction: topOfferActionReducer,
 });
 
 const userInfoFromStorage = localStorage.getItem("userInfo")

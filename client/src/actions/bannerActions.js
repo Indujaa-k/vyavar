@@ -37,6 +37,21 @@ import {
   OFFER_BANNER_ACTIVE_SUCCESS,
   OFFER_BANNER_ACTIVE_FAIL,
   CLEAR_ACTIVE_OFFER_BANNER,
+  TOP_OFFER_LIST_REQUEST,
+  TOP_OFFER_LIST_SUCCESS,
+  TOP_OFFER_LIST_FAIL,
+  TOP_OFFER_CREATE_REQUEST,
+  TOP_OFFER_CREATE_SUCCESS,
+  TOP_OFFER_CREATE_FAIL,
+  TOP_OFFER_UPDATE_REQUEST,
+  TOP_OFFER_UPDATE_SUCCESS,
+  TOP_OFFER_UPDATE_FAIL,
+  TOP_OFFER_DELETE_REQUEST,
+  TOP_OFFER_DELETE_SUCCESS,
+  TOP_OFFER_DELETE_FAIL,
+  TOP_OFFER_ACTIVATE_REQUEST,
+  TOP_OFFER_ACTIVATE_SUCCESS,
+  TOP_OFFER_ACTIVATE_FAIL,
 } from "../constants/bannerConstants";
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -379,4 +394,154 @@ export const clearActiveOfferBanner = () => {
   return {
     type: CLEAR_ACTIVE_OFFER_BANNER,
   };
+};
+
+export const fetchTopOffers = () => async (dispatch, getState) => {
+  try {
+    dispatch({ type: TOP_OFFER_LIST_REQUEST });
+
+    const {
+      userLogin: { userInfo },
+    } = getState();
+
+    const config = {
+      headers: {
+        Authorization: `Bearer ${userInfo.token}`,
+      },
+    };
+
+    const { data } = await axios.get(
+      `${API_URL}/api/banners/offerbanners`,
+      config,
+    );
+
+    dispatch({ type: TOP_OFFER_LIST_SUCCESS, payload: data });
+  } catch (error) {
+    dispatch({
+      type: TOP_OFFER_LIST_FAIL,
+      payload: error.response?.data?.message || error.message,
+    });
+  }
+};
+
+/* CREATE OFFER */
+export const createTopOffer = (offerText) => async (dispatch, getState) => {
+  try {
+    dispatch({ type: TOP_OFFER_CREATE_REQUEST });
+
+    const {
+      userLogin: { userInfo },
+    } = getState();
+
+    const config = {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${userInfo.token}`,
+      },
+    };
+
+    await axios.post(
+      `${API_URL}/api/banners/offerbanner`,
+      { offerText },
+      config,
+    );
+
+    dispatch({ type: TOP_OFFER_CREATE_SUCCESS });
+    dispatch(fetchTopOffers());
+  } catch (error) {
+    dispatch({
+      type: TOP_OFFER_CREATE_FAIL,
+      payload: error.response?.data?.message || error.message,
+    });
+  }
+};
+
+/* UPDATE OFFER */
+export const updateTopOffer = (id, offerText) => async (dispatch, getState) => {
+  try {
+    dispatch({ type: TOP_OFFER_UPDATE_REQUEST });
+
+    const {
+      userLogin: { userInfo },
+    } = getState();
+
+    const config = {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${userInfo.token}`,
+      },
+    };
+
+    await axios.put(
+      `${API_URL}/api/banners/offerbanner/${id}`,
+      { offerText },
+      config,
+    );
+
+    dispatch({ type: TOP_OFFER_UPDATE_SUCCESS });
+    dispatch(fetchTopOffers());
+  } catch (error) {
+    dispatch({
+      type: TOP_OFFER_UPDATE_FAIL,
+      payload: error.response?.data?.message || error.message,
+    });
+  }
+};
+
+/* DELETE OFFER */
+export const deleteTopOffer = (id) => async (dispatch, getState) => {
+  try {
+    dispatch({ type: TOP_OFFER_DELETE_REQUEST });
+
+    const {
+      userLogin: { userInfo },
+    } = getState();
+
+    const config = {
+      headers: {
+        Authorization: `Bearer ${userInfo.token}`,
+      },
+    };
+
+    await axios.delete(`${API_URL}/api/banners/offerbanner/${id}`, config);
+
+    dispatch({ type: TOP_OFFER_DELETE_SUCCESS });
+    dispatch(fetchTopOffers());
+  } catch (error) {
+    dispatch({
+      type: TOP_OFFER_DELETE_FAIL,
+      payload: error.response?.data?.message || error.message,
+    });
+  }
+};
+
+/* ACTIVATE OFFER */
+export const activateTopOffer = (id) => async (dispatch, getState) => {
+  try {
+    dispatch({ type: TOP_OFFER_ACTIVATE_REQUEST });
+
+    const {
+      userLogin: { userInfo },
+    } = getState();
+
+    const config = {
+      headers: {
+        Authorization: `Bearer ${userInfo.token}`,
+      },
+    };
+
+    await axios.put(
+      `${API_URL}/api/banners/offerbanner/activate/${id}`,
+      {},
+      config,
+    );
+
+    dispatch({ type: TOP_OFFER_ACTIVATE_SUCCESS });
+    dispatch(fetchTopOffers());
+  } catch (error) {
+    dispatch({
+      type: TOP_OFFER_ACTIVATE_FAIL,
+      payload: error.response?.data?.message || error.message,
+    });
+  }
 };
