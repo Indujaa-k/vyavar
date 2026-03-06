@@ -15,7 +15,7 @@ const ResetEmailOtp = async ({ email, status, orderId,otp }) => {
     subject: `${status}`,
     text: `Hello, your One-Time-Password is ${orderId}`,
     html: `<p>Hello, your One-Time-Password is ${orderId}</strong> <p>Click the link below to reset your password:</p>
-    <a href="http://localhost:3000/resetPassword?email=${email}&otp=${otp}">Reset Password</a>`,
+    <a href="https://viyavarfashions.com/resetPassword?email=${email}&otp=${otp}">Reset Password</a>`,
   };
   console.log("Sending email to:", email);
   console.log("Email options:", mailOptions);

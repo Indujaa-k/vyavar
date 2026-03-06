@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Box, Button, Image, Icon } from "@chakra-ui/react";
 import { useNavigate, useLocation } from "react-router-dom";
-import DiscountImage from "../assets/discountpopup.png";
+import DiscountImage from "../assets/discountposter.jpeg";
 import { FaCaretUp } from "react-icons/fa";
+import { px } from "framer-motion";
 
 const DiscountTag = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -32,10 +33,9 @@ const DiscountTag = () => {
     return () => clearTimeout(openTimer);
   }, []);
 
-  
   const handleNavigate = () => {
     if (gender === "Men") {
-      navigate("/products?offerfilter=upto50&gender=Men");
+      navigate("/subscription");
     } else if (gender === "Women") {
       navigate("/products?offerfilter=upto50&gender=Women");
     } else {
@@ -58,13 +58,13 @@ const DiscountTag = () => {
         width="240px"
         height="50px"
         fontWeight="800"
-        fontSize={30}
+        fontSize={20}
         borderRadius="0"
-        zIndex="2001"
+        zIndex="1008"
         _hover={{ bg: "#ffb700" }}
         rightIcon={<Icon as={FaCaretUp} />}
       >
-        GET 90% OFF
+        Membership at ₹9/-
       </Button>
 
       {/* Popup */}

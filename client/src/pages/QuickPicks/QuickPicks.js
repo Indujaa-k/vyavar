@@ -1,51 +1,33 @@
 import React from "react";
 import "./QuickPicks.css";
-import Menimg1 from "../../assets/menimg1.png";
-import Menimg2 from "../../assets/menimg2.png";
-import Menimg3 from "../../assets/menimg3.png";
-import Menimg4 from "../../assets/menimg4.png";
-import Menimg5 from "../../assets/menimg5.png";
-import Menimg6 from "../../assets/menimg6.png";
-import Menimg7 from "../../assets/menimg7.png";
-import Menimg8 from "../../assets/menimg8.png";
-import Womenimg1 from "../../assets/quickg1.webp";
-import Womenimg2 from "../../assets/quickg2.webp";
-import Womenimg3 from "../../assets/quickg3.webp";
-import Womenimg4 from "../../assets/quickg4.webp";
-import Womenimg5 from "../../assets/quickg5.webp";
-import Womenimg6 from "../../assets/quickg6.webp";
-import Womenimg7 from "../../assets/quickg7.webp";
-import Womenimg8 from "../../assets/quickg8.webp";
+import Menimg1 from "../../assets/categorybanner1.png";
+import Menimg2 from "../../assets/categorybanner2.png";
+import Menimg4 from "../../assets/categorybanner9.png";
+import Menimg5 from "../../assets/categorybanner4.png";
+import Menimg6 from "../../assets/categorybanner6.png";
+import Menimg7 from "../../assets/categorybanner7.png";
+import Menimg8 from "../../assets/categorybanner8.png";
 import { useNavigate } from "react-router-dom";
 const QuickPicks = ({ category }) => {
   const navigate = useNavigate();
   const mencategories = [
-    { name: "Top Wear", imgSrc: Menimg1, filter: "Topwear" },
-    { name: "Bottom Wear", imgSrc: Menimg2, filter: "Bottomwear" },
-    { name: "Graphic T-Shirts", imgSrc: Menimg3, filter: "graphic-tshirts" },
-    { name: "Shirts", imgSrc: Menimg4, filter: "Shirts" },
-    { name: "Hoodies & Jackets", imgSrc: Menimg5, filter: "Hoodies" },
-    { name: "Co-ords", imgSrc: Menimg6, filter: "Coords" },
-    { name: "Athleisure", imgSrc: Menimg7, filter: "Athleisure" },
-    { name: "Innerwear", imgSrc: Menimg8, filter: "Innerwear" },
+    { name: "Stand Tall", imgSrc: Menimg1, filter: "Stand Tall" },
+    { name: "Explorer", imgSrc: Menimg2, filter: "Explorer" },
+    { name: "Stay Stronger", imgSrc: Menimg4, filter: "Stay Stronger" },
+    { name: "Explorer", imgSrc: Menimg5, filter: "Explorer" },
+    { name: "Stay Stronger", imgSrc: Menimg6, filter: "Stay Stronger" },
+    { name: "Stand Tall", imgSrc: Menimg7, filter: "Stand Tall" },
+    { name: "Stand Tall", imgSrc: Menimg8, filter: "Stand Tall" },
   ];
-  const womencategories = [
-    { name: "Top Wear", imgSrc: Womenimg1, filter: "Topwear" },
-    { name: "Bottom Wear", imgSrc: Womenimg2, filter: "Bottomwear" },
-    { name: "Dresses", imgSrc: Womenimg3, filter: "dresses" },
-    { name: "Athleisure", imgSrc: Womenimg4, filter: "Athleisure" },
-    { name: "Sleepwear", imgSrc: Womenimg5, filter: "sleepwear" },
-    { name: "Innerwear", imgSrc: Womenimg6, filter: "Innerwear" },
-    { name: "Co-ords", imgSrc: Womenimg7, filter: "Coords" },
-    { name: "jumpsuits", imgSrc: Womenimg8, filter: "jumpsuits" },
-  ];
-  const selectedCategories =
-    category === "Men" ? mencategories : womencategories;
+
+  const selectedCategories = category === "Men" ? mencategories : [];
   // const handleCategoryClick = (filter) => {
   //   history.push(/products/${filter}?gender=${category});
   // };
   const handleCategoryClick = (filter) => {
-    navigate(`/products?category=${filter}&gender=${category}`); 
+    navigate(
+      `/products?keyword=${encodeURIComponent(filter)}&gender=${encodeURIComponent(category)}`,
+    );
   };
 
   return (
@@ -69,4 +51,4 @@ const QuickPicks = ({ category }) => {
   );
 };
 
-export default QuickPicks;
+export default QuickPicks;

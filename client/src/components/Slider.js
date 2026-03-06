@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { listBanners } from "../actions/bannerActions";
 import ShopNowBtn from "./ShopNowBtn";
 import { useLocation } from "react-router-dom";
+import "./Slider.css";
 
 const Slider = () => {
   const dispatch = useDispatch();
@@ -46,20 +47,14 @@ const Slider = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    setAuto(true);
-    if (auto) {
-      slideInterval = setInterval(nextSlide, intervalTime);
-    }
-    return () => {
-      setAuto(false);
-      clearInterval(slideInterval);
-    };
-  }, [auto, current]);
+    const slideInterval = setInterval(nextSlide, intervalTime);
+    return () => clearInterval(slideInterval);
+  }, [current]);
 
   if (loading) return <p>Loading banners...</p>;
   if (error) return <p>Error: {error}</p>;
-  if (!filteredBanners.length)
-    return <p>No banners available for {gender || "all"}.</p>;
+  // if (!filteredBanners.length)
+  //   return <p>No banners available for {gender || "all"}.</p>;
 
   return (
     <div className="slider">
@@ -71,8 +66,8 @@ const Slider = () => {
             background: `url(${API_URl}${banner.image}) no-repeat center top/cover`,
           }}
         >
-          <h1 className="titleslider">{banner.title}</h1>
-          <h3 className="subtitleslider">{banner.subtitle}</h3>
+          <div className="titleslider">{banner.title}</div>
+          <div className="subtitleslider">{banner.subtitle}</div>
 
           <div className="content">
             <Link to="/products/">

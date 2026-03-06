@@ -18,7 +18,6 @@ import {
 import { RiShoppingCart2Line } from "react-icons/ri";
 import { MdHome } from "react-icons/md";
 import { BiSearch } from "react-icons/bi";
-import { FaHeart } from "react-icons/fa";
 import { BsArrowRightShort } from "react-icons/bs";
 import { MdKeyboardArrowRight } from "react-icons/md";
 import { IoLogOutOutline } from "react-icons/io5";
@@ -27,8 +26,6 @@ import { logout } from "../actions/userActions";
 import Logo from "../assets/viyavar.png";
 import navheart from "../assets/navheart.svg";
 import Categorylist from "./Categorylist/Categorylist";
-import Brandlist from "./Brandlist/Brandlist";
-import BrandImg from "../../src/assets/brandimg.svg";
 import CategoryImg from "../../src/assets/categoryimg.svg";
 import "./Nav.css";
 import { getUserDetails } from "../actions/userActions";
@@ -43,7 +40,6 @@ import {
   DrawerContent,
   DrawerCloseButton,
   DrawerBody,
-  useBreakpointValue,
 } from "@chakra-ui/react";
 import { GiHamburgerMenu } from "react-icons/gi";
 
@@ -75,16 +71,15 @@ const Nav = () => {
     }
     setSearchKeyword("");
   };
+
   const onSearchChange = (e) => {
     setSearchKeyword(e.target.value);
   };
 
   useEffect(() => {
-    const cart = cartItems.length ? cartItems.length : 0;
-    setincart(cart);
-    return () => {
-      setincart(0);
-    };
+    const count = cartItems.length ? cartItems.length : 0;
+    setincart(count);
+    return () => setincart(0);
   }, [cart]);
 
   const dispatch = useDispatch();
@@ -95,14 +90,15 @@ const Nav = () => {
     dispatch(logout());
     onClose();
   };
+
   useEffect(() => {
-    if (userInfo) {
-      dispatch(getUserDetails("profile"));
-    }
+    if (userInfo) dispatch(getUserDetails("profile"));
   }, [dispatch, userInfo]);
+
   useEffect(() => {
     dispatch(getActiveOfferBanner());
   }, [dispatch]);
+
   useEffect(() => {
     dispatch(checkHasCombo());
   }, [dispatch]);
@@ -125,9 +121,9 @@ const Nav = () => {
             aria-label="Open menu"
           />
         </Box>
+
         <NavLink to="/" className="logo">
           <img src={Logo} alt="logo" />
-          {/* <span className="logo-text">Vyavar</span> */}
         </NavLink>
 
         <div className="search-container">
@@ -135,7 +131,7 @@ const Nav = () => {
             <InputGroup>
               <Input
                 type="text"
-                placeholder="Search products,brands and more..."
+                placeholder="Search products, brands and more..."
                 value={searchKeyword}
                 onChange={onSearchChange}
                 ref={searchRef}
@@ -165,15 +161,12 @@ const Nav = () => {
             onMouseEnter={() => setShowCategory(true)}
             onMouseLeave={() => setShowCategory(false)}
           >
-            {/* CLICK → /products */}
             <NavLink to="/products?productMode=combo" className="nav-item">
               <div className="nav-content">
                 <img src={CategoryImg} alt="Categories" className="nav-img" />
                 <span>Categories</span>
               </div>
             </NavLink>
-
-            {/* HOVER → dropdown */}
             {showCategory && <Categorylist />}
           </li>
 
@@ -195,7 +188,7 @@ const Nav = () => {
               </div>
             </NavLink>
           </li>
-          {/* Added Bag option in the list */}
+
           <li>
             <NavLink
               to="/cart"
@@ -234,7 +227,6 @@ const Nav = () => {
                 ) : (
                   <CgProfile size={25} className="settingIcon" />
                 )}
-
                 <span className="user-name">{user?.name}</span>
               </Link>
 
@@ -263,6 +255,7 @@ const Nav = () => {
           )}
         </div>
 
+        {/* Logout Dialog */}
         <AlertDialog
           isOpen={isOpen}
           leastDestructiveRef={cancelRef}
@@ -275,8 +268,7 @@ const Nav = () => {
               bg="white"
               maxW="320px"
               height={80}
-              p={6} /* ⬅️ Added padding */
-              animation="fadeIn 0.3s ease-in-out"
+              p={6}
             >
               <AlertDialogHeader
                 fontSize="md"
@@ -286,11 +278,9 @@ const Nav = () => {
               >
                 Logout!
               </AlertDialogHeader>
-
               <AlertDialogBody textAlign="center" fontSize="md" p={5}>
-                Are you sure you want to log out? <br />
+                Are you sure you want to log out?
               </AlertDialogBody>
-
               <AlertDialogFooter display="flex" justifyContent="center" p={4}>
                 <Button
                   ref={cancelRef}
@@ -317,6 +307,8 @@ const Nav = () => {
             </AlertDialogContent>
           </AlertDialogOverlay>
         </AlertDialog>
+
+        {/* Mobile Drawer */}
         <Drawer
           isOpen={isMobileMenuOpen}
           placement="left"
@@ -333,7 +325,6 @@ const Nav = () => {
               paddingTop="20px"
               paddingBottom="20px"
             >
-              {/* Top: Profile info */}
               {userInfo && (
                 <Link
                   to="/profile"
@@ -371,16 +362,13 @@ const Nav = () => {
                 </Link>
               )}
 
-              {/* Middle: Menu links */}
               <ul
-                className="navLinks-mobile"
                 style={{
                   listStyle: "none",
                   display: "flex",
                   flexDirection: "column",
                   gap: "20px",
                   paddingLeft: "0",
-                  // removed flexGrow
                 }}
               >
                 <li>
@@ -392,6 +380,7 @@ const Nav = () => {
                     Home
                   </NavLink>
                 </li>
+
                 <li
                   style={{
                     color: "white",
@@ -401,7 +390,6 @@ const Nav = () => {
                     alignItems: "center",
                   }}
                 >
-                  {/* Navigate to products */}
                   <span
                     onClick={() => {
                       navigate("/products?productMode=combo");
@@ -410,8 +398,6 @@ const Nav = () => {
                   >
                     Categories
                   </span>
-
-                  {/* Toggle dropdown */}
                   <span
                     onClick={() => setShowMobileCategory(!showMobileCategory)}
                     style={{ fontSize: "22px", paddingLeft: "10px" }}
@@ -420,7 +406,6 @@ const Nav = () => {
                   </span>
                 </li>
 
-                {/* Mobile Category List */}
                 {showMobileCategory && (
                   <Box pl="15px" mt="10px">
                     <Categorylist
@@ -442,6 +427,7 @@ const Nav = () => {
                     Wishlist
                   </NavLink>
                 </li>
+
                 <li>
                   <NavLink
                     style={{ color: "white", fontSize: "18px" }}
@@ -452,12 +438,10 @@ const Nav = () => {
                   </NavLink>
                 </li>
 
-                {/* Logout button directly after Bag */}
                 {userInfo && (
                   <li
-                    onClick={onOpen} // triggers the AlertDialog
+                    onClick={onOpen}
                     style={{
-                      width: "100%",
                       color: "white",
                       fontWeight: "bold",
                       cursor: "pointer",
@@ -491,55 +475,17 @@ const Nav = () => {
           </DrawerContent>
         </Drawer>
       </nav>
-      <>
-        {!shouldHideBanner && (
-          <div
-            style={{
-              backgroundColor: "#fbd983", // your desired background
-              overflow: "hidden",
-              whiteSpace: "nowrap",
-              padding: "12px 0",
-              position: "sticky",
-              zIndex: "999",
-              top: "70px",
-              fontWeight: "700",
-            }}
-          >
-            <div
-              style={{
-                display: "inline-block",
-                paddingLeft: "100%",
-                animation:
-                  "marquee 15s linear infinite, shine 2s linear infinite",
-                fontSize: "16px",
-                background:
-                  "linear-gradient(90deg, #000 40%, #fff 50%, #000 60%)",
-                backgroundSize: "200% auto",
-                color: "transparent",
-                WebkitBackgroundClip: "text",
-              }}
-            >
-              {banner
-                ? `${banner.offerText} • ${banner.offerText} • ${banner.offerText}`
-                : "Stay tuned for exciting offers!• Stay tuned for exciting offers!• Stay tuned for exciting offers!"}
-            </div>
 
-            <style>
-              {`
-      @keyframes marquee {
-        0% { transform: translateX(0%); }
-        100% { transform: translateX(-100%); }
-      }
-
-      @keyframes shine {
-        0% { background-position: -200% 0; }
-        100% { background-position: 200% 0; }
-      }
-    `}
-            </style>
+      {/* ===== OFFER BANNER ===== */}
+      {!shouldHideBanner && (
+        <div className="offer-banner">
+          <div className="offer-banner-track">
+            {banner
+              ? `${banner.offerText} • ${banner.offerText} • ${banner.offerText}`
+              : "Stay tuned for exciting offers! • Stay tuned for exciting offers! • Stay tuned for exciting offers!"}
           </div>
-        )}
-      </>
+        </div>
+      )}
     </>
   );
 };

@@ -10,8 +10,6 @@ import menImg from "../assets/men.png";
 import "../pages/Home.css";
 import Trust from "./Trustdetails/Trust";
 import VideoBanner from "./UserVideoBanner/VideoBanner";
-import OffersPage from "../pages/OffersPage/OffersPage";
-import Bestselling from "../pages/Bestselling/Bestselling";
 import Trendingbrand from "../pages/Trendingbrands/Trendingbrand";
 import { useNavigate } from "react-router-dom";
 import Tshirts from "./TopCategories/Tshirts";
@@ -41,9 +39,7 @@ const ProductsC = ({ match }) => {
       <VideoBanner />
       {gender && <QuickPicks category={gender} />}
       <Slider />
-      {gender && <OffersPage category={gender} />}
       {/* <Cardscg /> */}
-      {gender && <Bestselling category={gender} />}
       {gender && <Trendingbrand category={gender} />}
       {gender && <Tshirts category={gender} subcategory={"Shirts"} />}
       {gender && <Pants category={gender} subcategory={"Jeans"} />}

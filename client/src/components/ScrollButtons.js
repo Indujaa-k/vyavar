@@ -5,10 +5,10 @@ import { ChevronUpIcon, ChevronDownIcon } from "@chakra-ui/icons";
 const ScrollButton = () => {
   const [isAtTop, setIsAtTop] = useState(true);
 
-  // Check scroll position
+ 
   useEffect(() => {
     const handleScroll = () => {
-      setIsAtTop(window.scrollY < 200); // If scrolled down 200px, change button
+      setIsAtTop(window.scrollY < 200); 
     };
 
     window.addEventListener("scroll", handleScroll);
@@ -25,7 +25,7 @@ const ScrollButton = () => {
   };
 
   return (
-    <Box position="fixed" bottom="20px" right="20px" zIndex="1000">
+    <Box position="fixed" bottom="20px" right="20px" zIndex="2990">
       <IconButton
         onClick={handleScroll}
         icon={isAtTop ? <ChevronDownIcon /> : <ChevronUpIcon />}

@@ -281,40 +281,25 @@ const EditVariantProduct = () => {
     formData.append("brandname", commonState.brandname);
     formData.append("description", commonState.description);
     formData.append("isFeatured", commonState.isFeatured);
-
     formData.append(
       "shippingDetails",
       JSON.stringify(commonState.shippingDetails),
     );
 
-    formData.append(
-      "productdetails",
-      JSON.stringify(commonState.productdetails),
-    );
+    // ✅ Individual fields — matches what backend reads from req.body
+    formData.append("gender", commonState.productdetails.gender);
+    formData.append("category", commonState.productdetails.category);
+    formData.append("subcategory", commonState.productdetails.subcategory);
+    formData.append("type", commonState.productdetails.type);
+    formData.append("ageRange", commonState.productdetails.ageRange);
+    formData.append("fabric", commonState.productdetails.fabric);
 
-    console.log("🚀 Size Chart File to upload:", commonState.sizeChartFile);
-
-    // ✅ IMPORTANT
     if (commonState.sizeChartFile) {
       formData.append("sizeChart", commonState.sizeChartFile);
     }
-    dispatch(
-      updateProductGroupCommon(groupId, {
-        brandname: commonState.brandname,
-        description: commonState.description,
-        shippingDetails: commonState.shippingDetails,
-        isFeatured: commonState.isFeatured,
 
-        gender: commonState.productdetails.gender,
-        category: commonState.productdetails.category,
-        subcategory: commonState.productdetails.subcategory,
-        type: commonState.productdetails.type,
-        fabric: commonState.productdetails.fabric,
-        ageRange: commonState.productdetails.ageRange,
-      }),
-    );
+    dispatch(updateProductGroupCommon(groupId, formData)); // ✅ formData, not plain object
   };
-
   // ================= VARIANT HELPERS =================
   const updateVariantField = (id, field, value) => {
     setVariantState((prev) =>

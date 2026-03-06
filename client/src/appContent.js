@@ -13,6 +13,7 @@ import {
   Routes,
   Navigate,
 } from "react-router-dom";
+import ReturnPolicy from "./pages/returnpolicy";
 import ScrollIntoView from "./components/Scrollintoview";
 import RegisterScreen from "./components/RegisterScreen";
 import ProfileScreen from "./components/ProfileScreen";
@@ -66,7 +67,6 @@ import ShippingCost from "./pages/Delivery/ShippingCost";
 // import ProtectedRoute from "./pages/ProtectedRoutes";
 const appContent = () => {
   const { userInfo } = useSelector((state) => state.userLogin);
- 
 
   return (
     <>
@@ -201,7 +201,7 @@ const appContent = () => {
             <Route path="/register" element={<RegisterScreen />} />
             <Route path="/forgetpassword" element={<ForgotPasswordScreen />} />
             <Route path="/resetPassword" element={<ResetPasswordScreen />} />
-
+            <Route path="/returnpolicy" element={<ReturnPolicy />} />
             <Route path="/profile" element={<ProfileScreen />} />
 
             <Route path="/subscription" element={<SubscriptionPayment />} />
@@ -220,7 +220,7 @@ const appContent = () => {
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
           <ScrollButtons />
-         <Footer />
+          <Footer />
           {/* path="/products/:category" */}
         </>
       )}

@@ -1,5 +1,3 @@
-
-
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -27,15 +25,19 @@ const SubscriptionPayment = () => {
 
   /* ================= REDUX STATE ================= */
   const { userInfo } = useSelector((state) => state.userLogin);
-  const { loading: userLoading, user } = useSelector((state) => state.userDetails);
+  const { loading: userLoading, user } = useSelector(
+    (state) => state.userDetails,
+  );
   const { subscriptions = [], loading: subsLoading } = useSelector(
-    (state) => state.subscriptionList
+    (state) => state.subscriptionList,
   );
-  const { loading: orderLoading, order, error: orderError } = useSelector(
-    (state) => state.subscriptionOrder
-  );
+  const {
+    loading: orderLoading,
+    order,
+    error: orderError,
+  } = useSelector((state) => state.subscriptionOrder);
   const { success: confirmSuccess } = useSelector(
-    (state) => state.subscriptionConfirm
+    (state) => state.subscriptionConfirm,
   );
 
   /* ================= FETCH DATA ================= */
@@ -54,7 +56,7 @@ const SubscriptionPayment = () => {
     (p) =>
       p.isActive &&
       new Date(p.startDate) <= today &&
-      new Date(p.endDate) >= today
+      new Date(p.endDate) >= today,
   );
 
   /* ================= USER SUBSCRIPTION (FROM USER DB) ================= */
@@ -87,9 +89,8 @@ const SubscriptionPayment = () => {
             razorpayPaymentId: response.razorpay_payment_id,
             razorpayOrderId: response.razorpay_order_id,
             razorpaySignature: response.razorpay_signature,
-          })
-        )
-        .then(() => {
+          }),
+        ).then(() => {
           // ✅ REFRESH USER DATA AFTER SUCCESSFUL PAYMENT
           dispatch(getUserDetails("profile"));
         });
@@ -124,10 +125,12 @@ const SubscriptionPayment = () => {
           minH="60vh"
           direction="column"
           color="white"
+          textAlign="center"
         >
           <Text fontSize="3xl" fontWeight="bold" mb={4}>
             No Subscription Available
           </Text>
+
           <Text fontSize="lg" color="gray.300">
             Please come back later
           </Text>
@@ -200,8 +203,14 @@ const SubscriptionPayment = () => {
 
           {/* ACTION */}
           {user?.isSubscribed ? (
-            <Badge colorScheme="green" width="100%" textAlign="center" p={2} bg="orange">
-               Subscribed
+            <Badge
+              colorScheme="green"
+              width="100%"
+              textAlign="center"
+              p={2}
+              bg="orange"
+            >
+              Subscribed
             </Badge>
           ) : (
             <Button

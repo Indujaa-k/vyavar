@@ -6,7 +6,7 @@ const shippingRateSchema = mongoose.Schema(
     estimatedDeliveryDate: { type: String, default: "N/A" },
     currency: { type: String, default: "USD" },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 const transactionSchema = mongoose.Schema(
   {
@@ -37,7 +37,7 @@ const transactionSchema = mongoose.Schema(
       type: String,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 const orderSchema = mongoose.Schema(
   {
@@ -85,7 +85,15 @@ const orderSchema = mongoose.Schema(
     },
     orderStatus: {
       type: String,
-      enum: ["CREATED", "CONFIRMED", "PACKED", "OUT_FOR_DELIVERY"],
+      enum: [
+        "CREATED",
+        "CONFIRMED",
+        "PACKED",
+        "OUT_FOR_DELIVERY",
+        "RETURN_APPROVED",
+        "RETURN_COMPLETED",
+        "DELIVERED",
+      ],
       default: "CREATED",
     },
 
@@ -151,7 +159,7 @@ const orderSchema = mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const Order = mongoose.model("Order", orderSchema);

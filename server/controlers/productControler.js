@@ -1146,26 +1146,28 @@ const getProductFullById = asyncHandler(async (req, res) => {
 });
 
 const updateGroupCommonFields = asyncHandler(async (req, res) => {
-  const shipping = req.body.shippingDetails;
+  console.log("📁 req.files:", req.files); // ← add this temporarily
+  console.log("📦 req.body:", req.body); // ← add this temporarily
+
+  // ✅ Parse shippingDetails since it comes as a JSON string from FormData
+  let shipping = req.body.shippingDetails;
+  if (typeof shipping === "string") {
+    shipping = JSON.parse(shipping);
+  }
 
   if (shipping?.originAddress?.street2 !== undefined) {
     delete shipping.originAddress.street2;
   }
 
   let sizeChartPath = null;
-
   if (req.files?.sizeChart?.length > 0) {
     sizeChartPath = req.files.sizeChart[0].path.replace(/\\/g, "/");
-    console.log(
-      "🚀 [updateGroupCommonFields] Size Chart received:",
-      sizeChartPath,
-    );
   }
 
   const updateFields = {
     brandname: req.body.brandname,
     description: req.body.description,
-    shippingDetails: shipping,
+    shippingDetails: shipping, // ✅ now properly parsed
     isFeatured: req.body.isFeatured,
     "productdetails.gender": req.body.gender,
     "productdetails.category": req.body.category,

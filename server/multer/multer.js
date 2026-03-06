@@ -69,6 +69,7 @@ const fileFilter = (req, file, cb) => {
     "video/mp4",
     "video/avi",
     "application/pdf",
+    "application/octet-stream",
   ];
 
   if (allowed.includes(file.mimetype)) {

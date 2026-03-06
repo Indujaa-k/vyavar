@@ -14,7 +14,7 @@ const UserVideoBanner = () => {
   }, [dispatch]);
   const API_URL = process.env.REACT_APP_API_URL;
   return (
-    <Box p={0} w="87vw" mx="auto" mt="20">
+    <Box p={0} w="87vw" mx="auto" mt="5">
       {" "}
       {/* Full width container */}
       {loading ? (

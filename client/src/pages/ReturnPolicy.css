@@ -1,0 +1,60 @@
+/* Formal, professional styling for Return Policy */
+
+.policy-wrapper {
+  font-family: 'Georgia', serif;
+  color: #222;
+  line-height: 1.6;
+  padding: 20px 30px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.policy-title {
+  text-align: center;
+  font-size: 32px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: #111;
+  text-decoration: underline;
+}
+
+.policy-section {
+  margin-top: 25px;
+}
+
+.policy-subtitle {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #111;
+}
+
+.policy-subsubtitle {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+.policy-text {
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+
+.policy-list {
+  margin-left: 20px;
+  margin-bottom: 8px;
+}
+
+.policy-list li {
+  margin-bottom: 4px;
+}
+
+a {
+  color: #0073e6;
+  text-decoration: underline;
+}
+
+a:hover {
+  text-decoration: none;
+}

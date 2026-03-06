@@ -8,6 +8,7 @@ import {
   updateUserProfile,
   logout,
 } from "../actions/userActions";
+import ReturnPolicy from "../pages/returnpolicy";
 import { listMyOrders } from "../actions/orderActions";
 import {
   Box,
@@ -373,6 +374,11 @@ const ProfileScreen = () => {
             id: "orders",
             label: "My Orders",
             icon: FaShoppingBag,
+          },
+          {
+            id: "returnPolicy",
+            label: "Return Policy",
+            icon: FaUndo,
           },
           {
             id: "about",
@@ -815,13 +821,21 @@ const ProfileScreen = () => {
   };
   const getStatusLabel = (status) => {
     switch (status) {
-      case "DELIVERED":
-        return "Delivered";
-      case "OUT_FOR_DELIVERY":
-        return "Dispatched";
       case "CONFIRMED":
+        return "Confirmed";
+
       case "PACKED":
-        return "Active";
+        return "Packed";
+
+      case "OUT_FOR_DELIVERY":
+        return "OUT_FOR_DELIVERY";
+
+      case "RETURN_APPROVED":
+        return "Return Approved";
+
+      case "RETURN_COMPLETED":
+        return "Return Completed";
+
       default:
         return "Active";
     }
@@ -829,12 +843,23 @@ const ProfileScreen = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "DELIVERED":
+      case "CONFIRMED":
         return "green.500";
+
+      case "PACKED":
+        return "orange.500";
+
       case "OUT_FOR_DELIVERY":
         return "blue.500";
+
+      case "RETURN_APPROVED":
+        return "purple.500";
+
+      case "RETURN_COMPLETED":
+        return "red.500";
+
       default:
-        return "orange.500";
+        return "gray.500";
     }
   };
 
@@ -847,7 +872,7 @@ const ProfileScreen = () => {
           order.orderStatus === "CONFIRMED" || order.orderStatus === "PACKED"
         );
 
-      if (orderTab === "dispatched")
+      if (orderTab === "OUT_FOR_DELIVERY")
         return order.orderStatus === "OUT_FOR_DELIVERY";
 
       return true;
@@ -880,9 +905,9 @@ const ProfileScreen = () => {
           </Button>
 
           <Button
-            variant={orderTab === "dispatched" ? "solid" : "outline"}
+            variant={orderTab === "OUT_FOR_DELIVERY" ? "solid" : "outline"}
             colorScheme="blue"
-            onClick={() => setOrderTab("dispatched")}
+            onClick={() => setOrderTab("OUT_FOR_DELIVERY")}
           >
             Dispatched
           </Button>
@@ -1062,6 +1087,8 @@ const ProfileScreen = () => {
         return renderAddresses();
       case "orders":
         return renderOrders();
+      case "returnPolicy": 
+        return <ReturnPolicy />;
       default:
         return renderProfile();
     }
