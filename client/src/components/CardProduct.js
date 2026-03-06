@@ -180,7 +180,7 @@ const CardProduct = ({ product }) => {
               icon={<HiChevronLeft />}
             />
             <Image
-              src={product.images[currentImageIndex]}
+              src={`${process.env.REACT_APP_API_URL}/${product.images[currentImageIndex]}`}
               objectFit="contain"
               w="100%"
               maxH="90vh"

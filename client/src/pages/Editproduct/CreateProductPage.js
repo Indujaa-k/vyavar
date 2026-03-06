@@ -25,11 +25,29 @@ import { useNavigate } from "react-router-dom";
 const CATEGORY_DATA = [
   {
     name: "Topwear",
-    subcategories: ["Regular", "Oversized", "Full Sleeve"],
+    subcategories: [
+      "Regular",
+      "Oversized",
+      "Full Sleeve",
+      "Shirts",
+      "Graphic T-Shirts",
+    ],
   },
   {
     name: "Hoodies",
     subcategories: ["Hooded Sweatshirts", "Zip Hoodies"],
+  },
+  {
+    name: "Bottomwear",
+    subcategories: ["Pants", "Shorts", "Tracks"],
+  },
+  {
+    name: "Innerwear",
+    subcategories: ["Vests", "Bottom Wear"],
+  },
+  {
+    name: "Gym Wears",
+    subcategories: ["T-Shirts", "Tracks", "Shorts "],
   },
 ];
 
@@ -99,7 +117,17 @@ const CreateProductPage = () => {
     type: ["Casual", "Formal", "Sports"],
     ageRange: ["Kids", "Teen", "Adult"],
     color: ["Red", "Blue", "Black", "White"],
-    fabric: ["Cotton", "Polyester", "Leather"],
+    fabric: [
+      "Cotton",
+      "Polyester",
+      "Leather",
+      "Cotton Polyester",
+      "Polyester Cotton",
+      "Lycra Cotton",
+      "Cotton Lycra",
+      "Ottoman Lycra",
+      "Spandex",
+    ],
     sizes: ["S", "M", "L", "XL", "XXL"],
   };
 

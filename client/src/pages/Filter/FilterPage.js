@@ -1,83 +1,129 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, useHistory, useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import {
   Box,
   Flex,
   Heading,
-  Input,
-  Select,
   Text,
   Stack,
-  Button,
   Img,
   Checkbox,
   VStack,
+  Spinner,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { Listproductbyfiters } from "../../actions/productActions";
 import Filterimg from "../../assets/filtersicon.svg";
 import FilterCategory from "./Filtercategory";
+import axios from "axios";
 
 const FilterPage = () => {
   const dispatch = useDispatch();
-  const productList = useSelector((state) => state.productList); // Get product list from Redux store
-  const { products, loading, error } = productList;
   const location = useLocation();
   const navigate = useNavigate();
   const { category } = useParams();
 
-  // Function to get query params
-  const getQueryParams = () => {
-    return new URLSearchParams(location.search);
-  };
   const forcedGender =
     category === "Men" ? "Men" : category === "Women" ? "Women" : "";
 
+  const getQueryParams = () => new URLSearchParams(location.search);
   const getArrayParam = (key) => {
     const value = getQueryParams().get(key);
     return value ? value.split(",") : [];
   };
 
+  // ✅ Dynamic options from DB
+  const [filterOptions, setFilterOptions] = useState({
+    categories: [],
+    subcategories: [],
+    loading: false,
+  });
+
   const [filters, setFilters] = useState({
+    category: getArrayParam("category"),
+    subcategory: getArrayParam("subcategory"),
     sizes: getArrayParam("sizes"),
     discount: getArrayParam("discount"),
     rating: getArrayParam("rating"),
   });
 
+  // ✅ Fetch all products and extract unique categories/subcategories
+  useEffect(() => {
+    const fetchFilterOptions = async () => {
+      setFilterOptions((prev) => ({ ...prev, loading: true }));
+      try {
+        const genderQuery = forcedGender ? `?gender=${forcedGender}` : "";
+        const { data } = await axios.get(`/api/products${genderQuery}`);
+
+        // ✅ Build category → subcategory map from real products
+        const categoryMap = {};
+        data.forEach((product) => {
+          const cat = product.productdetails?.category;
+          const sub = product.productdetails?.subcategory;
+          if (cat) {
+            if (!categoryMap[cat]) categoryMap[cat] = new Set();
+            if (sub) categoryMap[cat].add(sub);
+          }
+        });
+
+        // Convert Set → Array
+        const categories = Object.keys(categoryMap);
+        const subcategoryMap = {};
+        Object.entries(categoryMap).forEach(([cat, subs]) => {
+          subcategoryMap[cat] = [...subs];
+        });
+
+        setFilterOptions({ categories, subcategoryMap, loading: false });
+      } catch (err) {
+        console.error("Failed to fetch filter options:", err);
+        setFilterOptions((prev) => ({ ...prev, loading: false }));
+      }
+    };
+
+    fetchFilterOptions();
+  }, [forcedGender]);
+
+  // ✅ Available subcategories based on selected categories
+  const availableSubcategories =
+    filters.category.length > 0
+      ? filters.category.flatMap(
+          (cat) => filterOptions.subcategoryMap?.[cat] || [],
+        )
+      : Object.values(filterOptions.subcategoryMap || {}).flat();
+
+  // ✅ Remove invalid subcategories when category changes
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      subcategory: prev.subcategory.filter((sub) =>
+        availableSubcategories.includes(sub),
+      ),
+    }));
+  }, [filters.category]);
+
   useEffect(() => {
     if (forcedGender && filters.gender !== forcedGender) {
-      setFilters((prevFilters) => ({ ...prevFilters, gender: forcedGender }));
+      setFilters((prev) => ({ ...prev, gender: forcedGender }));
     }
   }, [category]);
 
   const handleCheckboxChange = (name, value) => {
-    setFilters((prevFilters) => {
-      const updatedValues = prevFilters[name].includes(value)
-        ? prevFilters[name].filter((v) => v !== value)
-        : [...prevFilters[name], value];
-
-      return { ...prevFilters, [name]: updatedValues };
+    setFilters((prev) => {
+      const updatedValues = prev[name].includes(value)
+        ? prev[name].filter((v) => v !== value)
+        : [...prev[name], value];
+      return { ...prev, [name]: updatedValues };
     });
-  };
-
-  const handleSelectChange = (e) => {
-    const { name, value } = e.target;
-    setFilters((prevFilters) => ({
-      ...prevFilters,
-      [name]: value,
-    }));
   };
 
   const updateURL = () => {
     const params = new URLSearchParams();
-
     Object.keys(filters).forEach((key) => {
       if (Array.isArray(filters[key]) && filters[key].length > 0) {
         params.set(key, filters[key].join(","));
       }
     });
-
     navigate({ search: `?${params.toString()}` });
   };
 
@@ -87,50 +133,47 @@ const FilterPage = () => {
   };
 
   const handleClearFilters = () => {
-    setFilters((prevFilters) => {
-      const preservedGender = prevFilters.gender || forcedGender; // ✅ Ensure gender is preserved
+    const clearedFilters = {
+      gender: forcedGender,
+      category: [],
+      subcategory: [],
+      sizes: [],
+      discount: [],
+      rating: [],
+      from: "",
+      to: "",
+      sortBy: "",
+    };
+    setFilters(clearedFilters);
 
-      return {
-        gender: preservedGender, // ✅ Explicitly set gender
-        brandname: [],
-        category: [],
-        subcategory: [],
-        type: [],
-        color: [],
-        fabric: [],
-        sizes: [],
-        discount: [],
-        rating: [],
-        from: "",
-        to: "",
-        sortBy: "",
-      };
-    });
-
-    // ✅ Ensure gender is always included in the URL
     const searchParams = new URLSearchParams();
-    const currentGender = forcedGender || filters.gender;
-    if (currentGender) {
-      searchParams.set("gender", currentGender);
-    }
-
+    if (forcedGender) searchParams.set("gender", forcedGender);
     navigate({ search: `?${searchParams.toString()}` });
-    dispatch(Listproductbyfiters({ gender: currentGender }));
+    dispatch(Listproductbyfiters({ gender: forcedGender }));
   };
+
   const renderCheckboxList = (title, name, options) => (
     <FilterCategory title={title} onApplyFilters={handleSubmit}>
-      <VStack align="start" spacing={1}>
-        {options.map((option) => (
-          <Checkbox
-            key={option}
-            isChecked={filters[name].includes(option)}
-            onChange={() => handleCheckboxChange(name, option)}
-            colorScheme="cyan"
-          >
-            {option}
-          </Checkbox>
-        ))}
-      </VStack>
+      {filterOptions.loading ? (
+        <Spinner size="sm" color="cyan.500" />
+      ) : options.length === 0 ? (
+        <Text fontSize="sm" color="gray.400">
+          No options available
+        </Text>
+      ) : (
+        <VStack align="start" spacing={1}>
+          {options.map((option) => (
+            <Checkbox
+              key={option}
+              isChecked={filters[name]?.includes(option)}
+              onChange={() => handleCheckboxChange(name, option)}
+              colorScheme="cyan"
+            >
+              {option}
+            </Checkbox>
+          ))}
+        </VStack>
+      )}
     </FilterCategory>
   );
 
@@ -148,7 +191,7 @@ const FilterPage = () => {
           alignItems="center"
           p={0}
           bg="white"
-          border="1px solid "
+          border="1px solid"
           borderColor="gray.200"
           mb={4}
         >
@@ -167,38 +210,19 @@ const FilterPage = () => {
             Clear All
           </Text>
         </Flex>
+
         <Stack spacing={3}>
-          {/* {renderCheckboxList("Brand", "brandname", [
-            "Puma",
-            "Nike",
-            "TommyHilfigher",
-            "Allensolley",
-          ])}
+          {/* ✅ Dynamic Category */}
+          {renderCheckboxList("Category", "category", filterOptions.categories)}
 
-          <FilterCategory title="Gender">
-            <Text fontWeight="bold">{filters.gender}</Text>
-          </FilterCategory> */}
+          {/* ✅ Dynamic Subcategory — filtered by selected categories */}
+          {renderCheckboxList(
+            "Subcategory",
+            "subcategory",
+            availableSubcategories,
+          )}
 
-          {/* {renderCheckboxList("Category", "category", ["Shirts", "Pants"])}
-          {renderCheckboxList("Subcategory", "subcategory", [
-            "Shirts",
-            "Jeans",
-            "Pants",
-            "Shorts",
-            "SweatPants",
-          ])} */}
-          {/* {renderCheckboxList("Type", "type", ["T-Shirts", "Jeans", "Jackets"])}
-          {renderCheckboxList("Color", "color", [
-            "Red",
-            "Blue",
-            "Black",
-            "White",
-          ])}
-          {renderCheckboxList("Fabric", "fabric", [
-            "Cotton",
-            "Polyester",
-            "Leather",
-          ])} */}
+          {/* ✅ Static Filters */}
           {renderCheckboxList("Size", "sizes", ["S", "M", "L", "XL"])}
           {renderCheckboxList("Minimum Discount", "discount", [
             "10",
