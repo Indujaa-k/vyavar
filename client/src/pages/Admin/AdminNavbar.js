@@ -88,8 +88,6 @@ const AdminNavbar = ({ setIsSidebarOpen }) => {
                   width: "auto",
                 }}
               />
-
-              <span className="logoimg-text">E-Commerce</span>
             </NavLink>
           </Box>
 
