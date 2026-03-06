@@ -115,14 +115,16 @@ const getBanners = asyncHandler(async (req, res) => {
     }).select("banners");
 
     const banners = productsWithBanners.flatMap((product) =>
-      product.banners.map((banner) => ({
-        _id: banner._id,
-        image: banner.image,
-        title: banner.title,
-        subtitle: banner.subtitle,
-        gender: banner.gender,
-        productId: banner.productId,
-      })),
+      product.banners
+        .filter((banner) => banner.image && banner.title) // ← add this
+        .map((banner) => ({
+          _id: banner._id,
+          image: banner.image,
+          title: banner.title,
+          subtitle: banner.subtitle,
+          gender: banner.gender,
+          productId: banner.productId,
+        })),
     );
 
     res.status(200).json(banners);

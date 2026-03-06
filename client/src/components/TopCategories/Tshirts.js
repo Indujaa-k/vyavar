@@ -78,7 +78,7 @@ const Tshirts = () => {
                     <>
                       <span className="old-price">Rs. {product.price}</span>
                       <span className="product-price">
-                        Rs. {product.subscriptionPrice}
+                         {product.subscriptionPrice}
                       </span>
                     </>
                   ) : (
@@ -88,7 +88,7 @@ const Tshirts = () => {
                           Rs. {product.oldPrice}
                         </span>
                       )}
-                      <span className="product-price">Rs. {product.price}</span>
+                      <span className="product-price"> {product.price}</span>
                     </>
                   )}
                 </div>

@@ -73,11 +73,31 @@ const SweatPants = () => {
                 </Link>
 
                 <div className="price-row">
-                  {product.oldPrice && product.oldPrice > product.price && (
-                    <span className="old-price">Rs. {product.oldPrice}</span>
+                  {product.isSubscriptionApplied &&
+                  product.subscriptionPrice ? (
+                    <>
+                      <span className="old-price">Rs. {product.price}</span>
+                      <span className="product-price">
+                        {product.subscriptionPrice}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      {product.oldPrice && product.oldPrice > product.price && (
+                        <span className="old-price">
+                          Rs. {product.oldPrice}
+                        </span>
+                      )}
+                      <span className="product-price"> {product.price}</span>
+                    </>
                   )}
-                  <span className="product-price">Rs. {product.price}</span>
                 </div>
+
+                {product.isSubscriptionApplied && product.subscriptionPrice && (
+                  <p className="subscription-badge">
+                    {product.subscriptionDiscountPercent}% OFF with Subscription
+                  </p>
+                )}
               </div>
             </Box>
           ))

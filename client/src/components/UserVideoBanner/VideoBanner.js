@@ -25,8 +25,9 @@ const UserVideoBanner = () => {
         <Text color="red.500" mt={4} textAlign="center">
           {error}
         </Text>
-      ) : videos.length === 0 ? (
-        <Text textAlign="center">No videos available.</Text>
+      // )  
+      // : videos.length === 0 ? (
+      //   <Text textAlign="center">No videos available.</Text>
       ) : (
         videos.map((video) => (
           <Box key={video._id} w="87vw" overflow="hidden">
