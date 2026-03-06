@@ -97,9 +97,9 @@ router.post(
 );
 router.put(
   "/group/variant/:id",
-  uploadMultipleImages,
   protect,
   adminOrSeller,
+  uploadMultipleImages,
   updateVariant,
 );
 router.put(

@@ -114,7 +114,7 @@ const TotalDetails = () => {
       color: "orange.500",
     },
     {
-      label: "Dispatched",
+      label: "OUT_FOR_DELIVERY",
       key: "outForDelivery",
       icon: MdLocalShipping,
       color: "green.500",

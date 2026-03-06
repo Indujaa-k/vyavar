@@ -58,7 +58,7 @@ const Order = () => {
     error: invoiceError,
     invoice,
   } = invoiceDetails;
- const API_URL = process.env.REACT_APP_API_URL;
+  const API_URL = process.env.REACT_APP_API_URL;
   const addDecimals = (num) => {
     return (Math.round(num * 100) / 100).toFixed(2);
   };
@@ -112,7 +112,6 @@ const Order = () => {
       px={{ base: 4, md: 10, lg: 20 }}
       py={{ base: 6, md: 10 }}
       bg="white"
-      mt="60px"
     >
       <Helmet>
         <title>Order Details</title>
@@ -183,12 +182,20 @@ const Order = () => {
                 </Text>
               </Box>
               <Text>
-                {order.isDelivered ? (
-                  <Badge colorScheme="green">
-                    Delivered at {order.deliveredAt}
-                  </Badge>
+                {order.orderStatus === "DELIVERED" ? (
+                  <Badge colorScheme="green">Delivered</Badge>
+                ) : order.orderStatus === "OUT_FOR_DELIVERY" ? (
+                  <Badge colorScheme="blue">Out For Delivery</Badge>
+                ) : order.orderStatus === "PACKED" ? (
+                  <Badge colorScheme="orange">Packed</Badge>
+                ) : order.orderStatus === "CONFIRMED" ? (
+                  <Badge colorScheme="green">Confirmed</Badge>
+                ) : order.orderStatus === "RETURN_APPROVED" ? (
+                  <Badge colorScheme="purple">Return Approved</Badge>
+                ) : order.orderStatus === "RETURN_COMPLETED" ? (
+                  <Badge colorScheme="red">Return Completed</Badge>
                 ) : (
-                  <Badge colorScheme="red">Not Delivered</Badge>
+                  <Badge colorScheme="gray">Created</Badge>
                 )}
               </Text>
 
@@ -330,11 +337,7 @@ const Order = () => {
                 </Text>
               </HStack>
               <OrderTracking order={order} />
-              <Button
-                mt={6} // margin top
-                colorScheme="pink"
-                onClick={() => navigate("/profile")}
-              >
+              <Button mt={6} colorScheme="pink" onClick={() => navigate(-1)}>
                 Back
               </Button>
             </VStack>

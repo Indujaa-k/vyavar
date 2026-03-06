@@ -484,7 +484,7 @@ const Productpage = () => {
                     style={{
                       position: "absolute",
                       top: "120px",
-                      left: "40px",
+                      right: "0px",
                       width: "650px",
                       height: "950px",
                       border: "2px solid #ddd",
@@ -495,7 +495,7 @@ const Productpage = () => {
                       backgroundSize: "300%",
                       backgroundRepeat: "no-repeat",
                       pointerEvents: "none",
-                      zIndex: 999,
+                      zIndex: 998,
                     }}
                   />
                 )}

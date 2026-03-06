@@ -222,7 +222,7 @@ const acceptOrder = asyncHandler(async (req, res) => {
 
     await sendEmail({
       email: order.user.email,
-      status: "DISPATCHED",
+      status: "OUT_FOR_DELIVERY",
       order,
     });
 
@@ -712,7 +712,7 @@ export const updateOrderStatus = async (req, res) => {
 
     if (
       previousStatus !== newStatus &&
-      ["PACKED", "DISPATCHED"].includes(newStatus)
+      ["PACKED", "OUT_FOR_DELIVERY"].includes(newStatus)
     ) {
       await sendEmail({
         email: order.user.email,
@@ -749,6 +749,7 @@ export const updateOrderStatus = async (req, res) => {
 // @desc   Get order statuses count
 // @route  GET /api/orders/status-count
 // @access Admin
+// @access Admin
 const getOrderStatusCounts = asyncHandler(async (req, res) => {
   const confirmed = await Order.countDocuments({
     orderStatus: "CONFIRMED",
@@ -762,16 +763,30 @@ const getOrderStatusCounts = asyncHandler(async (req, res) => {
     orderStatus: "OUT_FOR_DELIVERY",
   });
 
-  const allOrders = confirmed + packed + outForDelivery;
+  const returnApproved = await Order.countDocuments({
+    orderStatus: "RETURN_APPROVED",
+  });
+
+  const returnCompleted = await Order.countDocuments({
+    orderStatus: "RETURN_COMPLETED",
+  });
+  const delivered = await Order.countDocuments({
+    orderStatus: "DELIVERED",
+  });
+
+  const allOrders =
+    confirmed + packed + outForDelivery + returnApproved + returnCompleted + delivered;
 
   res.json({
     allOrders,
     confirmed,
     packed,
     outForDelivery,
+    returnApproved,
+    returnCompleted,
+    delivered,
   });
 });
-
 // @desc create billing invoice to an order
 // @route   POST /api/orders/billinginvoice
 // @access  Private/Admin

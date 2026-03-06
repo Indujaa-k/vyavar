@@ -28,7 +28,7 @@ const sendEmail = async ({ email, status, order }) => {
       subject = "📦 Your Order is Packed";
       break;
 
-    case "DISPATCHED":
+    case "OUT_FOR_DELIVERY":
     case "SHIPPED":
       console.log("🚚 DISPATCH mail triggered");
       subject = "🚚 Order Dispatched";

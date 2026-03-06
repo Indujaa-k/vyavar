@@ -1,0 +1,146 @@
+/* Prevent horizontal scroll */
+body {
+  overflow-x: hidden;
+}
+
+/* Slider Container */
+.slider {
+  position: relative;
+  width: 100%;
+  height: 80vh;
+  overflow: hidden;
+}
+
+/* Slide */
+.slide {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.6s ease-in-out;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 8%;
+}
+
+.slide.current {
+  opacity: 1;
+}
+
+/* Title */
+.titleslider {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #fff;
+  max-width: 600px;
+}
+
+/* Subtitle */
+.subtitleslider {
+  font-size: 1.4rem;
+  color: #f1f1f1;
+  margin-top: 10px;
+  max-width: 500px;
+}
+
+/* Button container */
+.content {
+  margin-top: 20px;
+}
+
+/* Arrows */
+.next,
+.prev {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: white;
+  background: rgba(0,0,0,0.4);
+  padding: 10px;
+  border-radius: 50%;
+  z-index: 10;
+}
+
+.next {
+  right: 20px;
+}
+
+.prev {
+  left: 20px;
+}
+
+.next:hover,
+.prev:hover {
+  background: rgba(0,0,0,0.7);
+}
+
+/* ===================== */
+/* Tablet */
+/* ===================== */
+
+@media (max-width: 1024px) {
+  .slider {
+    height: 70vh;
+  }
+
+  .titleslider {
+    font-size: 2.2rem;
+  }
+
+  .subtitleslider {
+    font-size: 1.2rem;
+  }
+}
+
+/* ===================== */
+/* Mobile */
+/* ===================== */
+
+@media (max-width: 768px) {
+  .slider {
+    height: 60vh;
+  }
+
+  .slide {
+    padding-left: 5%;
+    padding-right: 5%;
+    align-items: center;
+    text-align: center;
+  }
+
+  .titleslider {
+    font-size: 1.8rem;
+  }
+
+  .subtitleslider {
+    font-size: 1rem;
+  }
+
+  .next,
+  .prev {
+    padding: 8px;
+  }
+}
+
+/* ===================== */
+/* Small Mobile */
+/* ===================== */
+
+@media (max-width: 480px) {
+  .slider {
+    height: 50vh;
+  }
+
+  .titleslider {
+    font-size: 1.4rem;
+  }
+
+  .subtitleslider {
+    font-size: 0.9rem;
+  }
+}

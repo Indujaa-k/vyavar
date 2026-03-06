@@ -1,12 +1,7 @@
-import React from 'react'
+import React from "react";
 
 const ShopNowBtn = () => {
-    return (
-            <button className="ShopNow">
-                SHOP NOW
-                </button>
-        
-    )
-}
+  return <button className="ShopNow">SHOP NOW</button>;
+};
 
-export default ShopNowBtn
+export default ShopNowBtn;

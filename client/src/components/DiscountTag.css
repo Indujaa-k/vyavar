@@ -1,0 +1,35 @@
+.discount-container {
+  position: fixed;
+  top: 35%;
+  right: 0;
+  transform: translateY(-50%);
+  z-index: 3000;
+}
+
+.discount-button {
+  background-color: #000346;
+  color: white;
+  transform: rotate(-90deg);
+  transform-origin: right center;
+  width: 250px;
+  height: 50px;
+  font-weight: 800;
+  font-size: 20px;
+  border-radius: 0;
+}
+
+.discount-banner {
+  position: absolute;
+  top: 100%;
+  right: 25px;
+  transform: translateY(-50%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.discount-banner img {
+  display: block;
+  max-width: 260px;
+  height: auto;
+}

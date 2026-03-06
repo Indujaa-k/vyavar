@@ -11,6 +11,8 @@ import {
   Spinner,
   Flex,
 } from "@chakra-ui/react";
+import { AiOutlineCheckCircle } from "react-icons/ai";
+
 import { Link as RouterLink } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -47,59 +49,59 @@ const AdminLayout = ({ children }) => {
   const orderStatusList = [
     {
       label: "All Orders",
-      key: "allOrders",
+      key: "allorders",
       icon: FaListAlt,
       color: "purple.500",
     },
-    // {
-    //   label: "Pending",
-    //   key: "pending",
-    //   icon: MdPendingActions,
-    //   color: "blue.500",
-    // },
+
     {
       label: "Confirmed",
       key: "confirmed",
       icon: FaClipboardList,
       color: "green.500",
     },
+
     {
-      label: "packed",
+      label: "Packed",
       key: "packed",
       icon: GiCardboardBox,
       color: "orange.500",
     },
+
     {
-      label: "Dispatched",
-      key: "outForDelivery",
+      label: "Out For Delivery",
+      key: "out-for-delivery",
       icon: MdLocalShipping,
       color: "green.500",
     },
-    // {
-    //   label: "Delivered",
-    //   key: "delivered",
-    //   icon: AiOutlineDeliveredProcedure,
-    //   color: "blue.500",
-    // },
-    // { label: "Canceled", key: "canceled", icon: MdCancel, color: "red.500" },
-    // {
-    //   label: "Returned",
-    //   key: "returned",
-    //   icon: AiOutlineRollback,
-    //   color: "blue.500",
-    // },
-    // {
-    //   label: "Failed to deliver",
-    //   key: "failed",
-    //   icon: ImCross,
-    //   color: "red.500",
-    // },
+
+    {
+      label: "Delivered",
+      key: "delivered",
+      icon: AiOutlineDeliveredProcedure,
+      color: "blue.500",
+    },
+
+    {
+      label: "Return Approved",
+      key: "return-approved",
+      icon: AiOutlineRollback,
+      color: "purple.500",
+    },
+
+    {
+      label: "Return Completed",
+      key: "return-completed",
+      icon: AiOutlineCheckCircle,
+      color: "teal.500",
+    },
   ];
+  console.log(orderStatuses);
 
   return (
     <>
       {/* Admin Navbar */}
-    <AdminNavbar setIsSidebarOpen={setIsSidebarOpen} />
+      <AdminNavbar setIsSidebarOpen={setIsSidebarOpen} />
 
       <Box display="flex">
         {/* Sidebar */}
@@ -267,7 +269,17 @@ const AdminLayout = ({ children }) => {
                             minW="30px"
                             textAlign="center"
                           >
-                            {orderStatuses[status.key] || 0}
+                            {orderStatuses[
+                              {
+                                allorders: "allOrders",
+                                confirmed: "confirmed",
+                                packed: "packed",
+                                "out-for-delivery": "outForDelivery",
+                                delivered: "delivered",
+                                "return-approved": "returnApproved",
+                                "return-completed": "returnCompleted",
+                              }[status.key]
+                            ] || 0}
                           </Box>
                         </Button>
                       ))

@@ -1,10 +1,9 @@
 import React from "react";
 import { useLocation, Link } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Box, SimpleGrid, Image, Text } from "@chakra-ui/react";
+import { Box, SimpleGrid } from "@chakra-ui/react";
 import "./Tshirts.css";
-import MenTshirtbanner from "../../assets/Tshirtsmenbanner.png";
-import WomenenTshirtbanner from "../../assets/girlstshirt.webp";
+import MenTshirtbanner from "../../assets/banner1.jpeg";
 
 const Tshirts = () => {
   const location = useLocation();
@@ -17,27 +16,26 @@ const Tshirts = () => {
       title: "Tshirts",
       subtitle: "Your everyday go-to",
     },
-    Women: {
-      img: WomenenTshirtbanner,
-      title: "Trendy Tees",
-      subtitle: "Stylish & Comfortable",
-    },
   };
 
   const productList = useSelector((state) => state.productList);
   const products = productList?.products || [];
 
-  const tshirts = products
-    .filter(
-      (product) =>
-        product.productdetails?.subcategory === "Shirts" &&
-        product.productdetails?.gender === gender,
-    )
-    .slice(0, 5);
+  const getFourProducts = (products, startIndex) => {
+    const topFour = products.slice(0, 4);
+    const selected = products.slice(startIndex, startIndex + 4);
+    if (selected.length < 4) {
+      const remaining = 4 - selected.length;
+      return [...selected, ...topFour.slice(0, remaining)];
+    }
+    return selected;
+  };
+
+  const tshirts = getFourProducts(products, 0);
 
   return (
     <div className="categor-container">
-      {/* 🔹 Banner */}
+      {/* Banner */}
       <div className="banner">
         <img
           src={banners[gender].img}
@@ -46,95 +44,61 @@ const Tshirts = () => {
         />
       </div>
 
-      {/* 🔹 Product Grid */}
-      <SimpleGrid columns={{ base: 1, md: 3, lg: 4 }} spacing={6} p={4}>
+      {/* Product Grid */}
+      <SimpleGrid columns={{ base: 2, md: 3, lg: 4 }} spacing={6} p={4}>
         {tshirts.length > 0 ? (
           tshirts.map((product) => (
-            <Box
-              key={product._id}
-              borderRadius="xl"
-              overflow="hidden"
-              bg="white"
-              w="100%"
-              maxW="280px"
-              mx="auto"
-            >
+            <Box key={product._id} className="product-card">
               {/* Image */}
               <Link to={`/product/${product._id}`}>
-                <Box
-                  h={{ base: "240px", md: "300px", lg: "360px" }}
-                  overflow="hidden"
-                >
+                <div className="product-image-wrapper">
                   {product.discount > 0 && (
                     <div className="discountBadge">
                       <span>{product.discount}%</span>
                       <span>OFF</span>
                     </div>
                   )}
-
-                  <Image
+                  <img
                     src={`${process.env.REACT_APP_API_URL}/${product.images[0]}`}
                     alt={product.description}
-                    objectFit="cover"
-                    w="100%"
-                    h="100%"
                   />
-                </Box>
+                </div>
               </Link>
 
               {/* Details */}
-              <Box p={3}>
+              <div className="product-details">
                 <Link to={`/product/${product._id}`}>
-                  <Text fontSize="md" fontWeight="semibold" isTruncated mb={1}>
-                    {product.brandname}
-                  </Text>
-
-                  <Text fontSize="sm" color="gray.600" noOfLines={2}>
-                    {product.description}
-                  </Text>
+                  <p className="product-title">{product.brandname}</p>
+                  <p className="product-description">{product.description}</p>
                 </Link>
 
-                {/* Price */}
-                <Box mt={2}>
+                <div className="price-row">
                   {product.isSubscriptionApplied &&
                   product.subscriptionPrice ? (
                     <>
-                      <Text
-                        fontSize="xs"
-                        color="gray.500"
-                        textDecoration="line-through"
-                      >
-                        Rs. {product.price}
-                      </Text>
-
-                      <Text fontSize="md" fontWeight="bold">
+                      <span className="old-price">Rs. {product.price}</span>
+                      <span className="product-price">
                         Rs. {product.subscriptionPrice}
-                      </Text>
-
-                      <Text fontSize="xs" color="green.500" fontWeight="bold">
-                        {product.subscriptionDiscountPercent}% OFF with
-                        Subscription
-                      </Text>
+                      </span>
                     </>
                   ) : (
-                    <Box display="flex" gap={2} alignItems="center">
+                    <>
                       {product.oldPrice && product.oldPrice > product.price && (
-                        <Text
-                          fontSize="xs"
-                          color="gray.500"
-                          textDecoration="line-through"
-                        >
+                        <span className="old-price">
                           Rs. {product.oldPrice}
-                        </Text>
+                        </span>
                       )}
-
-                      <Text fontSize="md" fontWeight="bold">
-                        Rs. {product.price}
-                      </Text>
-                    </Box>
+                      <span className="product-price">Rs. {product.price}</span>
+                    </>
                   )}
-                </Box>
-              </Box>
+                </div>
+
+                {product.isSubscriptionApplied && product.subscriptionPrice && (
+                  <p className="subscription-badge">
+                    {product.subscriptionDiscountPercent}% OFF with Subscription
+                  </p>
+                )}
+              </div>
             </Box>
           ))
         ) : (
