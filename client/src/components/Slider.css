@@ -1,146 +1,196 @@
-/* Prevent horizontal scroll */
-body {
-  overflow-x: hidden;
+body{
+  overflow-x:hidden;
 }
 
-/* Slider Container */
-.slider {
-  position: relative;
-  width: 100%;
-  height: 80vh;
-  overflow: hidden;
+/* ===================== */
+/* Slider */
+/* ===================== */
+
+.slider{
+  position:relative;
+  width:100%;
+  height:80vh;
+  overflow:hidden;
 }
 
+/* ===================== */
 /* Slide */
-.slide {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  transition: opacity 0.6s ease-in-out;
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: center;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding-left: 8%;
+/* ===================== */
+
+.slide{
+  position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  opacity:0;
+  transition:opacity 0.8s ease-in-out;
+
+  background-repeat:no-repeat;
+  background-size:cover;
+  background-position:center;
+
+  z-index:0;
 }
 
-.slide.current {
-  opacity: 1;
+.slide.current{
+  opacity:1;
+  z-index:1;
 }
 
+/* ===================== */
+/* Overlay */
+/* ===================== */
+
+.slide-overlay{
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,0.4);
+  z-index:2;
+}
+
+/* ===================== */
+/* Content */
+/* ===================== */
+
+.slide-content{
+  position:absolute;
+  inset:0;
+  z-index:5;
+
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+
+  text-align:center;
+  padding:0 10%;
+}
+
+/* ===================== */
 /* Title */
-.titleslider {
-  font-size: 3rem;
-  font-weight: 700;
-  color: #fff;
-  max-width: 600px;
+/* ===================== */
+
+.titleslider{
+  font-size:clamp(2rem,5vw,4.5rem);
+  font-weight:800;
+  color:#fff;
+  margin-bottom:12px;
+
+  text-shadow:0 2px 10px rgba(0,0,0,0.6);
 }
 
+/* ===================== */
 /* Subtitle */
-.subtitleslider {
-  font-size: 1.4rem;
-  color: #f1f1f1;
-  margin-top: 10px;
-  max-width: 500px;
+/* ===================== */
+
+.subtitleslider{
+  font-size:clamp(1rem,2vw,1.5rem);
+  color:#f0f0f0;
+  margin-bottom:24px;
 }
 
-/* Button container */
-.content {
-  margin-top: 20px;
+/* ===================== */
+/* Button */
+/* ===================== */
+
+.shop-now-btn{
+  background:#09254a;
+  color:white;
+  padding:12px 24px;
+  border:none;
+  border-radius:6px;
+  font-weight:bold;
+  cursor:pointer;
+
+  transition:0.3s;
 }
 
+.shop-now-btn:hover{
+  background:#153259;
+  transform:translateY(-2px);
+}
+
+/* ===================== */
 /* Arrows */
+/* ===================== */
+
 .next,
-.prev {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  cursor: pointer;
-  color: white;
-  background: rgba(0,0,0,0.4);
-  padding: 10px;
-  border-radius: 50%;
-  z-index: 10;
+.prev{
+  position:absolute;
+  top:50%;
+  transform:translateY(-50%);
+  color:white;
+
+  background:rgba(0,0,0,0.4);
+  padding:10px;
+  border-radius:50%;
+
+  cursor:pointer;
+  z-index:10;
 }
 
-.next {
-  right: 20px;
-}
-
-.prev {
-  left: 20px;
-}
+.next{ right:20px; }
+.prev{ left:20px; }
 
 .next:hover,
-.prev:hover {
-  background: rgba(0,0,0,0.7);
+.prev:hover{
+  background:rgba(0,0,0,0.75);
 }
 
 /* ===================== */
 /* Tablet */
 /* ===================== */
 
-@media (max-width: 1024px) {
-  .slider {
-    height: 70vh;
-  }
+@media(max-width:1024px){
 
-  .titleslider {
-    font-size: 2.2rem;
-  }
+.slider{
+  height:65vh;
+}
 
-  .subtitleslider {
-    font-size: 1.2rem;
-  }
 }
 
 /* ===================== */
 /* Mobile */
 /* ===================== */
 
-@media (max-width: 768px) {
-  .slider {
-    height: 60vh;
-  }
+@media(max-width:768px){
 
-  .slide {
-    padding-left: 5%;
-    padding-right: 5%;
-    align-items: center;
-    text-align: center;
-  }
+.slider{
+  height:55vh;
+}
 
-  .titleslider {
-    font-size: 1.8rem;
-  }
+.slide-content{
+  justify-content:flex-end;
+  align-items:flex-start;
+  text-align:left;
 
-  .subtitleslider {
-    font-size: 1rem;
-  }
+  padding:0 6% 8%;
+}
 
-  .next,
-  .prev {
-    padding: 8px;
-  }
+.titleslider{
+  font-size:1.7rem;
+}
+
+.subtitleslider{
+  font-size:0.95rem;
+}
+
 }
 
 /* ===================== */
 /* Small Mobile */
 /* ===================== */
 
-@media (max-width: 480px) {
-  .slider {
-    height: 50vh;
-  }
+@media(max-width:480px){
 
-  .titleslider {
-    font-size: 1.4rem;
-  }
+.slider{
+  height:50vh;
+}
 
-  .subtitleslider {
-    font-size: 0.9rem;
-  }
+.next,
+.prev{
+  padding:7px;
+}
+
 }
