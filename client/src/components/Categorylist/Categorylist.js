@@ -1,53 +1,77 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
+import axios from "axios";
 import "../Nav.css";
 
 const Categorylist = ({ isMobile, onItemClick }) => {
-  // Define Men and Women categories
-  const menCategories = [
-    {
-      name: "Topwear",
-      subcategories: ["Regular", "Oversized", "Full Sleeve"],
-    },
-    { name: "Hoodies", subcategories: ["Hooded Sweatshirts", "Zip Hoodies"] },
-    { name: "Combo", subcategories: [] }, // Combo has no subcategories
-  ];
-
-  const womenCategories = [
-    {
-      name: "Clothing",
-      subcategories: ["Tops", "Casual Shirts", "Formal Shirts"],
-    },
-    { name: "Bottomwear", subcategories: ["Pants", "Straight"] },
-    { name: "Combo", subcategories: [] }, // Added Combo for women too
-  ];
-
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const gender = searchParams.get("gender") || "Men";
 
-  const categoriesToShow =
-    gender === "Men"
-      ? menCategories
-      : gender === "Women"
-        ? womenCategories
-        : [];
+  const [categoryMap, setCategoryMap] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setLoading(true);
+      try {
+        const genderQuery = gender ? `?gender=${gender}` : "";
+        const { data } = await axios.get(`/api/products${genderQuery}`);
+
+        // Build category → subcategories map from real products (same logic as FilterPage)
+        const map = {};
+        data.forEach((product) => {
+          const cat = product.productdetails?.category;
+          const sub = product.productdetails?.subcategory;
+          if (cat) {
+            if (!map[cat]) map[cat] = new Set();
+            if (sub) map[cat].add(sub);
+          }
+        });
+
+        // Convert Sets to Arrays
+        const resolved = {};
+        Object.entries(map).forEach(([cat, subs]) => {
+          resolved[cat] = [...subs];
+        });
+
+        setCategoryMap(resolved);
+      } catch (err) {
+        console.error("Failed to fetch categories:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, [gender]);
+
+  const categories = Object.entries(categoryMap); // [[catName, [sub1, sub2]], ...]
 
   return (
     <div className="category-contain">
-      {categoriesToShow.length > 0 ? (
+      {loading ? (
+        <p className="category-loading">Loading...</p>
+      ) : categories.length > 0 ? (
         <div className={`dropdown-menu ${isMobile ? "mobile" : ""}`}>
           <div className="category-contain">
-            {categoriesToShow.map((category, index) => (
+            {categories.map(([catName, subcategories], index) => (
               <div key={index} className="category-column">
-                <h4>{category.name}</h4>
+                <h4>
+                  <NavLink
+                    to={`/products?gender=${gender}&category=${encodeURIComponent(catName)}`}
+                    onClick={onItemClick}
+                  >
+                    {catName}
+                  </NavLink>
+                </h4>
                 <ul>
-                  {category.subcategories.length > 0 ? (
-                    category.subcategories.map((sub, subIndex) => (
+                  {subcategories.length > 0 ? (
+                    subcategories.map((sub, subIndex) => (
                       <li key={subIndex}>
                         <NavLink
                           to={`/products?gender=${gender}&category=${encodeURIComponent(
-                            category.name,
+                            catName,
                           )}&subcategory=${encodeURIComponent(sub)}`}
                           onClick={onItemClick}
                         >
@@ -55,7 +79,7 @@ const Categorylist = ({ isMobile, onItemClick }) => {
                         </NavLink>
                       </li>
                     ))
-                  ) : category.name.toLowerCase() === "combo" ? (
+                  ) : catName.toLowerCase() === "combo" ? (
                     <li>
                       <NavLink
                         to={`/products?gender=${gender}&category=Combo`}
