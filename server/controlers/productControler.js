@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import asyncHandler from "express-async-handler";
 import multer from "multer";
 import XLSX from "xlsx";
+import path from "path";
 import Product from "../models/productModel.js";
 import ProductGroup from "../models/productgroupModel.js";
 import User from "../models/userModel.js";
@@ -751,6 +752,7 @@ export const markReviewNotHelpful = async (req, res) => {
   await product.save();
   res.json({ message: "Marked as not helpful" });
 };
+
 const uploadProducts = asyncHandler(async (req, res) => {
   if (!req.file) {
     res.status(400);
@@ -759,10 +761,44 @@ const uploadProducts = asyncHandler(async (req, res) => {
 
   const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json(sheet);
+  const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
-  const groupMap = {}; // ExcelGroupId → MongoGroupId
+  const groupMap = {};
   let created = 0;
+  const skipped = [];
+
+  // ✅ Safe number helper — never returns NaN
+  const safeNum = (val, fallback = 0) => {
+    const n = parseFloat(val);
+    return isNaN(n) ? fallback : n;
+  };
+
+  // ✅ Ensure directory exists
+  const ensureDir = (dir) => {
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  };
+
+  // ✅ Copy a local file into the project's uploads folder (same as multer)
+  // Returns the stored relative path e.g. "uploads/products/images/images-1234567890.jpg"
+  const copyToUploads = (srcPath, folder) => {
+    srcPath = srcPath.trim();
+
+    if (!fs.existsSync(srcPath)) {
+      console.warn(`File not found, skipping: ${srcPath}`);
+      return null;
+    }
+
+    ensureDir(folder);
+
+    const ext = path.extname(srcPath); // .jpg / .pdf
+    const filename = `images-${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
+    const destPath = path.join(folder, filename);
+
+    fs.copyFileSync(srcPath, destPath);
+
+    // Return the relative path — same format multer saves to DB
+    return destPath.replace(/\\/g, "/"); // normalize Windows backslashes
+  };
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
@@ -771,74 +807,102 @@ const uploadProducts = asyncHandler(async (req, res) => {
       throw new Error(`Row ${i + 2}: SKU & productGroupId required`);
     }
 
-    // 🔹 Uniform Mongo productGroupId
     if (!groupMap[row.productGroupId]) {
       groupMap[row.productGroupId] = row.productGroupId;
     }
 
-    // 🔹 Upload images
+    // ✅ Skip duplicate SKUs
+    const exists = await Product.findOne({ SKU: row.SKU });
+    if (exists) {
+      console.warn(`Row ${i + 2}: SKU "${row.SKU}" already exists — skipped`);
+      skipped.push(row.SKU);
+      continue;
+    }
+
+    // 🔹 Copy images → uploads/products/images  (matches multer fieldname "images")
     let images = [];
-
     if (row.images) {
-      const paths = row.images.split("|");
-
+      const paths = row.images
+        .split("|")
+        .map((p) => p.trim())
+        .filter(Boolean);
       for (const p of paths) {
-        if (fs.existsSync(p)) {
-          images.push(p); // ✅ store local path directly
-        }
+        const saved = copyToUploads(p, "uploads/products/images");
+        if (saved) images.push(saved);
       }
     }
 
-    // 🔹 Sizes & stock
-    const sizes = row.sizes.split(",");
-    const stockBySize = row.stockBySize.split(",").map((s) => {
-      const [size, stock] = s.split(":");
-      return { size, stock: Number(stock) };
-    });
+    // 🔹 Copy sizeChart PDF → uploads/pdfs  (matches multer pdf handling)
+    let sizeChart = "";
+    if (row.sizeChart) {
+      const saved = copyToUploads(row.sizeChart, "uploads/pdfs");
+      if (saved) sizeChart = saved;
+    }
 
-    const oldPrice = Number(row.oldPrice);
-    const discount = Number(row.discount || 0);
-    const price = oldPrice - (oldPrice * discount) / 100;
+    // 🔹 Sizes & stock
+    const sizes = row.sizes
+      ? row.sizes
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [];
+
+    const stockBySize = row.stockBySize
+      ? row.stockBySize.split(",").map((s) => {
+          const [size, stock] = s.split(":");
+          return {
+            size: (size || "").trim(),
+            stock: safeNum(stock, 0),
+          };
+        })
+      : [];
+
+    // 🔹 Prices
+    const oldPrice = safeNum(row.oldPrice, 0);
+    const discount = safeNum(row.discount, 0);
+    const price = +(oldPrice - (oldPrice * discount) / 100).toFixed(2);
+
+    // 🔹 Shipping
+    const weight = safeNum(row.weight, 0.5);
+    const length = safeNum(row.length, 10);
+    const width = safeNum(row.width, 10);
+    const height = safeNum(row.height, 2);
+    const zip = safeNum(row.zip, 0);
 
     await Product.create({
       user: req.user._id,
       SKU: row.SKU,
       productGroupId: groupMap[row.productGroupId],
-
       brandname: row.brandname || "Default Brand",
       description: row.description || "",
 
       images,
+      sizeChart,
       price,
       oldPrice,
       discount,
 
       productdetails: {
-        gender: row.gender || "unisex",
-        category: row.category || "general",
-        subcategory: row.subcategory || "general",
-        type: row.type || "general",
-        ageRange: row.ageRange || "all",
-        fabric: row.fabric || "cotton",
-        color: row.color,
+        gender: row.gender || "Unisex",
+        category: row.category || "General",
+        subcategory: row.subcategory || "General",
+        type: row.type || "Casual",
+        ageRange: row.ageRange || "Adult",
+        fabric: row.fabric || "Cotton",
+        color: row.color || "",
         sizes,
         stockBySize,
       },
 
-      // ✅ AUTO-FILLED SHIPPING DETAILS
       shippingDetails: {
-        weight: 0.5,
-        dimensions: {
-          length: 10,
-          width: 10,
-          height: 2,
-        },
+        weight,
+        dimensions: { length, width, height },
         originAddress: {
-          street1: "Warehouse",
-          city: "Chennai",
-          state: "Tamil Nadu",
-          zip: 600001,
-          country: "India",
+          street1: row.street1 || "Warehouse",
+          city: row.city || "Chennai",
+          state: row.state || "Tamil Nadu",
+          zip,
+          country: row.country || "India",
         },
       },
     });
@@ -849,6 +913,11 @@ const uploadProducts = asyncHandler(async (req, res) => {
   res.status(201).json({
     message: "Bulk upload successful",
     productsCreated: created,
+    ...(skipped.length > 0 && {
+      skipped: skipped.length,
+      skippedSKUs: skipped,
+      warning: `${skipped.length} SKU(s) already existed and were skipped`,
+    }),
   });
 });
 
