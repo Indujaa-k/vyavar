@@ -31,6 +31,9 @@ const CATEGORY_DATA = [
       "Full Sleeve",
       "Shirts",
       "Graphic T-Shirts",
+      "Regular Tees",
+      "Plain Tees",
+      "Embroidery Tees",
     ],
   },
   {
@@ -89,29 +92,6 @@ const CreateProductPage = () => {
   };
 
   const dispatch = useDispatch();
-  // const options = {
-  //   gender: ["Men", "Women", "Unisex"],
-  // category: [
-  //   "Clothing",
-  //   "Topwear",
-  //   "Bottomwear",
-  //   "Shirts",
-  //   "Hoodies",
-  //   "Innerwear",
-  //   "Footwear",
-  //   "Accessories",
-  // ],
-  // subcategory: [
-  //   "Shirts",
-  //   "Jeans",
-  //   "Pants",
-  //   "Shorts",
-  //   "SweatPants",
-  //   "Sets",
-  //   "Regular",
-  //   "Oversized",
-  //   "Full Sleeve",
-  // ],
   const options = {
     gender: ["Men", "Women", "Unisex"],
     type: ["Casual", "Formal", "Sports"],
@@ -202,15 +182,7 @@ const CreateProductPage = () => {
       navigate("/admin/productlist");
     }
   }, [dispatch, success, navigate, toast]);
-  // useEffect(() => {
-  //   if (productType === "combo") {
-  //     setProductdetails((prev) => ({
-  //       ...prev,
-  //       category: "Combo",
-  //       subcategory: "",
-  //     }));
-  //   }
-  // }, [productType]);
+
   useEffect(() => {
     if (error) {
       toast({
@@ -860,7 +832,7 @@ const CreateProductPage = () => {
               ...shippingDetails,
               dimensions: {
                 ...shippingDetails.dimensions,
-                length: Number(e.target.value), // ✅ Ensure it's a number
+                length: Number(e.target.value),
               },
             })
           }
@@ -875,7 +847,7 @@ const CreateProductPage = () => {
               ...shippingDetails,
               dimensions: {
                 ...shippingDetails.dimensions,
-                width: Number(e.target.value), // ✅ Convert to number
+                width: Number(e.target.value),
               },
             })
           }
@@ -890,7 +862,7 @@ const CreateProductPage = () => {
               ...shippingDetails,
               dimensions: {
                 ...shippingDetails.dimensions,
-                height: Number(e.target.value), // ✅ Convert to number
+                height: Number(e.target.value),
               },
             })
           }
