@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import asyncHandler from "express-async-handler";
 import multer from "multer";
+import { fileURLToPath } from "url";
 import XLSX from "xlsx";
 import path from "path";
 import Product from "../models/productModel.js";
@@ -767,6 +768,11 @@ const uploadProducts = asyncHandler(async (req, res) => {
   let created = 0;
   const skipped = [];
 
+  // ✅ Absolute path to project root — works in production regardless of cwd
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const PROJECT_ROOT = path.resolve(__dirname, "../../"); // adjust "../.." to match your folder depth
+
   // ✅ Safe number helper — never returns NaN
   const safeNum = (val, fallback = 0) => {
     const n = parseFloat(val);
@@ -778,9 +784,9 @@ const uploadProducts = asyncHandler(async (req, res) => {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   };
 
-  // ✅ Copy a local file into the project's uploads folder (same as multer)
-  // Returns the stored relative path e.g. "uploads/products/images/images-1234567890.jpg"
-  const copyToUploads = (srcPath, folder) => {
+  // ✅ Copy file to absolute uploads folder, return relative path for DB
+  // DB path format: "uploads/products/images/images-123.jpg"  (same as multer)
+  const copyToUploads = (srcPath, relativeFolder) => {
     srcPath = srcPath.trim();
 
     if (!fs.existsSync(srcPath)) {
@@ -788,16 +794,17 @@ const uploadProducts = asyncHandler(async (req, res) => {
       return null;
     }
 
-    ensureDir(folder);
+    const absFolder = path.join(PROJECT_ROOT, relativeFolder); // ✅ absolute on disk
+    ensureDir(absFolder);
 
-    const ext = path.extname(srcPath); // .jpg / .pdf
+    const ext = path.extname(srcPath);
     const filename = `images-${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
-    const destPath = path.join(folder, filename);
+    const destAbs = path.join(absFolder, filename);
 
-    fs.copyFileSync(srcPath, destPath);
+    fs.copyFileSync(srcPath, destAbs);
 
-    // Return the relative path — same format multer saves to DB
-    return destPath.replace(/\\/g, "/"); // normalize Windows backslashes
+    // ✅ Relative forward-slash path stored in DB — same as multer
+    return `${relativeFolder}/${filename}`.replace(/\\/g, "/");
   };
 
   for (let i = 0; i < rows.length; i++) {
@@ -819,7 +826,7 @@ const uploadProducts = asyncHandler(async (req, res) => {
       continue;
     }
 
-    // 🔹 Copy images → uploads/products/images  (matches multer fieldname "images")
+    // 🔹 Copy images → uploads/products/images
     let images = [];
     if (row.images) {
       const paths = row.images
@@ -832,7 +839,7 @@ const uploadProducts = asyncHandler(async (req, res) => {
       }
     }
 
-    // 🔹 Copy sizeChart PDF → uploads/pdfs  (matches multer pdf handling)
+    // 🔹 Copy sizeChart PDF → uploads/pdfs
     let sizeChart = "";
     if (row.sizeChart) {
       const saved = copyToUploads(row.sizeChart, "uploads/pdfs");
