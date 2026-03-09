@@ -1,6 +1,8 @@
 import express from "express";
 const router = express.Router();
 import excelUpload from "../middleware/excelUpload.js";
+import zipUpload from "../multer/zipUpload.js";
+
 import {
   getProducts,
   deleteProduct,
@@ -66,7 +68,7 @@ router.post(
   "/upload",
   protect,
   adminOrSeller,
-  excelUpload.single("file"),
+  zipUpload.single("file"),
   uploadProducts,
 );
 router.get("/:id/full", optionalAuth, getProductFullById);
