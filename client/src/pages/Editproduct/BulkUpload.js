@@ -9,9 +9,10 @@ import {
   Flex,
   Stack,
   useToast,
+  Badge,
 } from "@chakra-ui/react";
 import HashLoader from "react-spinners/HashLoader";
-import { FaCloudUploadAlt } from "react-icons/fa";
+import { FaCloudUploadAlt, FaFileArchive } from "react-icons/fa";
 
 const SAMPLE_COLUMNS = [
   { key: "SKU", sample1: "SKU12345", sample2: "SKU12346" },
@@ -19,14 +20,14 @@ const SAMPLE_COLUMNS = [
   { key: "brandname", sample1: "Nike", sample2: "Nike" },
   { key: "description", sample1: "Cool T-shirt", sample2: "Cool T-shirt" },
   {
-    key: "images (| separated paths)",
-    sample1: "D:/images/img1.jpg|D:/images/img2.jpg",
-    sample2: "D:/images/img3.jpg|D:/images/img4.jpg",
+    key: "images (filenames | sep)",
+    sample1: "img1.jpg|img2.jpg|img3.jpg",
+    sample2: "img4.jpg|img5.jpg|img6.jpg",
   },
   {
-    key: "sizeChart (pdf path)",
-    sample1: "D:/sizecharts/chart1.pdf",
-    sample2: "D:/sizecharts/chart1.pdf",
+    key: "sizeChart (pdf filename)",
+    sample1: "chart.pdf",
+    sample2: "chart.pdf",
   },
   { key: "gender", sample1: "Men", sample2: "Men" },
   { key: "category", sample1: "Topwear", sample2: "Topwear" },
@@ -35,24 +36,30 @@ const SAMPLE_COLUMNS = [
   { key: "ageRange", sample1: "Adult", sample2: "Adult" },
   { key: "fabric", sample1: "Cotton", sample2: "Cotton Polyester" },
   { key: "color", sample1: "Black", sample2: "White" },
-  { key: "sizes (comma separated)", sample1: "S,M,L", sample2: "S,M,L" },
-  {
-    key: "stockBySize (size:qty)",
-    sample1: "S:10,M:20,L:15",
-    sample2: "S:5,M:10,L:8",
-  },
+  { key: "sizes", sample1: "S,M,L", sample2: "S,M,L" },
+  { key: "stockBySize", sample1: "S:10,M:20,L:15", sample2: "S:5,M:10,L:8" },
   { key: "oldPrice", sample1: "120", sample2: "120" },
   { key: "discount", sample1: "20", sample2: "20" },
+  { key: "weight", sample1: "0.5", sample2: "0.5" },
+  { key: "length", sample1: "30", sample2: "30" },
+  { key: "width", sample1: "20", sample2: "20" },
+  { key: "height", sample1: "5", sample2: "5" },
+  { key: "street1", sample1: "123 Warehouse Rd", sample2: "123 Warehouse Rd" },
+  { key: "city", sample1: "Chennai", sample2: "Chennai" },
+  { key: "state", sample1: "Tamil Nadu", sample2: "Tamil Nadu" },
+  { key: "zip", sample1: "600001", sample2: "600001" },
+  { key: "country", sample1: "India", sample2: "India" },
 ];
 
 const cellStyle = {
   border: "1px solid #ccc",
   padding: "6px 8px",
   whiteSpace: "nowrap",
+  fontSize: "11px",
 };
 const headerStyle = {
   ...cellStyle,
-  background: "#4A90E2",
+  background: "#1F4E79",
   color: "#fff",
   fontWeight: 600,
 };
@@ -75,11 +82,8 @@ const BulkUploadPage = () => {
         isClosable: true,
       });
       setFile(null);
-      setTimeout(() => {
-        dispatch({ type: "PRODUCT_BULK_UPLOAD_RESET" });
-      }, 500);
+      setTimeout(() => dispatch({ type: "PRODUCT_BULK_UPLOAD_RESET" }), 500);
     }
-
     if (error) {
       toast({
         title: "Upload Failed",
@@ -99,29 +103,19 @@ const BulkUploadPage = () => {
     if (!file) {
       toast({
         title: "No file selected.",
-        description: "Please select a file to upload.",
         status: "error",
-        duration: 5000,
+        duration: 3000,
         isClosable: true,
       });
       return;
     }
     dispatch(uploadBulkProducts(file));
-    toast({
-      title: "Uploading...",
-      description: "Your file is being uploaded.",
-      status: "info",
-      duration: 5000,
-      isClosable: true,
-    });
   };
 
   const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile) setFile(selectedFile);
+    const selected = e.target.files[0];
+    if (selected) setFile(selected);
   };
-
-  const clearFile = () => setFile(null);
 
   return (
     <Flex
@@ -145,23 +139,81 @@ const BulkUploadPage = () => {
       >
         <h1
           className="titlepanel"
-          style={{ color: "black", textAlign: "center", marginBottom: "20px" }}
+          style={{ color: "black", textAlign: "center", marginBottom: "8px" }}
         >
           Bulk Upload
         </h1>
+
+        {/* ── How to prepare ZIP ── */}
+        <Box
+          w="full"
+          mb={6}
+          p={4}
+          bg="blue.50"
+          borderRadius="md"
+          border="1px solid"
+          borderColor="blue.200"
+        >
+          <Text fontWeight="bold" fontSize="md" mb={2} color="blue.800">
+            📦 How to prepare your ZIP file
+          </Text>
+          <Stack spacing={1} fontSize="sm" color="blue.900">
+            <Text>1. Fill in the Excel template with your product data.</Text>
+            <Text>
+              2. In the <b>images</b> column use <b>just the filenames</b>{" "}
+              separated by <b>|</b> — e.g.{" "}
+              <code>img1.jpg|img2.jpg|img3.jpg</code>
+            </Text>
+            <Text>
+              3. In the <b>sizeChart</b> column use just the <b>PDF filename</b>{" "}
+              — e.g. <code>chart.pdf</code>
+            </Text>
+            <Text>
+              4. Put the Excel file <b>and all image/PDF files</b> together in
+              one folder.
+            </Text>
+            <Text>
+              5. <b>Select all files</b> → right-click →{" "}
+              <b>Compress / Send to ZIP</b>.
+            </Text>
+            <Text>
+              6. Upload the <b>.zip</b> file below. ✅
+            </Text>
+          </Stack>
+
+          {/* ZIP structure visual */}
+          <Box
+            mt={3}
+            p={3}
+            bg="white"
+            borderRadius="md"
+            fontFamily="mono"
+            fontSize="12px"
+            color="gray.700"
+            border="1px solid"
+            borderColor="gray.200"
+          >
+            <Text fontWeight="bold" mb={1}>
+              📁 your-upload.zip
+            </Text>
+            <Text pl={4}>📄 products.xlsx</Text>
+            <Text pl={4}>🖼️ img1.jpg</Text>
+            <Text pl={4}>🖼️ img2.jpg</Text>
+            <Text pl={4}>🖼️ img3.jpg</Text>
+            <Text pl={4}>🖼️ img4.jpg</Text>
+            <Text pl={4}>📄 chart.pdf</Text>
+            <Text pl={4} color="gray.400">
+              … all your images
+            </Text>
+          </Box>
+        </Box>
 
         {/* ── Sample Table ── */}
         <Box mb={6} w="full" overflowX="auto">
           <Text fontWeight="bold" mb={2} textAlign="center">
             Sample Excel Format
           </Text>
-          <table
-            style={{
-              borderCollapse: "collapse",
-              fontSize: "12px",
-              width: "100%",
-            }}
-          >
+          <table style={{ borderCollapse: "collapse", width: "100%" }}>
             <thead>
               <tr>
                 {SAMPLE_COLUMNS.map((col) => (
@@ -188,54 +240,6 @@ const BulkUploadPage = () => {
               </tr>
             </tbody>
           </table>
-
-          {/* Legend */}
-          <Box mt={3} p={3} bg="blue.50" borderRadius="md" fontSize="12px">
-            <Text fontWeight="bold" mb={1}>
-              📋 Field Notes:
-            </Text>
-            <Text>
-              • <b>productGroupId</b> — same value groups color variants under
-              one product
-            </Text>
-            <Text>
-              • <b>images</b> — full disk paths separated by <b>|</b> (min 3,
-              max 5)
-            </Text>
-            <Text>
-              • <b>sizeChart</b> — full disk path to a single <b>.pdf</b> file
-              (optional)
-            </Text>
-            <Text>
-              • <b>gender</b> — Men / Women / Unisex
-            </Text>
-            <Text>
-              • <b>category</b> — Topwear / Hoodies / Bottomwear / Innerwear /
-              Gym Wears
-            </Text>
-            <Text>
-              • <b>subcategory</b> — e.g. Regular Tees / Plain Tees / Embroidery
-              Tees / Oversized …
-            </Text>
-            <Text>
-              • <b>type</b> — Casual / Formal / Sports
-            </Text>
-            <Text>
-              • <b>ageRange</b> — Kids / Teen / Adult
-            </Text>
-            <Text>
-              • <b>fabric</b> — Cotton / Polyester / Cotton Lycra …{" "}
-            </Text>
-            <Text>
-              • <b>sizes</b> — comma separated: S,M,L,XL,XXL
-            </Text>
-            <Text>
-              • <b>stockBySize</b> — size:qty pairs: S:10,M:20,L:15
-            </Text>
-            <Text>
-              • <b>discount</b> — percentage number e.g. 20 (means 20%)
-            </Text>
-          </Box>
         </Box>
 
         <Button
@@ -260,7 +264,7 @@ const BulkUploadPage = () => {
             left="0"
             width="100vw"
             height="100vh"
-            bg="rgba(255, 255, 255, 0.7)"
+            bg="rgba(255,255,255,0.7)"
             zIndex="9999"
             justify="center"
             align="center"
@@ -269,7 +273,6 @@ const BulkUploadPage = () => {
           </Flex>
         )}
 
-        {/* ── Error / Success messages ── */}
         {error && (
           <Text color="red.500" textAlign="center" mb={4}>
             {typeof error === "string" ? error : error?.message}
@@ -281,15 +284,20 @@ const BulkUploadPage = () => {
             <Text color="gray.600" fontSize="sm">
               Products created: {message?.productsCreated}
             </Text>
+            {message?.warning && (
+              <Text color="orange.500" fontSize="sm">
+                {message.warning}
+              </Text>
+            )}
           </Box>
         )}
 
         {/* ── Upload Form ── */}
         <form
           onSubmit={bulkUploadHandler}
-          style={{ width: "100%", maxWidth: "400px" }}
+          style={{ width: "100%", maxWidth: "420px" }}
         >
-          <Flex direction="column" align="center" mb={4}>
+          <Flex direction="column" align="center">
             <Flex
               direction="column"
               align="center"
@@ -300,41 +308,38 @@ const BulkUploadPage = () => {
               width="100%"
               mb={4}
               _hover={{ cursor: "pointer", borderColor: "#0074D9" }}
+              onClick={() => document.getElementById("zip-file-input").click()}
             >
-              <FaCloudUploadAlt size={40} color="#4A90E2" />
-              <Text mt={4} fontSize="lg" color="#4A90E2" textAlign="center">
-                Drag & Drop your file here, or click to select
+              <FaFileArchive size={44} color="#4A90E2" />
+              <Text mt={3} fontSize="lg" color="#4A90E2" textAlign="center">
+                Click to select your <b>.zip</b> file
               </Text>
-
+              <Badge mt={2} colorScheme="blue">
+                .zip only
+              </Badge>
               <Input
                 type="file"
-                accept=".xlsx,.xls"
+                accept=".zip,application/zip,application/x-zip-compressed"
                 onChange={handleFileChange}
                 disabled={loading}
                 display="none"
-                id="file-input"
+                id="zip-file-input"
               />
-
-              <Button
-                as="label"
-                htmlFor="file-input"
-                colorScheme="teal"
-                variant="outline"
-                mt={4}
-              >
-                Choose File
-              </Button>
             </Flex>
 
             {file && (
-              <Stack spacing={2} align="center" mb={4}>
-                <Text fontWeight="bold">Selected File:</Text>
+              <Stack spacing={1} align="center" mb={4}>
+                <Text fontWeight="bold">Selected:</Text>
                 <Text>{file.name}</Text>
                 <Text fontSize="sm" color="gray.500">
-                  Size: {Math.round(file.size / 1024)} KB
+                  Size: {(file.size / (1024 * 1024)).toFixed(2)} MB
                 </Text>
-                <Button size="sm" colorScheme="red" onClick={clearFile}>
-                  Clear File
+                <Button
+                  size="sm"
+                  colorScheme="red"
+                  onClick={() => setFile(null)}
+                >
+                  Remove
                 </Button>
               </Stack>
             )}
@@ -346,7 +351,7 @@ const BulkUploadPage = () => {
               isDisabled={!file || loading}
               w="full"
             >
-              Upload
+              Upload ZIP
             </Button>
           </Flex>
         </form>

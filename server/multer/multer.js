@@ -5,19 +5,16 @@ import { fileURLToPath } from "url";
 
 /* ==========================
    ABSOLUTE PROJECT ROOT
-   Prevents undefined paths in production
 ========================== */
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const PROJECT_ROOT = path.resolve(__dirname, "../../"); // adjust to reach your project root
+const PROJECT_ROOT = path.resolve(__dirname, "../../"); // adjust if needed
 
 /* ==========================
    UTILITY: Ensure Directory
 ========================== */
 const ensureDir = (dir) => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 };
 
 /* ==========================
@@ -44,16 +41,25 @@ const storage = multer.diskStorage({
       relDir = "uploads/pdfs";
     }
 
-    const absDir = path.join(PROJECT_ROOT, relDir); // ✅ always absolute
+    // ✅ Write to absolute path on disk (production safe)
+    const absDir = path.join(PROJECT_ROOT, relDir);
     ensureDir(absDir);
+
+    // ✅ Store relDir on file so we can build relative path in filename()
+    file._relDir = relDir;
+
     cb(null, absDir);
   },
 
   filename(req, file, cb) {
-    cb(
-      null,
-      `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`,
-    );
+    const filename = `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`;
+
+    // ✅ Override file.path AFTER multer sets it so DB always gets relative path
+    // multer sets file.path = destination + "/" + filename
+    // We intercept by storing the relative version on the file object
+    file._relativePath = `${file._relDir}/${filename}`.replace(/\\/g, "/");
+
+    cb(null, filename);
   },
 });
 
@@ -73,7 +79,6 @@ const fileFilter = (req, file, cb) => {
     "application/pdf",
     "application/octet-stream",
   ];
-
   if (allowed.includes(file.mimetype)) {
     cb(null, true);
   } else {
@@ -87,19 +92,52 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB
+  limits: { fileSize: 100 * 1024 * 1024 },
 });
 
 /* ==========================
-   EXPORTS
+   MIDDLEWARE WRAPPER
+   Rewrites file.path → relative path after multer processes files
+   so every controller using file.path gets the correct relative path for DB
 ========================== */
-export const uploadSingleImage = upload.single("image");
-export const uploadSingleVideo = upload.single("video");
-export const uploadMultipleImages = upload.array("images", 5);
-export const uploadReviewImages = upload.array("photos", 3);
-export const uploadProfileImage = upload.single("profilePicture");
+const rewritePaths = (req, res, next) => {
+  // req.file  → single upload
+  if (req.file?._relativePath) {
+    req.file.path = req.file._relativePath;
+  }
+  // req.files → array upload
+  if (Array.isArray(req.files)) {
+    req.files.forEach((f) => {
+      if (f._relativePath) f.path = f._relativePath;
+    });
+  }
+  // req.files → fields upload (object of arrays)
+  if (req.files && typeof req.files === "object" && !Array.isArray(req.files)) {
+    Object.values(req.files).forEach((arr) => {
+      arr.forEach((f) => {
+        if (f._relativePath) f.path = f._relativePath;
+      });
+    });
+  }
+  next();
+};
 
-export const uploadProductFiles = upload.fields([
-  { name: "images", maxCount: 50 },
-  { name: "sizeChart", maxCount: 1 },
-]);
+/* ==========================
+   EXPORTS — each export now composes upload + rewritePaths
+========================== */
+export const uploadSingleImage = [upload.single("image"), rewritePaths];
+export const uploadSingleVideo = [upload.single("video"), rewritePaths];
+export const uploadMultipleImages = [upload.array("images", 5), rewritePaths];
+export const uploadReviewImages = [upload.array("photos", 3), rewritePaths];
+export const uploadProfileImage = [
+  upload.single("profilePicture"),
+  rewritePaths,
+];
+
+export const uploadProductFiles = [
+  upload.fields([
+    { name: "images", maxCount: 50 },
+    { name: "sizeChart", maxCount: 1 },
+  ]),
+  rewritePaths,
+];

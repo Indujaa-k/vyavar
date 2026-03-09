@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import asyncHandler from "express-async-handler";
 import multer from "multer";
 import { fileURLToPath } from "url";
+import AdmZip from "adm-zip";
 import XLSX from "xlsx";
 import path from "path";
 import Product from "../models/productModel.js";
@@ -757,55 +758,94 @@ export const markReviewNotHelpful = async (req, res) => {
 const uploadProducts = asyncHandler(async (req, res) => {
   if (!req.file) {
     res.status(400);
-    throw new Error("Excel file required");
+    throw new Error("ZIP file required");
   }
 
-  const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-
-  const groupMap = {};
-  let created = 0;
-  const skipped = [];
-
-  // ✅ Absolute path to project root — works in production regardless of cwd
+  // ✅ server/controlers/productControler.js → one level up = server/
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
-  const PROJECT_ROOT = path.resolve(__dirname, "../../"); // adjust "../.." to match your folder depth
+  const PROJECT_ROOT = path.resolve(__dirname, "../"); // server/controlers → server/
 
-  // ✅ Safe number helper — never returns NaN
   const safeNum = (val, fallback = 0) => {
     const n = parseFloat(val);
     return isNaN(n) ? fallback : n;
   };
 
-  // ✅ Ensure directory exists
   const ensureDir = (dir) => {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   };
 
-  // ✅ Copy file to absolute uploads folder, return relative path for DB
-  // DB path format: "uploads/products/images/images-123.jpg"  (same as multer)
-  const copyToUploads = (srcPath, relativeFolder) => {
-    srcPath = srcPath.trim();
+  // ✅ Extract ZIP from memory buffer
+  const zip = new AdmZip(req.file.buffer);
+  const zipEntries = zip.getEntries();
 
-    if (!fs.existsSync(srcPath)) {
-      console.warn(`File not found, skipping: ${srcPath}`);
-      return null;
+  // ✅ Find Excel file inside ZIP
+  const excelEntry = zipEntries.find(
+    (e) =>
+      !e.isDirectory &&
+      (e.entryName.endsWith(".xlsx") || e.entryName.endsWith(".xls")) &&
+      !e.entryName.includes("__MACOSX"),
+  );
+
+  if (!excelEntry) {
+    res.status(400);
+    throw new Error("No Excel file (.xlsx / .xls) found inside the ZIP");
+  }
+
+  // ✅ Build flat filename → ZipEntry map
+  const allowedImageExts = [".jpg", ".jpeg", ".png", ".webp", ".avif", ".jfif"];
+  const allowedPdfExts = [".pdf"];
+  const imageEntryMap = {};
+
+  zipEntries.forEach((entry) => {
+    if (entry.isDirectory || entry.entryName.includes("__MACOSX")) return;
+    const ext = path.extname(entry.entryName).toLowerCase();
+    const basename = path.basename(entry.entryName);
+    if (allowedImageExts.includes(ext) || allowedPdfExts.includes(ext)) {
+      imageEntryMap[basename] = entry;
     }
+  });
 
+  // ✅ Parse Excel
+  const excelBuffer = excelEntry.getData();
+  const workbook = XLSX.read(excelBuffer, { type: "buffer" });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+  // ✅ Write ZIP entry to disk → return RELATIVE path for DB
+  const saveEntryToDisk = (entry, relativeFolder) => {
     const absFolder = path.join(PROJECT_ROOT, relativeFolder); // ✅ absolute on disk
     ensureDir(absFolder);
-
-    const ext = path.extname(srcPath);
+    const ext = path.extname(entry.entryName).toLowerCase();
     const filename = `images-${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
     const destAbs = path.join(absFolder, filename);
-
-    fs.copyFileSync(srcPath, destAbs);
-
-    // ✅ Relative forward-slash path stored in DB — same as multer
+    fs.writeFileSync(destAbs, entry.getData());
+    // ✅ relative path stored in DB — matches what static server serves
     return `${relativeFolder}/${filename}`.replace(/\\/g, "/");
   };
+
+  // ✅ Resolve pipe-separated filenames from Excel cell
+  const resolveFiles = (cellValue, folder) => {
+    if (!cellValue) return [];
+    return cellValue
+      .split("|")
+      .map((p) => p.trim())
+      .filter(Boolean)
+      .reduce((acc, p) => {
+        const basename = path.basename(p); // handles "img.jpg" or "D:/path/img.jpg"
+        const entry = imageEntryMap[basename];
+        if (entry) {
+          acc.push(saveEntryToDisk(entry, folder));
+        } else {
+          console.warn(`Not found in ZIP: ${basename}`);
+        }
+        return acc;
+      }, []);
+  };
+
+  const groupMap = {};
+  let created = 0;
+  const skipped = [];
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
@@ -826,25 +866,10 @@ const uploadProducts = asyncHandler(async (req, res) => {
       continue;
     }
 
-    // 🔹 Copy images → uploads/products/images
-    let images = [];
-    if (row.images) {
-      const paths = row.images
-        .split("|")
-        .map((p) => p.trim())
-        .filter(Boolean);
-      for (const p of paths) {
-        const saved = copyToUploads(p, "uploads/products/images");
-        if (saved) images.push(saved);
-      }
-    }
-
-    // 🔹 Copy sizeChart PDF → uploads/pdfs
-    let sizeChart = "";
-    if (row.sizeChart) {
-      const saved = copyToUploads(row.sizeChart, "uploads/pdfs");
-      if (saved) sizeChart = saved;
-    }
+    // 🔹 Images & sizeChart from ZIP
+    const images = resolveFiles(row.images, "uploads/products/images");
+    const pdfPaths = resolveFiles(row.sizeChart, "uploads/pdfs");
+    const sizeChart = pdfPaths[0] || "";
 
     // 🔹 Sizes & stock
     const sizes = row.sizes
@@ -857,10 +882,7 @@ const uploadProducts = asyncHandler(async (req, res) => {
     const stockBySize = row.stockBySize
       ? row.stockBySize.split(",").map((s) => {
           const [size, stock] = s.split(":");
-          return {
-            size: (size || "").trim(),
-            stock: safeNum(stock, 0),
-          };
+          return { size: (size || "").trim(), stock: safeNum(stock, 0) };
         })
       : [];
 
@@ -882,13 +904,11 @@ const uploadProducts = asyncHandler(async (req, res) => {
       productGroupId: groupMap[row.productGroupId],
       brandname: row.brandname || "Default Brand",
       description: row.description || "",
-
       images,
       sizeChart,
       price,
       oldPrice,
       discount,
-
       productdetails: {
         gender: row.gender || "Unisex",
         category: row.category || "General",
@@ -900,7 +920,6 @@ const uploadProducts = asyncHandler(async (req, res) => {
         sizes,
         stockBySize,
       },
-
       shippingDetails: {
         weight,
         dimensions: { length, width, height },
