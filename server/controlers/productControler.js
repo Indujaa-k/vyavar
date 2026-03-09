@@ -889,7 +889,7 @@ const uploadProducts = asyncHandler(async (req, res) => {
     // 🔹 Prices
     const oldPrice = safeNum(row.oldPrice, 0);
     const discount = safeNum(row.discount, 0);
-    const price = +(oldPrice - (oldPrice * discount) / 100).toFixed(2);
+    const price = Math.round(oldPrice - (oldPrice * discount) / 100);
 
     // 🔹 Shipping
     const weight = safeNum(row.weight, 0.5);
@@ -1462,6 +1462,13 @@ const getProductGroup = asyncHandler(async (req, res) => {
     variants: products,
   });
 });
+// ─── DROP-IN REPLACEMENT for updateVariant in productControler.js ───────────
+//
+// BUGS FIXED:
+//  1. product.images[index] existence check blocked adding images at new indexes
+//  2. imageIndexes not normalised to array for single-file uploads
+//  3. Added server-side guard: never save blob: or data: URIs to DB
+//
 const updateVariant = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id);
   if (!product) {
@@ -1469,31 +1476,49 @@ const updateVariant = asyncHandler(async (req, res) => {
     throw new Error("Variant not found");
   }
 
-  // prices
-  if (req.body.oldPrice !== "") product.oldPrice = Number(req.body.oldPrice);
-  if (req.body.discount !== "") product.discount = Number(req.body.discount);
-  if (req.body.price !== "") product.price = Number(req.body.price);
+  // ── Prices ──────────────────────────────────────────────────
+  if (req.body.oldPrice !== undefined && req.body.oldPrice !== "")
+    product.oldPrice = Number(req.body.oldPrice);
+  if (req.body.discount !== undefined && req.body.discount !== "")
+    product.discount = Number(req.body.discount);
+  if (req.body.price !== undefined && req.body.price !== "")
+    product.price = Number(req.body.price);
 
-  // details
+  // ── Product details ─────────────────────────────────────────
   if (req.body.color) product.productdetails.color = req.body.color;
   if (req.body.sizes) product.productdetails.sizes = JSON.parse(req.body.sizes);
   if (req.body.stockBySize)
     product.productdetails.stockBySize = JSON.parse(req.body.stockBySize);
 
-  // ✅ IMAGE REPLACEMENT (IMPORTANT PART)
+  // ── Image replacement ────────────────────────────────────────
   if (req.files && req.files.length > 0) {
+    // Normalise to array (single upload sends a string)
     let imageIndexes = req.body.imageIndexes;
-
-    if (typeof imageIndexes === "string") {
+    if (!imageIndexes) {
+      imageIndexes = [];
+    } else if (typeof imageIndexes === "string") {
       imageIndexes = [imageIndexes];
     }
 
     req.files.forEach((file, i) => {
-      const index = Number(imageIndexes[i]);
-      if (!isNaN(index) && product.images[index]) {
-        product.images[index] = file.path;
+      const slotIndex = Number(imageIndexes[i]);
+      if (isNaN(slotIndex)) return;
+
+      const filePath = file.path;
+
+      // ✅ Server-side guard: reject any path that looks like a data URI or blob URL
+      if (filePath.startsWith("data:") || filePath.startsWith("blob:")) {
+        console.warn(
+          `Rejected bad image path at index ${slotIndex}:`,
+          filePath.slice(0, 40),
+        );
+        return;
       }
+
+      product.images[slotIndex] = filePath;
     });
+
+    product.markModified("images");
   }
 
   const updated = await product.save();

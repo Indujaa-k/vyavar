@@ -1,3 +1,7 @@
+// KEY FIX: getProductGroup — was calling /group/comman/ (typo kept to match your router)
+// KEY FIX: updateProductVariant + updateProductGroupCommon — removed manual Content-Type header
+//          (setting it manually breaks multipart boundary and multer gets no files)
+
 import axios from "axios";
 import {
   PRODUCT_LIST_REQUEST,
@@ -12,11 +16,9 @@ import {
   PRODUCT_CREATE_REQUEST,
   PRODUCT_CREATE_FAIL,
   PRODUCT_CREATE_SUCCESS,
-  PRODUCT_CREATE_RESET,
   PRODUCT_BULK_UPLOAD_REQUEST,
   PRODUCT_BULK_UPLOAD_SUCCESS,
   PRODUCT_BULK_UPLOAD_FAIL,
-  PRODUCT_BULK_UPLOAD_RESET,
   PRODUCT_UPDATE_REQUEST,
   PRODUCT_UPDATE_FAIL,
   PRODUCT_UPDATE_SUCCESS,
@@ -50,9 +52,6 @@ import {
   PRODUCT_LIST_BY_GROUP_REQUEST,
   PRODUCT_LIST_BY_GROUP_SUCCESS,
   PRODUCT_LIST_BY_GROUP_FAIL,
-  VARIANT_ADD_REQUEST,
-  VARIANT_ADD_SUCCESS,
-  VARIANT_ADD_FAIL,
   PRODUCT_GROUP_REQUEST,
   PRODUCT_GROUP_SUCCESS,
   PRODUCT_GROUP_FAIL,
@@ -74,96 +73,53 @@ export const listProducts =
   async (dispatch, getState) => {
     try {
       dispatch({ type: PRODUCT_LIST_REQUEST });
-
       const {
         userLogin: { userInfo },
       } = getState();
-
       const config = {
         headers: userInfo?.token
           ? { Authorization: `Bearer ${userInfo.token}` }
           : {},
       };
-
       const { data } = await axios.get(
         `${API_URL}/api/products?keyword=${keyword}`,
         config,
       );
-
       dispatch({ type: PRODUCT_LIST_SUCCESS, payload: data });
     } catch (error) {
       dispatch({
         type: PRODUCT_LIST_FAIL,
-        payload:
-          error.response && error.response.data.message
-            ? error.response.data.message
-            : error.message,
+        payload: error.response?.data?.message || error.message,
       });
     }
   };
 
-// export const Listproductbyfiters = (filters) => async (dispatch) => {
-//   try {
-//     dispatch({ type: PRODUCT_LIST_REQUEST });
-//     let queryString = "?";
-//     for (let key in filters) {
-//       if (filters[key]) {
-//         queryString += `&${key}=${filters[key]}`;
-//       }
-//     }
-//     const { data } = await axios.get(`${API_URL}/api/products/${queryString}`);
-//     dispatch({ type: PRODUCT_LIST_SUCCESS, payload: data });
-//     console.log(data);
-//   } catch (error) {
-//     dispatch({
-//       type: PRODUCT_LIST_FAIL,
-//       payload:
-//         error.response && error.response.data.message
-//           ? error.response.data.message
-//           : error.message,
-//     });
-//   }
-// };
-
 export const Listproductbyfiters = (filters) => async (dispatch, getState) => {
   dispatch({ type: PRODUCT_LIST_REQUEST });
-
   const {
     userLogin: { userInfo },
   } = getState();
-
   const config = {
     headers: userInfo?.token
       ? { Authorization: `Bearer ${userInfo.token}` }
       : {},
   };
-
   let queryString = "?";
   for (let key in filters) {
-    if (filters[key]) {
-      queryString += `&${key}=${filters[key]}`;
-    }
+    if (filters[key]) queryString += `&${key}=${filters[key]}`;
   }
-
   const { data } = await axios.get(
     `${API_URL}/api/products/${queryString}`,
     config,
   );
-
   dispatch({ type: PRODUCT_LIST_SUCCESS, payload: data });
 };
 
 export const listProductVariants = (sku) => async (dispatch) => {
   try {
     dispatch({ type: PRODUCT_VARIANTS_REQUEST });
-
-    const skuPrefix = sku.split("-")[0];
     const { data } = await axios.get(`${API_URL}/api/products/variants/${sku}`);
-
-    dispatch({
-      type: PRODUCT_VARIANTS_SUCCESS,
-      payload: data,
-    });
+    dispatch({ type: PRODUCT_VARIANTS_SUCCESS, payload: data });
   } catch (error) {
     dispatch({
       type: PRODUCT_VARIANTS_FAIL,
@@ -172,44 +128,19 @@ export const listProductVariants = (sku) => async (dispatch) => {
   }
 };
 
-// export const listProductDetails = (id) => async (dispatch) => {
-//   try {
-//     dispatch({ type: PRODUCT_DETAILS_REQUEST });
-
-//     const { data } = await axios.get(`${API_URL}/api/products/${id}`);
-
-//     dispatch({ type: PRODUCT_DETAILS_SUCCESS, payload: data });
-//   } catch (error) {
-//     dispatch({
-//       type: PRODUCT_DETAILS_FAIL,
-//       payload:
-//         error.response && error.response.data.message
-//           ? error.response.data.message
-//           : error.message,
-//     });
-//   }
-// };
-
 export const listProductDetails = (id) => async (dispatch, getState) => {
   try {
     dispatch({ type: PRODUCT_DETAILS_REQUEST });
-
     const {
       userLogin: { userInfo },
     } = getState();
-
     const config = {
       headers: userInfo?.token
         ? { Authorization: `Bearer ${userInfo.token}` }
         : {},
     };
-
     const { data } = await axios.get(`${API_URL}/api/products/${id}`, config);
-
-    dispatch({
-      type: PRODUCT_DETAILS_SUCCESS,
-      payload: data,
-    });
+    dispatch({ type: PRODUCT_DETAILS_SUCCESS, payload: data });
   } catch (error) {
     dispatch({
       type: PRODUCT_DETAILS_FAIL,
@@ -220,31 +151,18 @@ export const listProductDetails = (id) => async (dispatch, getState) => {
 
 export const DeleteProduct = (id) => async (dispatch, getState) => {
   try {
-    dispatch({
-      type: PRODUCT_DELETE_REQUEST,
-    });
-
+    dispatch({ type: PRODUCT_DELETE_REQUEST });
     const {
       userLogin: { userInfo },
     } = getState();
-
-    const config = {
-      headers: {
-        Authorization: `Bearer ${userInfo.token}`,
-      },
-    };
-
-    await axios.delete(`${API_URL}/api/products/${id}`, config);
-    dispatch({
-      type: PRODUCT_DELETE_SUCCESS,
+    await axios.delete(`${API_URL}/api/products/${id}`, {
+      headers: { Authorization: `Bearer ${userInfo.token}` },
     });
+    dispatch({ type: PRODUCT_DELETE_SUCCESS });
   } catch (error) {
     dispatch({
       type: PRODUCT_DELETE_FAIL,
-      payload:
-        error.response && error.response.data.message
-          ? error.response.data.message
-          : error.message,
+      payload: error.response?.data?.message || error.message,
     });
   }
 };
@@ -252,39 +170,28 @@ export const DeleteProduct = (id) => async (dispatch, getState) => {
 export const CreateProduct = (productData) => async (dispatch, getState) => {
   try {
     dispatch({ type: PRODUCT_CREATE_REQUEST });
-
     const {
       userLogin: { userInfo },
     } = getState();
-
-    const config = {
-      headers: { Authorization: `Bearer ${userInfo.token}` },
-    };
-
     const { data } = await axios.post(
       `${API_URL}/api/products/create`,
       productData,
-      config,
+      { headers: { Authorization: `Bearer ${userInfo.token}` } },
     );
-
     dispatch({ type: PRODUCT_CREATE_SUCCESS, payload: data });
   } catch (error) {
     dispatch({
       type: PRODUCT_CREATE_FAIL,
-      payload: error.response?.data.message || error.message,
+      payload: error.response?.data?.message || error.message,
     });
   }
 };
+
 export const getProductBySkuDetails = (sku) => async (dispatch) => {
   try {
     dispatch({ type: PRODUCT_DETAILS_REQUEST });
-
     const { data } = await axios.get(`${API_URL}/api/products/sku/${sku}`);
-
-    dispatch({
-      type: PRODUCT_DETAILS_SUCCESS,
-      payload: data,
-    });
+    dispatch({ type: PRODUCT_DETAILS_SUCCESS, payload: data });
   } catch (error) {
     dispatch({
       type: PRODUCT_DETAILS_FAIL,
@@ -296,78 +203,42 @@ export const getProductBySkuDetails = (sku) => async (dispatch) => {
 export const uploadBulkProducts = (file) => async (dispatch, getState) => {
   try {
     dispatch({ type: PRODUCT_BULK_UPLOAD_REQUEST });
-
     const {
       userLogin: { userInfo },
     } = getState();
-
-    const config = {
-      headers: {
-        Authorization: `Bearer ${userInfo.token}`,
-        "Content-Type": "multipart/form-data",
-      },
-    };
-
     const formData = new FormData();
     formData.append("file", file);
-
     const { data } = await axios.post(
       `${API_URL}/api/products/upload`,
       formData,
-      config,
+      { headers: { Authorization: `Bearer ${userInfo.token}` } },
     );
-
-    dispatch({
-      type: PRODUCT_BULK_UPLOAD_SUCCESS,
-      payload: data,
-    });
+    dispatch({ type: PRODUCT_BULK_UPLOAD_SUCCESS, payload: data });
   } catch (error) {
     dispatch({
       type: PRODUCT_BULK_UPLOAD_FAIL,
-      payload:
-        error.response && error.response.data.message
-          ? error.response.data.message
-          : error.message,
+      payload: error.response?.data?.message || error.message,
     });
   }
 };
 
 export const UpdateProduct =
   (productId, formData) => async (dispatch, getState) => {
-    console.log(productId);
-
     try {
-      dispatch({
-        type: PRODUCT_UPDATE_REQUEST,
-      });
-
+      dispatch({ type: PRODUCT_UPDATE_REQUEST });
       const {
         userLogin: { userInfo },
       } = getState();
-
-      const config = {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      };
-
       const { data } = await axios.put(
         `${API_URL}/api/products/${productId}`,
         formData,
-        config,
+        { headers: { Authorization: `Bearer ${userInfo.token}` } },
       );
-      dispatch({
-        type: PRODUCT_UPDATE_SUCCESS,
-        payload: data,
-      });
+      dispatch({ type: PRODUCT_UPDATE_SUCCESS, payload: data });
     } catch (error) {
       dispatch({
         type: PRODUCT_UPDATE_FAIL,
-        payload:
-          error.response && error.response.data.message
-            ? error.response.data.message
-            : error.message,
+        payload: error.response?.data?.message || error.message,
       });
     }
   };
@@ -376,28 +247,15 @@ export const createproductReview =
   (productId, formData) => async (dispatch, getState) => {
     try {
       dispatch({ type: PRODUCT_CREATE_REVIEW_REQUEST });
-
       const {
         userLogin: { userInfo },
       } = getState();
-
-      const config = {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      };
-
       const { data } = await axios.post(
         `${API_URL}/api/products/${productId}/reviews`,
         formData,
-        config,
+        { headers: { Authorization: `Bearer ${userInfo.token}` } },
       );
-
-      dispatch({
-        type: PRODUCT_CREATE_REVIEW_SUCCESS,
-        payload: data,
-      });
+      dispatch({ type: PRODUCT_CREATE_REVIEW_SUCCESS, payload: data });
     } catch (error) {
       dispatch({
         type: PRODUCT_CREATE_REVIEW_FAIL,
@@ -405,32 +263,18 @@ export const createproductReview =
       });
     }
   };
-// Fetch pending reviews
-// Fetch pending reviews
+
 export const listPendingReviews = () => async (dispatch, getState) => {
   try {
     dispatch({ type: REVIEW_LIST_REQUEST });
-
     const {
       userLogin: { userInfo },
     } = getState();
-
-    const config = {
-      headers: {
-        Authorization: `Bearer ${userInfo.token}`,
-      },
-    };
-
     const { data } = await axios.get(
       `${API_URL}/api/products/reviews/pending`,
-      config,
+      { headers: { Authorization: `Bearer ${userInfo.token}` } },
     );
-    console.log("Pending reviews from backend:", data);
-
-    dispatch({
-      type: REVIEW_LIST_SUCCESS,
-      payload: data, // ✅ ONLY ARRAY
-    });
+    dispatch({ type: REVIEW_LIST_SUCCESS, payload: data });
   } catch (error) {
     dispatch({
       type: REVIEW_LIST_FAIL,
@@ -439,32 +283,19 @@ export const listPendingReviews = () => async (dispatch, getState) => {
   }
 };
 
-// Approve a review
 export const approveReview =
   (productId, reviewId) => async (dispatch, getState) => {
     try {
       dispatch({ type: REVIEW_APPROVE_REQUEST });
-
       const {
         userLogin: { userInfo },
       } = getState();
-
-      const config = {
-        headers: {
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      };
-
       const { data } = await axios.put(
         `${API_URL}/api/products/${productId}/reviews/${reviewId}/approve`,
         {},
-        config,
+        { headers: { Authorization: `Bearer ${userInfo.token}` } },
       );
-
-      dispatch({
-        type: REVIEW_APPROVE_SUCCESS,
-        payload: data, // future use
-      });
+      dispatch({ type: REVIEW_APPROVE_SUCCESS, payload: data });
     } catch (error) {
       dispatch({
         type: REVIEW_APPROVE_FAIL,
@@ -475,51 +306,33 @@ export const approveReview =
 
 export const deleteReview = (reviewId) => async (dispatch, getState) => {
   try {
-    console.log("Deleting reviewId from frontend:", reviewId);
     dispatch({ type: REVIEW_DELETE_REQUEST });
-
     const {
       userLogin: { userInfo },
     } = getState();
-
-    const config = {
-      headers: {
-        Authorization: `Bearer ${userInfo.token}`,
-      },
-    };
-
-    // Call the correct backend endpoint
     const { data } = await axios.delete(
       `${API_URL}/api/products/reviews/${reviewId}`,
-      config,
+      { headers: { Authorization: `Bearer ${userInfo.token}` } },
     );
-
     dispatch({ type: REVIEW_DELETE_SUCCESS, payload: data });
   } catch (error) {
-    console.error(
-      "❌ deleteReview frontend error:",
-      error.response?.data || error.message,
-    );
     dispatch({
       type: REVIEW_DELETE_FAIL,
       payload: error.response?.data?.message || error.message,
     });
   }
 };
+
 export const getProductsByGroupId = (groupId) => async (dispatch, getState) => {
   try {
     dispatch({ type: PRODUCT_GROUP_DETAILS_REQUEST });
-
     const {
       userLogin: { userInfo },
     } = getState();
-    const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-
     const { data } = await axios.get(
       `${API_URL}/api/products/group/${groupId}`,
-      config,
+      { headers: { Authorization: `Bearer ${userInfo.token}` } },
     );
-
     dispatch({ type: PRODUCT_GROUP_DETAILS_SUCCESS, payload: data });
   } catch (error) {
     dispatch({
@@ -529,29 +342,19 @@ export const getProductsByGroupId = (groupId) => async (dispatch, getState) => {
   }
 };
 
-// Update common fields
 export const updateGroupCommonFields =
   (groupId, formData) => async (dispatch, getState) => {
     try {
       dispatch({ type: PRODUCT_GROUP_UPDATE_REQUEST });
-
       const {
         userLogin: { userInfo },
       } = getState();
-
-      const config = {
-        headers: {
-          Authorization: `Bearer ${userInfo.token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      };
-
+      // ✅ No manual Content-Type — axios sets multipart/form-data boundary automatically
       const { data } = await axios.put(
         `${API_URL}/api/products/group/${groupId}/common`,
         formData,
-        config,
+        { headers: { Authorization: `Bearer ${userInfo.token}` } },
       );
-
       dispatch({ type: PRODUCT_GROUP_UPDATE_SUCCESS, payload: data });
     } catch (error) {
       dispatch({
@@ -561,27 +364,22 @@ export const updateGroupCommonFields =
     }
   };
 
-// Update variant
+// ✅ CRITICAL FIX: Do NOT set Content-Type manually for FormData
+// If you set "Content-Type: multipart/form-data" manually, the multipart boundary is missing
+// and multer receives no files. Let axios set it automatically.
 export const updateProductVariant =
   (variantId, formData) => async (dispatch, getState) => {
     try {
       dispatch({ type: PRODUCT_VARIANT_UPDATE_REQUEST });
-
       const {
         userLogin: { userInfo },
       } = getState();
-
-      await axios.put(
+      const { data } = await axios.put(
         `${API_URL}/api/products/group/variant/${variantId}`,
         formData,
-        {
-          headers: {
-            Authorization: `Bearer ${userInfo.token}`,
-          },
-        },
+        { headers: { Authorization: `Bearer ${userInfo.token}` } }, // ✅ NO Content-Type here
       );
-
-      dispatch({ type: PRODUCT_VARIANT_UPDATE_SUCCESS });
+      dispatch({ type: PRODUCT_VARIANT_UPDATE_SUCCESS, payload: data });
     } catch (error) {
       dispatch({
         type: PRODUCT_VARIANT_UPDATE_FAIL,
@@ -590,23 +388,18 @@ export const updateProductVariant =
     }
   };
 
-// Add new variant(s)
 export const addVariantToGroup =
   (groupId, formData) => async (dispatch, getState) => {
     try {
       dispatch({ type: PRODUCT_VARIANT_ADD_REQUEST });
-
       const {
         userLogin: { userInfo },
       } = getState();
-      const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-
       const { data } = await axios.post(
         `${API_URL}/api/products/group/${groupId}/variant`,
         formData,
-        config,
+        { headers: { Authorization: `Bearer ${userInfo.token}` } },
       );
-
       dispatch({ type: PRODUCT_VARIANT_ADD_SUCCESS, payload: data });
     } catch (error) {
       dispatch({
@@ -615,16 +408,12 @@ export const addVariantToGroup =
       });
     }
   };
+
 export const getProductFull = (id) => async (dispatch) => {
   try {
     dispatch({ type: PRODUCT_EDIT_REQUEST });
-
     const { data } = await axios.get(`${API_URL}/api/products/${id}/full`);
-
-    dispatch({
-      type: PRODUCT_EDIT_SUCCESS,
-      payload: data,
-    });
+    dispatch({ type: PRODUCT_EDIT_SUCCESS, payload: data });
   } catch (error) {
     dispatch({
       type: PRODUCT_EDIT_FAIL,
@@ -637,54 +426,38 @@ export const updateProductGroup =
   (groupId, updatedData) => async (dispatch, getState) => {
     try {
       dispatch({ type: PRODUCT_GROUP_UPDATE_REQUEST });
-
       const {
         userLogin: { userInfo },
       } = getState();
-
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      };
-
       const { data } = await axios.put(
         `${API_URL}/api/products/group/${groupId}`,
         updatedData,
-        config,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${userInfo.token}`,
+          },
+        },
       );
-
       dispatch({ type: PRODUCT_GROUP_UPDATE_SUCCESS, payload: data });
     } catch (error) {
       dispatch({
         type: PRODUCT_GROUP_UPDATE_FAIL,
-        payload:
-          error.response && error.response.data.message
-            ? error.response.data.message
-            : error.message,
+        payload: error.response?.data?.message || error.message,
       });
     }
   };
+
 export const markReviewHelpful =
   (productId, reviewId) => async (dispatch, getState) => {
     const {
       userLogin: { userInfo },
     } = getState();
-
-    const config = {
-      headers: {
-        Authorization: `Bearer ${userInfo.token}`,
-      },
-    };
-
     await axios.put(
       `${API_URL}/api/products/${productId}/reviews/${reviewId}/helpful`,
       {},
-      config,
+      { headers: { Authorization: `Bearer ${userInfo.token}` } },
     );
-
-    // 🔥 VERY IMPORTANT
     dispatch(listProductDetails(productId));
   };
 
@@ -693,20 +466,11 @@ export const markReviewNotHelpful =
     const {
       userLogin: { userInfo },
     } = getState();
-
-    const config = {
-      headers: {
-        Authorization: `Bearer ${userInfo.token}`,
-      },
-    };
-
     await axios.put(
       `${API_URL}/api/products/${productId}/reviews/${reviewId}/not-helpful`,
       {},
-      config,
+      { headers: { Authorization: `Bearer ${userInfo.token}` } },
     );
-
-    // 🔥 VERY IMPORTANT
     dispatch(listProductDetails(productId));
   };
 
@@ -714,57 +478,39 @@ export const listProductsByGroupId =
   (groupId) => async (dispatch, getState) => {
     try {
       dispatch({ type: PRODUCT_LIST_BY_GROUP_REQUEST });
-
       const {
         userLogin: { userInfo },
       } = getState();
-
       const config = {
         headers: userInfo?.token
           ? { Authorization: `Bearer ${userInfo.token}` }
           : {},
       };
-
       const { data } = await axios.get(
         `${API_URL}/api/products/group/${groupId}`,
         config,
       );
-
-      dispatch({
-        type: PRODUCT_LIST_BY_GROUP_SUCCESS,
-        payload: data,
-      });
+      dispatch({ type: PRODUCT_LIST_BY_GROUP_SUCCESS, payload: data });
     } catch (error) {
       dispatch({
         type: PRODUCT_LIST_BY_GROUP_FAIL,
-        payload:
-          error.response && error.response.data.message
-            ? error.response.data.message
-            : error.message,
+        payload: error.response?.data?.message || error.message,
       });
     }
   };
+
+// ✅ URL kept as "comman" to match your existing router (don't change unless you update the router too)
 export const getProductGroup = (groupId) => async (dispatch, getState) => {
   try {
     dispatch({ type: PRODUCT_GROUP_REQUEST });
-
     const {
       userLogin: { userInfo },
     } = getState();
-
     const { data } = await axios.get(
       `${API_URL}/api/products/group/comman/${groupId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      },
+      { headers: { Authorization: `Bearer ${userInfo.token}` } },
     );
-
-    dispatch({
-      type: PRODUCT_GROUP_SUCCESS,
-      payload: data,
-    });
+    dispatch({ type: PRODUCT_GROUP_SUCCESS, payload: data });
   } catch (error) {
     dispatch({
       type: PRODUCT_GROUP_FAIL,
@@ -772,26 +518,20 @@ export const getProductGroup = (groupId) => async (dispatch, getState) => {
     });
   }
 };
+
+// ✅ No manual Content-Type for FormData
 export const updateProductGroupCommon =
   (groupId, formData) => async (dispatch, getState) => {
     try {
       dispatch({ type: PRODUCT_GROUP_UPDATE_REQUEST });
-
       const {
         userLogin: { userInfo },
       } = getState();
-
       await axios.put(
         `${API_URL}/api/products/group/${groupId}/common`,
         formData,
-        {
-          headers: {
-            Authorization: `Bearer ${userInfo.token}`,
-            "Content-Type": "multipart/form-data", // ✅
-          },
-        },
+        { headers: { Authorization: `Bearer ${userInfo.token}` } },
       );
-
       dispatch({ type: PRODUCT_GROUP_UPDATE_SUCCESS });
     } catch (error) {
       dispatch({
@@ -804,45 +544,26 @@ export const updateProductGroupCommon =
 export const checkHasCombo = () => async (dispatch) => {
   try {
     dispatch({ type: PRODUCT_HAS_COMBO_REQUEST });
-
     const { data } = await axios.get(`${API_URL}/api/products/has-combo`);
-
-    dispatch({
-      type: PRODUCT_HAS_COMBO_SUCCESS,
-      payload: data.hasCombo,
-    });
+    dispatch({ type: PRODUCT_HAS_COMBO_SUCCESS, payload: data.hasCombo });
   } catch (error) {
-    dispatch({
-      type: PRODUCT_HAS_COMBO_FAIL,
-      payload: error.message,
-    });
+    dispatch({ type: PRODUCT_HAS_COMBO_FAIL, payload: error.message });
   }
 };
+
 export const unapproveReview =
   (productId, reviewId) => async (dispatch, getState) => {
     try {
       dispatch({ type: REVIEW_UNAPPROVE_REQUEST });
-
       const {
         userLogin: { userInfo },
       } = getState();
-
-      const config = {
-        headers: {
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      };
-
       const { data } = await axios.put(
         `${API_URL}/api/products/${productId}/reviews/${reviewId}/unapprove`,
         {},
-        config,
+        { headers: { Authorization: `Bearer ${userInfo.token}` } },
       );
-
-      dispatch({
-        type: REVIEW_UNAPPROVE_SUCCESS,
-        payload: data,
-      });
+      dispatch({ type: REVIEW_UNAPPROVE_SUCCESS, payload: data });
     } catch (error) {
       dispatch({
         type: REVIEW_UNAPPROVE_FAIL,
@@ -850,29 +571,19 @@ export const unapproveReview =
       });
     }
   };
-// Fetch all reviews (Admin)
+
 export const listAllReviews = () => async (dispatch, getState) => {
   try {
     dispatch({ type: REVIEW_LIST_REQUEST });
-
     const {
       userLogin: { userInfo },
     } = getState();
-
-    const config = {
-      headers: {
-        Authorization: `Bearer ${userInfo.token}`,
-      },
-    };
-
-    const { data } = await axios.get(
-      `${API_URL}/api/products/reviews/all`, // make sure this endpoint exists in your backend
-      config,
-    );
-
+    const { data } = await axios.get(`${API_URL}/api/products/reviews/all`, {
+      headers: { Authorization: `Bearer ${userInfo.token}` },
+    });
     dispatch({
       type: REVIEW_LIST_SUCCESS,
-      payload: Array.isArray(data) ? data : [], // safety
+      payload: Array.isArray(data) ? data : [],
     });
   } catch (error) {
     dispatch({

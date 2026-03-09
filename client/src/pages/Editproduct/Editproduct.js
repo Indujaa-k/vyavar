@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { listProductDetails, UpdateProduct } from "../../actions/productActions";
+import {
+  listProductDetails,
+  UpdateProduct,
+} from "../../actions/productActions";
 import { PRODUCT_UPDATE_RESET } from "../../constants/productConstants";
 import { useNavigate, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet";
@@ -16,36 +19,62 @@ import {
   Text,
   Stack,
   Checkbox,
-  InputGroup,
   Heading,
   Flex,
   Divider,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
+  Image,
 } from "@chakra-ui/react";
 import "./CreateProduct.css";
+
+const API = process.env.REACT_APP_API_URL;
+
+const CATEGORY_DATA = [
+  {
+    name: "Topwear",
+    subcategories: [
+      "Regular",
+      "Oversized",
+      "Full Sleeve",
+      "Shirts",
+      "Graphic T-Shirts",
+      "Regular Tees",
+      "Plain Tees",
+      "Embroidery Tees",
+    ],
+  },
+  { name: "Hoodies", subcategories: ["Hooded Sweatshirts", "Zip Hoodies"] },
+  { name: "Bottomwear", subcategories: ["Pants", "Shorts", "Tracks"] },
+  { name: "Innerwear", subcategories: ["Vests", "Bottom Wear"] },
+  { name: "Gym Wears", subcategories: ["T-Shirts", "Tracks", "Shorts"] },
+];
+
+const options = {
+  gender: ["Men", "Women", "Unisex"],
+  type: ["Casual", "Formal", "Sports"],
+  ageRange: ["Kids", "Teen", "Adult"],
+  fabric: ["Cotton", "Polyester", "Leather"],
+  sizes: ["S", "M", "L", "XL", "XXL"],
+};
 
 const EditProductPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { id: productId } = useParams();
 
-  // State
-  const [existingImages, setExistingImages] = useState(["", "", ""]);
-  const [newImages, setNewImages] = useState([]);
-  const [brandname, setbrandName] = useState("");
-  const [description, setdescription] = useState("");
+  // ── image state ──
+  // displayImages: what user sees (blob URL or existing URL)
+  // replacedImages: { [index]: File } — only changed slots
+  const [displayImages, setDisplayImages] = useState(["", "", ""]);
+  const [replacedImages, setReplacedImages] = useState({});
+
+  const [brandname, setBrandname] = useState("");
+  const [description, setDescription] = useState("");
   const [oldPrice, setOldPrice] = useState(0);
   const [discount, setDiscount] = useState(0);
   const [isFeatured, setIsFeatured] = useState(false);
   const [SKU, setSKU] = useState("");
-  const [sizeChartFile, setSizeChartFile] = useState("");
-  const [variantImages, setVariantImages] = useState([null, null, null]);
+  const [sizeChartFile, setSizeChartFile] = useState(null);
+  const [message, setMessage] = useState(null);
 
   const [productdetails, setProductdetails] = useState({
     gender: "",
@@ -57,89 +86,29 @@ const EditProductPage = () => {
     fabric: "",
     sizes: [],
   });
+
   const [stockBySize, setStockBySize] = useState([]);
+
   const [shippingDetails, setShippingDetails] = useState({
     weight: "",
     dimensions: { length: "", width: "", height: "" },
-    originAddress: {
-      street1: "",
-      street2: "",
-      city: "",
-      state: "",
-      zip: "",
-      country: "",
-    },
+    originAddress: { street1: "", city: "", state: "", zip: "", country: "" },
   });
-  const [message, setMessage] = useState(null);
 
-  //  variant
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const [variantData, setVariantData] = useState({
-    color: "",
-    SKU: "",
-    sizes: [],
-    stockBySize: [],
-  });
-  const generateVariantSKU = (productName, color) => {
-    const safeProductName = (productName || "")
-      .trim()
-      .toUpperCase()
-      .replace(/\s+/g, "-"); // replace spaces with hyphen
-
-    const safeColor = (color || "").trim().toUpperCase();
-
-    const time = new Date()
-      .toISOString()
-      .replace(/[-:.TZ]/g, "")
-      .slice(0, 14);
-
-    return `${safeProductName}-${safeColor}-${time}`;
-  };
-
-  const handleVariantImageChange = (e, index) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const updatedImages = [...variantImages];
-    updatedImages[index] = file;
-    setVariantImages(updatedImages);
-  };
-  const handleRemoveVariantImage = (index) => {
-    const updatedImages = [...variantImages];
-    updatedImages[index] = null; // remove the image
-    setVariantImages(updatedImages);
-  };
-
-  // Options
-  const options = {
-    gender: ["Men", "Women", "Unisex"],
-    category: [
-      "Clothing",
-      "Topwear",
-      "Bottomwear",
-      "Shirts",
-      "Hoodies",
-      "Innerwear",
-      "Footwear",
-      "Accessories",
-    ],
-    subcategory: ["Shirts", "Jeans", "Pants", "Shorts", "SweatPants", "Sets"],
-    type: ["Casual", "Formal", "Sports"],
-    ageRange: ["Kids", "Teen", "Adult"],
-    fabric: ["Cotton", "Polyester", "Leather"],
-    sizes: ["S", "M", "L", "XL", "XXL"],
-  };
- const disableNumberScroll = (e) => {
-    e.target.blur();
-  };
   // Redux
-  const productDetails = useSelector((state) => state.productDetails);
+  const productDetails = useSelector((s) => s.productDetails);
   const { loading, error, product } = productDetails;
 
-  const productUpdate = useSelector((state) => state.productUpdate);
-  const { loading: loadingUpdate, error: errorUpdate, success: successUpdate } = productUpdate;
+  const productUpdate = useSelector((s) => s.productUpdate);
+  const {
+    loading: loadingUpdate,
+    error: errorUpdate,
+    success: successUpdate,
+  } = productUpdate;
 
-  // Load product details
+  const disableNumberScroll = (e) => e.target.blur();
+
+  // ── Load product ──
   useEffect(() => {
     if (successUpdate) {
       dispatch({ type: PRODUCT_UPDATE_RESET });
@@ -148,13 +117,17 @@ const EditProductPage = () => {
       if (!product || product._id !== productId) {
         dispatch(listProductDetails(productId));
       } else {
-        setbrandName(product.brandname || "");
+        setBrandname(product.brandname || "");
         setOldPrice(product.oldPrice || 0);
         setDiscount(product.discount || 0);
-        setdescription(product.description || "");
-        setExistingImages(product.images?.slice(0, 3) || ["", "", ""]);
+        setDescription(product.description || "");
         setSKU(product.SKU || "");
         setIsFeatured(product.isFeatured || false);
+
+        // Show all existing images (up to 5)
+        const imgs = product.images || [];
+        setDisplayImages(imgs.length ? imgs : ["", "", ""]);
+        setReplacedImages({});
 
         setProductdetails({
           gender: product.productdetails?.gender || "",
@@ -173,7 +146,7 @@ const EditProductPage = () => {
             stock:
               product.productdetails?.stockBySize?.find((s) => s.size === size)
                 ?.stock || 0,
-          }))
+          })),
         );
 
         setShippingDetails({
@@ -185,7 +158,6 @@ const EditProductPage = () => {
           },
           originAddress: {
             street1: product.shippingDetails?.originAddress?.street1 || "",
-            street2: product.shippingDetails?.originAddress?.street2 || "",
             city: product.shippingDetails?.originAddress?.city || "",
             state: product.shippingDetails?.originAddress?.state || "",
             zip: product.shippingDetails?.originAddress?.zip || "",
@@ -196,14 +168,27 @@ const EditProductPage = () => {
     }
   }, [dispatch, productId, product, successUpdate, navigate]);
 
-  // Price calculation
   const calculatedPrice = () => {
-    const oldPriceNum = Number(oldPrice);
-    const discountNum = Number(discount);
-    return (oldPriceNum - (oldPriceNum * discountNum) / 100).toFixed(2);
+    const op = Number(oldPrice);
+    const d = Number(discount);
+    return (op - (op * d) / 100).toFixed(2);
   };
 
-  // Handlers
+  // ── Replace a single image slot ──
+  const handleReplaceImage = (e, index) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const blobUrl = URL.createObjectURL(file);
+
+    setDisplayImages((prev) => {
+      const updated = [...prev];
+      updated[index] = blobUrl;
+      return updated;
+    });
+
+    setReplacedImages((prev) => ({ ...prev, [index]: file }));
+  };
+
   const handleSizeChange = (size) => {
     setProductdetails((prev) => ({
       ...prev,
@@ -216,38 +201,16 @@ const EditProductPage = () => {
   const handleStockChange = (size, value) => {
     const num = value === "" ? 0 : Math.max(0, Number(value));
     setStockBySize((prev) =>
-      prev.map((s) => (s.size === size ? { ...s, stock: num } : s))
+      prev.map((s) => (s.size === size ? { ...s, stock: num } : s)),
     );
   };
 
-  const handleReplaceImage = (e, index) => {
-    const file = e.target.files[0];
-    if (file) {
-      const updatedImages = [...existingImages];
-      updatedImages[index] = URL.createObjectURL(file);
-      setExistingImages(updatedImages);
-
-      const updatedNewImages = [...newImages];
-      updatedNewImages[index] = file;
-      setNewImages(updatedNewImages);
-    }
-  };
-
-  const handleSizeChartUpload = (e) => {
-    const file = e.target.files[0];
-    if (file && file.type === "application/pdf") {
-      setSizeChartFile(file);
-    } else {
-      setMessage("Please upload a PDF file");
-    }
-  };
-
-  // Submit
+  // ── Submit ──
   const submitHandler = (e) => {
     e.preventDefault();
 
     const selectedStock = stockBySize.filter((s) =>
-      productdetails.sizes.includes(s.size)
+      productdetails.sizes.includes(s.size),
     );
     if (selectedStock.some((s) => s.stock <= 0)) {
       setMessage("Please enter stock greater than 0 for all selected sizes");
@@ -264,18 +227,23 @@ const EditProductPage = () => {
     formData.append("isFeatured", isFeatured);
     formData.append(
       "productdetails",
-      JSON.stringify({ ...productdetails, stockBySize: selectedStock })
+      JSON.stringify({ ...productdetails, stockBySize: selectedStock }),
     );
     formData.append("shippingDetails", JSON.stringify(shippingDetails));
 
-    newImages.forEach((file) => {
-      if (file) formData.append("images", file);
+    // ✅ Only send changed images + their slot indexes
+    // Backend will splice them into the correct position
+    Object.entries(replacedImages).forEach(([index, file]) => {
+      formData.append("images", file);
+      formData.append("imageIndexes", index);
     });
+
     if (sizeChartFile) formData.append("sizeChart", sizeChartFile);
 
     dispatch(UpdateProduct(productId, formData));
   };
 
+  // ── Render ──
   return (
     <Box
       maxW="container.md"
@@ -289,8 +257,9 @@ const EditProductPage = () => {
       <Heading as="h2" size="lg" mb={6} textAlign="center">
         🔧 Edit Product
       </Heading>
+
       {loading || loadingUpdate ? (
-        <HashLoader color={"#1e1e2c"} loading={true} size={40} />
+        <HashLoader color="#1e1e2c" loading size={40} />
       ) : errorUpdate || error ? (
         <Text color="red.500">{errorUpdate || error}</Text>
       ) : (
@@ -299,25 +268,22 @@ const EditProductPage = () => {
           encType="multipart/form-data"
           className="form-container"
         >
+          {/* ── Basic ── */}
           <FormControl isRequired>
             <FormLabel>Brand Name</FormLabel>
             <Input
-              type="text"
               value={brandname}
-              onChange={(e) => setbrandName(e.target.value)}
+              onChange={(e) => setBrandname(e.target.value)}
             />
           </FormControl>
 
-          <FormControl isRequired>
+          <FormControl isRequired mt={3}>
             <FormLabel>SKU</FormLabel>
-            <Input
-              type="text"
-              value={SKU}
-              onChange={(e) => setSKU(e.target.value)}
-            />
+            <Input value={SKU} onChange={(e) => setSKU(e.target.value)} />
           </FormControl>
 
           <Checkbox
+            mt={3}
             isChecked={isFeatured}
             onChange={(e) => setIsFeatured(e.target.checked)}
           >
@@ -325,6 +291,7 @@ const EditProductPage = () => {
           </Checkbox>
           <Divider my={4} />
 
+          {/* ── Pricing ── */}
           <Flex justify="space-between" gap={4}>
             <FormControl isRequired>
               <FormLabel>Old Price</FormLabel>
@@ -346,21 +313,82 @@ const EditProductPage = () => {
             </FormControl>
             <FormControl>
               <FormLabel>New Price</FormLabel>
-              <Input type="number" onWheel={disableNumberScroll} value={calculatedPrice()} readOnly />
+              <Input type="number" value={calculatedPrice()} readOnly />
             </FormControl>
           </Flex>
 
+          {/* ── Description ── */}
           <FormControl mt={4}>
             <FormLabel>Description</FormLabel>
             <Textarea
               value={description}
-              onChange={(e) => setdescription(e.target.value)}
-              placeholder="Type Something about product..."
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Type something about the product..."
             />
           </FormControl>
 
-          {/* Product details */}
-          {["gender", "category", "subcategory", "type", "ageRange", "color", "fabric"].map((field) => (
+          {/* ── Product Details ── */}
+          <FormControl mt={3}>
+            <FormLabel>Gender</FormLabel>
+            <select
+              value={productdetails.gender}
+              onChange={(e) =>
+                setProductdetails({ ...productdetails, gender: e.target.value })
+              }
+            >
+              <option value="">Select Gender</option>
+              {options.gender.map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+            </select>
+          </FormControl>
+
+          <FormControl mt={3}>
+            <FormLabel>Category</FormLabel>
+            <select
+              value={productdetails.category}
+              onChange={(e) =>
+                setProductdetails({
+                  ...productdetails,
+                  category: e.target.value,
+                  subcategory: "",
+                })
+              }
+            >
+              <option value="">Select Category</option>
+              {CATEGORY_DATA.map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </FormControl>
+
+          <FormControl mt={3}>
+            <FormLabel>Subcategory</FormLabel>
+            <select
+              value={productdetails.subcategory}
+              onChange={(e) =>
+                setProductdetails({
+                  ...productdetails,
+                  subcategory: e.target.value,
+                })
+              }
+            >
+              <option value="">Select Subcategory</option>
+              {CATEGORY_DATA.find(
+                (c) => c.name === productdetails.category,
+              )?.subcategories.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </FormControl>
+
+          {["type", "ageRange", "fabric"].map((field) => (
             <FormControl key={field} mt={3}>
               <FormLabel>
                 {field.charAt(0).toUpperCase() + field.slice(1)}
@@ -383,6 +411,7 @@ const EditProductPage = () => {
               </select>
             </FormControl>
           ))}
+
           <FormControl mt={3}>
             <FormLabel>Color</FormLabel>
             <Input
@@ -390,15 +419,12 @@ const EditProductPage = () => {
               placeholder="Enter color"
               value={productdetails.color}
               onChange={(e) =>
-                setProductdetails({
-                  ...productdetails,
-                  color: e.target.value,
-                })
+                setProductdetails({ ...productdetails, color: e.target.value })
               }
             />
           </FormControl>
 
-          {/* Sizes */}
+          {/* ── Sizes ── */}
           <FormControl mt={4}>
             <FormLabel>Sizes</FormLabel>
             <Stack direction="row" wrap="wrap">
@@ -414,10 +440,9 @@ const EditProductPage = () => {
             </Stack>
           </FormControl>
 
-          {/* Stock per size */}
           <FormControl mt={4}>
             <FormLabel>Stock per Size</FormLabel>
-            <Stack direction="column" spacing={2}>
+            <Stack spacing={2}>
               {stockBySize.map(
                 (s) =>
                   productdetails.sizes.includes(s.size) && (
@@ -428,38 +453,48 @@ const EditProductPage = () => {
                         onWheel={disableNumberScroll}
                         min={0}
                         value={s.stock}
-                        placeholder={`Stock for ${s.size}`}
                         onChange={(e) =>
                           handleStockChange(s.size, e.target.value)
                         }
                       />
                     </Flex>
-                  )
+                  ),
               )}
             </Stack>
           </FormControl>
-          {/* Images */}
-          <FormLabel mt={4}>Product Images (3)</FormLabel>
+
+          {/* ── Images ── */}
+          <FormLabel mt={6}>
+            Product Images — click any image to replace it
+          </FormLabel>
           <Flex wrap="wrap" gap={4}>
-            {existingImages.map((img, index) => (
+            {displayImages.map((img, index) => (
               <Box key={index} position="relative" w="100px" h="100px">
-                <img
-                  src={img || "https://via.placeholder.com/100"}
-                  alt={`Product ${index}`}
-                  style={{
-                    cursor: "pointer",
-                    borderRadius: "8px",
-                    objectFit: "cover",
-                    objectFit: "cover",
-                  }}
+                <Image
+                  src={
+                    img
+                      ? img.startsWith("blob:")
+                        ? img
+                        : `${API}/${img.replace(/\\/g, "/")}`
+                      : "https://via.placeholder.com/100"
+                  }
+                  boxSize="100px"
+                  objectFit="cover"
+                  borderRadius="md"
+                  cursor="pointer"
                   onClick={() =>
-                    document.getElementById(`imageUpload-${index}`).click()
+                    document.getElementById(`imgInput-${index}`).click()
+                  }
+                  border={
+                    replacedImages[index]
+                      ? "2px solid #48BB78"
+                      : "1px solid #E2E8F0"
                   }
                 />
                 <Input
                   type="file"
                   accept="image/*"
-                  id={`imageUpload-${index}`}
+                  id={`imgInput-${index}`}
                   onChange={(e) => handleReplaceImage(e, index)}
                   hidden
                 />
@@ -467,26 +502,40 @@ const EditProductPage = () => {
                   size="xs"
                   colorScheme="blue"
                   position="absolute"
-                  bottom="5px"
-                  right="5px"
+                  bottom="4px"
+                  right="4px"
                   onClick={() =>
-                    document.getElementById(`imageUpload-${index}`).click()
+                    document.getElementById(`imgInput-${index}`).click()
                   }
                 >
                   <FaEdit />
                 </Button>
+                {replacedImages[index] && (
+                  <Box
+                    position="absolute"
+                    top="4px"
+                    left="4px"
+                    bg="green.400"
+                    color="white"
+                    fontSize="9px"
+                    px={1}
+                    borderRadius="sm"
+                  >
+                    NEW
+                  </Box>
+                )}
               </Box>
             ))}
           </Flex>
 
-          {/* Size Chart */}
-          <FormControl mt={10}>
+          {/* ── Size Chart ── */}
+          <FormControl mt={6}>
             <FormLabel>Size Chart PDF</FormLabel>
-            <Flex align="center" mt={2}>
+            <Flex align="center" gap={3}>
               <Input
                 type="file"
                 accept="application/pdf"
-                onChange={handleSizeChartUpload}
+                onChange={(e) => setSizeChartFile(e.target.files[0])}
                 hidden
                 id="sizeChartUpload"
               />
@@ -498,74 +547,88 @@ const EditProductPage = () => {
                 colorScheme="teal"
                 variant="outline"
               >
-                Upload PDF
+                {sizeChartFile ? "Change PDF" : "Upload PDF"}
               </Button>
-              {sizeChartFile && (
-                <Text ml={3} fontSize="sm">
-                  {sizeChartFile.name}
-                </Text>
-              )}
+              {sizeChartFile && <Text fontSize="sm">{sizeChartFile.name}</Text>}
             </Flex>
           </FormControl>
-          <Button mt={6} colorScheme="purple" w="full" onClick={onOpen}>
-            ➕ Add Variant
-          </Button>
-          {/* Shipping details */}
-          <Heading size="md" color="teal.600" fontWeight="bold" mt={6} mb={4}>
+
+          {/* ── Shipping ── */}
+          <Heading size="md" color="teal.600" fontWeight="bold" mt={8} mb={4}>
             🚚 Shipping Details
           </Heading>
-          {["weight", "length", "width", "height"].map((field) => (
+
+          <FormControl>
+            <FormLabel>Weight (kg)</FormLabel>
+            <Input
+              type="number"
+              onWheel={disableNumberScroll}
+              value={shippingDetails.weight}
+              onChange={(e) =>
+                setShippingDetails({
+                  ...shippingDetails,
+                  weight: e.target.value,
+                })
+              }
+            />
+          </FormControl>
+
+          {["length", "width", "height"].map((field) => (
             <FormControl key={field} mt={2}>
               <FormLabel>
-                {field.charAt(0).toUpperCase() + field.slice(1)}
+                {field.charAt(0).toUpperCase() + field.slice(1)} (cm)
               </FormLabel>
               <Input
-                type={
-                  ["length", "width", "height"].includes(field)
-                    ? "number"
-                    : "text"
+                type="number"
+                onWheel={disableNumberScroll}
+                value={shippingDetails.dimensions[field]}
+                onChange={(e) =>
+                  setShippingDetails({
+                    ...shippingDetails,
+                    dimensions: {
+                      ...shippingDetails.dimensions,
+                      [field]: Number(e.target.value),
+                    },
+                  })
                 }
-                value={
-                  field === "weight"
-                    ? shippingDetails.weight
-                    : shippingDetails.dimensions[field]
-                }
-                onChange={(e) => {
-                  if (field === "weight")
-                    setShippingDetails({
-                      ...shippingDetails,
-                      weight: e.target.value,
-                    });
-                  else
-                    setShippingDetails({
-                      ...shippingDetails,
-                      dimensions: {
-                        ...shippingDetails.dimensions,
-                        [field]: Number(e.target.value),
-                      },
-                    });
-                }}
               />
             </FormControl>
           ))}
 
-          {/* Origin Address */}
-          <Heading size="md" color="teal.600" fontWeight="bold" mt={6} mb={4}>📍 Origin Address</Heading>
-          {["street1", "street2", "city", "state", "zip", "country"].map(field => (
+          <Heading size="md" color="teal.600" fontWeight="bold" mt={6} mb={4}>
+            📍 Origin Address
+          </Heading>
+          {["street1", "city", "state", "zip", "country"].map((field) => (
             <FormControl key={field} mt={2} isRequired>
-              <FormLabel>{field.charAt(0).toUpperCase() + field.slice(1)}</FormLabel>
-              <Input type="text" value={shippingDetails.originAddress[field]} onChange={e => setShippingDetails({...shippingDetails, originAddress: {...shippingDetails.originAddress, [field]: e.target.value}})} />
+              <FormLabel>
+                {field.charAt(0).toUpperCase() + field.slice(1)}
+              </FormLabel>
+              <Input
+                value={shippingDetails.originAddress[field]}
+                onChange={(e) =>
+                  setShippingDetails({
+                    ...shippingDetails,
+                    originAddress: {
+                      ...shippingDetails.originAddress,
+                      [field]: e.target.value,
+                    },
+                  })
+                }
+              />
             </FormControl>
           ))}
 
+          {message && (
+            <Text color="red.500" mt={3}>
+              {message}
+            </Text>
+          )}
 
-          {/* Submit */}
-          <Button type="submit" colorScheme="teal" w="full" mt={6}>
+          <Button type="submit" colorScheme="teal" w="full" mt={8}>
             Update Product
           </Button>
         </form>
       )}
-      {message && <Text color="red.500" mt={2}>{message}</Text>}
     </Box>
   );
 };
