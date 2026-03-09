@@ -8,7 +8,7 @@ import { fileURLToPath } from "url";
 ========================== */
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const PROJECT_ROOT = path.resolve(__dirname, "../../"); // adjust if needed
+const PROJECT_ROOT = path.resolve(__dirname, "../");
 
 /* ==========================
    UTILITY: Ensure Directory
@@ -29,36 +29,35 @@ const storage = multer.diskStorage({
     } else if (file.fieldname === "bannerImage") {
       relDir = "uploads/banners/images";
     } else if (file.fieldname === "images") {
+      // ✅ ALL product images → products/images regardless of mimetype
       relDir = "uploads/products/images";
+    } else if (file.fieldname === "sizeChart") {
+      // ✅ sizeChart always goes to pdfs folder (handles both PDF and image size charts)
+      relDir = "uploads/pdfs";
     } else if (
       file.fieldname === "image" &&
       req.originalUrl.includes("/api/banners")
     ) {
       relDir = "uploads/banners/images";
-    } else if (file.mimetype.startsWith("video")) {
+    } else if (file.mimetype.startsWith("video/")) {
       relDir = "uploads/banners/videos";
     } else if (file.mimetype === "application/pdf") {
       relDir = "uploads/pdfs";
     }
 
-    // ✅ Write to absolute path on disk (production safe)
     const absDir = path.join(PROJECT_ROOT, relDir);
     ensureDir(absDir);
 
-    // ✅ Store relDir on file so we can build relative path in filename()
+    // Store relDir so filename() can build the relative path
     file._relDir = relDir;
 
     cb(null, absDir);
   },
 
   filename(req, file, cb) {
-    const filename = `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`;
-
-    // ✅ Override file.path AFTER multer sets it so DB always gets relative path
-    // multer sets file.path = destination + "/" + filename
-    // We intercept by storing the relative version on the file object
+    const ext = path.extname(file.originalname).toLowerCase();
+    const filename = `${file.fieldname}-${Date.now()}-${Math.round(Math.random() * 1e6)}${ext}`;
     file._relativePath = `${file._relDir}/${filename}`.replace(/\\/g, "/");
-
     cb(null, filename);
   },
 });
@@ -82,7 +81,7 @@ const fileFilter = (req, file, cb) => {
   if (allowed.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Unsupported file type"), false);
+    cb(new Error(`Unsupported file type: ${file.mimetype}`), false);
   }
 };
 
@@ -96,22 +95,18 @@ const upload = multer({
 });
 
 /* ==========================
-   MIDDLEWARE WRAPPER
-   Rewrites file.path → relative path after multer processes files
-   so every controller using file.path gets the correct relative path for DB
+   PATH REWRITER MIDDLEWARE
+   Ensures file.path is always the relative DB-safe path
 ========================== */
 const rewritePaths = (req, res, next) => {
-  // req.file  → single upload
   if (req.file?._relativePath) {
     req.file.path = req.file._relativePath;
   }
-  // req.files → array upload
   if (Array.isArray(req.files)) {
     req.files.forEach((f) => {
       if (f._relativePath) f.path = f._relativePath;
     });
   }
-  // req.files → fields upload (object of arrays)
   if (req.files && typeof req.files === "object" && !Array.isArray(req.files)) {
     Object.values(req.files).forEach((arr) => {
       arr.forEach((f) => {
@@ -123,17 +118,20 @@ const rewritePaths = (req, res, next) => {
 };
 
 /* ==========================
-   EXPORTS — each export now composes upload + rewritePaths
+   EXPORTS
 ========================== */
 export const uploadSingleImage = [upload.single("image"), rewritePaths];
 export const uploadSingleVideo = [upload.single("video"), rewritePaths];
-export const uploadMultipleImages = [upload.array("images", 5), rewritePaths];
 export const uploadReviewImages = [upload.array("photos", 3), rewritePaths];
 export const uploadProfileImage = [
   upload.single("profilePicture"),
   rewritePaths,
 ];
 
+// ✅ For variant image replacement — allow up to 5 files
+export const uploadMultipleImages = [upload.array("images", 5), rewritePaths];
+
+// ✅ For product create/update — handles both "images" and "sizeChart" fields
 export const uploadProductFiles = [
   upload.fields([
     { name: "images", maxCount: 50 },

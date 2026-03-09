@@ -63,9 +63,9 @@ app.use("/api/contact", contactRoutes);
 app.get("/api/config/paypal", (req, res) =>
   res.send(process.env.PAYPAL_CLIENT_ID),
 );
-
-const __dirname = path.resolve();
-
+import { fileURLToPath } from "url";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);  // ← always the folder server.js is IN
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // if (process.env.NODE_ENV === "production") {

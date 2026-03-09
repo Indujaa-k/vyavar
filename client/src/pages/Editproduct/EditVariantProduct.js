@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
   Box,
   Flex,
@@ -8,8 +8,6 @@ import {
   Stack,
   Image,
   Heading,
-  Card,
-  CardBody,
   useToast,
   Spinner,
   FormLabel,
@@ -26,45 +24,56 @@ import {
 } from "../../actions/productActions";
 import { AddIcon } from "@chakra-ui/icons";
 
+const API = (process.env.REACT_APP_API_URL || "").replace(/\/$/, "");
+const MAX_IMAGES = 5;
+
+// ✅ Display-only helper — result is NEVER written back to state or DB
+// blob: URLs are VALID here — they are live previews of newly picked files
+const getImageSrc = (img) => {
+  if (!img || img.startsWith("data:")) {
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="70" height="70"><rect width="70" height="70" fill="#f0f0f0"/><text x="35" y="40" text-anchor="middle" font-size="9" fill="#999" font-family="sans-serif">No Image</text></svg>`,
+    )}`;
+  }
+  if (img.startsWith("blob:") || img.startsWith("http")) return img;
+  return `${API}/${img.replace(/\\/g, "/")}`;
+};
+
+const CATEGORY_DATA = [
+  {
+    name: "Topwear",
+    subcategories: ["T-Shirts", "Regular", "Oversized", "Full Sleeve"],
+  },
+  { name: "Hoodies", subcategories: ["Hooded Sweatshirts", "Zip Hoodies"] },
+];
+
+const OPTIONS = {
+  gender: ["Men", "Women", "Unisex"],
+  type: ["Casual", "Formal", "Sports"],
+  ageRange: ["Kids", "Teen", "Adult"],
+  fabric: ["Cotton", "Polyester", "Leather"],
+  sizes: ["S", "M", "L", "XL", "XXL"],
+};
+
 const EditVariantProduct = () => {
   const { groupId } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const toast = useToast();
+
   const fileInputRefs = useRef({});
-  const CATEGORY_DATA = [
-    {
-      name: "Topwear",
-      subcategories: ["T-Shirts", "Regular", "Oversized", "Full Sleeve"],
-    },
-    {
-      name: "Hoodies",
-      subcategories: ["Hooded Sweatshirts", "Zip Hoodies"],
-    },
-  ];
+  // ✅ Ref not state — avoids stale closure inside file input onChange
+  const activeImageRef = useRef({ variantId: null, index: null, isNew: false });
 
-  const options = {
-    gender: ["Men", "Women", "Unisex"],
-    type: ["Casual", "Formal", "Sports"],
-    ageRange: ["Kids", "Teen", "Adult"],
-    color: ["Red", "Blue", "Black", "White"],
-    fabric: ["Cotton", "Polyester", "Leather"],
-    sizes: ["S", "M", "L", "XL", "XXL"],
-  };
-
-  // ================= REDUX STATES =================
   const productGroup = useSelector((state) => state.productGroup);
   const { loading, error, common, variants } = productGroup;
-
   const groupUpdate = useSelector((state) => state.productGroupUpdate);
   const { success: groupUpdateSuccess, error: groupUpdateError } = groupUpdate;
-
   const variantUpdate = useSelector((state) => state.productVariantUpdate);
   const { success: variantUpdateSuccess, error: variantUpdateError } =
     variantUpdate;
   const [savingVariantId, setSavingVariantId] = useState(null);
 
-  // ================= LOCAL STATES =================
   const [commonState, setCommonState] = useState({
     brandname: "",
     description: "",
@@ -72,11 +81,7 @@ const EditVariantProduct = () => {
     sizeChartFile: null,
     shippingDetails: {
       weight: "",
-      dimensions: {
-        length: "",
-        width: "",
-        height: "",
-      },
+      dimensions: { length: "", width: "", height: "" },
       originAddress: {
         street1: "",
         city: "",
@@ -85,7 +90,6 @@ const EditVariantProduct = () => {
         country: "India",
       },
     },
-
     isFeatured: false,
     productdetails: {
       gender: "",
@@ -98,65 +102,84 @@ const EditVariantProduct = () => {
   });
 
   const [variantState, setVariantState] = useState([]);
-  const openImagePicker = (variantId) => {
-    if (fileInputRefs.current[variantId]) {
-      fileInputRefs.current[variantId].click();
-    }
-  };
-  // const options = {
-  //   gender: ["Men", "Women", "Unisex"],
-  //   category: [
-  //     "Clothing",
-  //     "Topwear",
-  //     "Bottomwear",
-  //     "Shirts",
-  //     "Hoodies",
-  //     "Innerwear",
-  //     "Footwear",
-  //     "Accessories",
-  //   ],
-  //   subcategory: ["Shirts", "Jeans", "Pants", "Shorts", "SweatPants", "Sets"],
-  //   type: ["Casual", "Formal", "Sports"],
-  //   ageRange: ["Kids", "Teen", "Adult"],
-  //   color: ["Red", "Blue", "Black", "White"],
-  //   fabric: ["Cotton", "Polyester", "Leather"],
-  //   sizes: ["S", "M", "L", "XL", "XXL"],
-  // };
+
+  const disableNumberScroll = (e) => e.target.blur();
+
   const calculatePrice = (oldPrice, discount) => {
     if (!oldPrice || discount < 0) return 0;
-    if (discount > 100) discount = 100;
-
-    const price = oldPrice - (oldPrice * discount) / 100;
-    return Math.round(price);
+    return Math.round(oldPrice - (oldPrice * Math.min(discount, 100)) / 100);
   };
-
   const calculateDiscount = (oldPrice, price) => {
     if (!oldPrice || !price || price > oldPrice) return 0;
-
-    const discount = ((oldPrice - price) / oldPrice) * 100;
-    return Math.round(discount);
+    return Math.round(((oldPrice - price) / oldPrice) * 100);
   };
+
+  // ✅ Replace an existing image slot
+  const openImagePicker = (variantId, index) => {
+    activeImageRef.current = { variantId, index, isNew: false };
+    const input = fileInputRefs.current[variantId];
+    if (input) {
+      input.value = "";
+      input.click();
+    }
+  };
+
+  // ✅ Add a new image slot (appended to end)
+  const openAddImagePicker = (variantId) => {
+    activeImageRef.current = { variantId, index: null, isNew: true };
+    const input = fileInputRefs.current[variantId];
+    if (input) {
+      input.value = "";
+      input.click();
+    }
+  };
+
+  const handleImageChange = useCallback((e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const { variantId, index, isNew } = activeImageRef.current;
+    if (variantId === null) return;
+
+    const previewUrl = URL.createObjectURL(file);
+
+    setVariantState((prev) =>
+      prev.map((v) => {
+        if (v._id !== variantId) return v;
+        if (isNew) {
+          // Append to end
+          const newIndex = v.images.length;
+          return {
+            ...v,
+            images: [...v.images, previewUrl],
+            replacedImages: { ...(v.replacedImages || {}), [newIndex]: file },
+          };
+        } else {
+          // Replace existing slot
+          const updatedImages = [...v.images];
+          updatedImages[index] = previewUrl;
+          return {
+            ...v,
+            images: updatedImages,
+            replacedImages: { ...(v.replacedImages || {}), [index]: file },
+          };
+        }
+      }),
+    );
+  }, []);
 
   const toggleSize = (variantId, size) => {
     setVariantState((prev) =>
       prev.map((v) => {
         if (v._id !== variantId) return v;
-
         const sizes = v.productdetails.sizes || [];
         const stockBySize = v.productdetails.stockBySize || [];
-
-        const existingStock = stockBySize.find((s) => s.size === size);
-        const stockValue = existingStock?.stock || 0;
-
-        // ===== UNCHECK =====
+        const stockValue = stockBySize.find((s) => s.size === size)?.stock || 0;
         if (sizes.includes(size)) {
-          if (stockValue > 0) {
-            const confirmRemove = window.confirm(
-              `Stock for size ${size} is ${stockValue}. Remove this size and reset stock?`,
-            );
-            if (!confirmRemove) return v;
-          }
-
+          if (
+            stockValue > 0 &&
+            !window.confirm(`Stock for size ${size} is ${stockValue}. Remove?`)
+          )
+            return v;
           return {
             ...v,
             productdetails: {
@@ -166,8 +189,6 @@ const EditVariantProduct = () => {
             },
           };
         }
-
-        // ===== CHECK =====
         return {
           ...v,
           productdetails: {
@@ -179,36 +200,29 @@ const EditVariantProduct = () => {
       }),
     );
   };
-  const [activeImage, setActiveImage] = useState({
-    variantId: null,
-    index: null,
-  });
 
-  // ================= FETCH GROUP =================
   useEffect(() => {
     dispatch(getProductGroup(groupId));
   }, [dispatch, groupId]);
 
-  // ================= SET DATA FROM REDUX =================
   useEffect(() => {
     if (common) {
-      console.log("🟢 COMMON DATA FROM REDUX:", common);
-      console.log("📦 VARIANTS FROM REDUX:", variants);
       setCommonState({
         brandname: common.brandname || "",
         description: common.description || "",
+        sizeChart: common.sizeChart || "",
+        sizeChartFile: null,
         shippingDetails: common.shippingDetails || {
           weight: "",
           dimensions: { length: "", width: "", height: "" },
           originAddress: {
-            street: "",
+            street1: "",
             city: "",
             state: "",
             zip: "",
             country: "India",
           },
         },
-        sizeChart: common.sizeChart || "",
         isFeatured: common.isFeatured || false,
         productdetails: {
           gender: common.productdetails?.gender || "",
@@ -219,41 +233,37 @@ const EditVariantProduct = () => {
           fabric: common.productdetails?.fabric || "",
         },
       });
-      if (variants) {
-        const normalized = variants.map((v) => ({
+    }
+    if (variants) {
+      setVariantState(
+        variants.map((v) => ({
           ...v,
+          // Strip data: URIs only — blob: and server paths are valid for display
+          images: (v.images || []).map((img) =>
+            img && !img.startsWith("data:") ? img : null,
+          ),
           productdetails: {
             ...v.productdetails,
-            sizes: v.productdetails.sizes || [],
-            stockBySize: Array.isArray(v.productdetails.stockBySize)
+            sizes: v.productdetails?.sizes || [],
+            stockBySize: Array.isArray(v.productdetails?.stockBySize)
               ? v.productdetails.stockBySize
               : [],
           },
-        }));
-
-        setVariantState(normalized);
-      }
+          replacedImages: {},
+        })),
+      );
     }
   }, [common, variants]);
-  const disableNumberScroll = (e) => {
-    e.target.blur();
-  };
 
-  // ================= TOAST HANDLERS =================
   useEffect(() => {
-    if (groupUpdateSuccess) {
-      toast({ title: "Group updated successfully", status: "success" });
-    }
-
-    if (groupUpdateError) {
-      toast({ title: groupUpdateError, status: "error" });
-    }
-
+    if (groupUpdateSuccess)
+      toast({ title: "Group updated", status: "success" });
+    if (groupUpdateError) toast({ title: groupUpdateError, status: "error" });
     if (variantUpdateSuccess) {
-      toast({ title: "Variant updated successfully", status: "success" });
+      toast({ title: "Variant updated", status: "success" });
       setSavingVariantId(null);
+      dispatch(getProductGroup(groupId));
     }
-
     if (variantUpdateError) {
       toast({ title: variantUpdateError, status: "error" });
       setSavingVariantId(null);
@@ -263,133 +273,96 @@ const EditVariantProduct = () => {
     groupUpdateError,
     variantUpdateSuccess,
     variantUpdateError,
-    toast,
   ]);
-  useEffect(() => {
-    if (productGroup?.common) {
-      setCommonState((prev) => ({
-        ...prev,
-        sizeChart: productGroup.common.sizeChart || "",
-      }));
-    }
-  }, [productGroup]);
 
-  // ================= GROUP UPDATE =================
   const updateGroupHandler = () => {
-    const formData = new FormData();
-
-    formData.append("brandname", commonState.brandname);
-    formData.append("description", commonState.description);
-    formData.append("isFeatured", commonState.isFeatured);
-    formData.append(
-      "shippingDetails",
-      JSON.stringify(commonState.shippingDetails),
-    );
-
-    // ✅ Individual fields — matches what backend reads from req.body
-    formData.append("gender", commonState.productdetails.gender);
-    formData.append("category", commonState.productdetails.category);
-    formData.append("subcategory", commonState.productdetails.subcategory);
-    formData.append("type", commonState.productdetails.type);
-    formData.append("ageRange", commonState.productdetails.ageRange);
-    formData.append("fabric", commonState.productdetails.fabric);
-
-    if (commonState.sizeChartFile) {
-      formData.append("sizeChart", commonState.sizeChartFile);
-    }
-
-    dispatch(updateProductGroupCommon(groupId, formData)); // ✅ formData, not plain object
+    const fd = new FormData();
+    fd.append("brandname", commonState.brandname);
+    fd.append("description", commonState.description);
+    fd.append("isFeatured", commonState.isFeatured);
+    fd.append("shippingDetails", JSON.stringify(commonState.shippingDetails));
+    fd.append("gender", commonState.productdetails.gender);
+    fd.append("category", commonState.productdetails.category);
+    fd.append("subcategory", commonState.productdetails.subcategory);
+    fd.append("type", commonState.productdetails.type);
+    fd.append("ageRange", commonState.productdetails.ageRange);
+    fd.append("fabric", commonState.productdetails.fabric);
+    if (commonState.sizeChartFile)
+      fd.append("sizeChart", commonState.sizeChartFile);
+    dispatch(updateProductGroupCommon(groupId, fd));
   };
-  // ================= VARIANT HELPERS =================
-  const updateVariantField = (id, field, value) => {
+
+  const updateVariantField = (id, field, value) =>
     setVariantState((prev) =>
       prev.map((v) => (v._id === id ? { ...v, [field]: value } : v)),
     );
-  };
 
-  const updateVariantDetails = (id, field, value) => {
+  const updateVariantDetails = (id, field, value) =>
     setVariantState((prev) =>
       prev.map((v) =>
         v._id === id
-          ? {
-              ...v,
-              productdetails: {
-                ...v.productdetails,
-                [field]: value,
-              },
-            }
+          ? { ...v, productdetails: { ...v.productdetails, [field]: value } }
           : v,
       ),
     );
-  };
-  const updateStockBySize = (variantId, size, value) => {
+
+  const updateStockBySize = (variantId, size, value) =>
     setVariantState((prev) =>
-      prev.map((v) => {
-        if (v._id !== variantId) return v;
-
-        const stockBySize = v.productdetails.stockBySize.map((item) =>
-          item.size === size ? { ...item, stock: value } : item,
-        );
-
-        return {
-          ...v,
-          productdetails: {
-            ...v.productdetails,
-            stockBySize,
-          },
-        };
-      }),
+      prev.map((v) =>
+        v._id !== variantId
+          ? v
+          : {
+              ...v,
+              productdetails: {
+                ...v.productdetails,
+                stockBySize: v.productdetails.stockBySize.map((item) =>
+                  item.size === size ? { ...item, stock: Number(value) } : item,
+                ),
+              },
+            },
+      ),
     );
-  };
-  const API = process.env.REACT_APP_API_URL;
-  // ================= SAVE VARIANT =================
+
   const saveVariantHandler = (variant) => {
-    setSavingVariantId(variant._id); // 👈 ADD THIS
-
-    const formData = new FormData();
-
-    formData.append("price", variant.price);
-    formData.append("oldPrice", variant.oldPrice);
-    formData.append("discount", variant.discount);
-    formData.append("color", variant.productdetails.color);
-
-    formData.append("sizes", JSON.stringify(variant.productdetails.sizes));
-    formData.append(
+    setSavingVariantId(variant._id);
+    const fd = new FormData();
+    fd.append("price", variant.price);
+    fd.append("oldPrice", variant.oldPrice);
+    fd.append("discount", variant.discount);
+    fd.append("color", variant.productdetails.color);
+    fd.append("sizes", JSON.stringify(variant.productdetails.sizes));
+    fd.append(
       "stockBySize",
       JSON.stringify(variant.productdetails.stockBySize),
     );
-
-    if (variant.replacedImages) {
+    if (
+      variant.replacedImages &&
+      Object.keys(variant.replacedImages).length > 0
+    ) {
       Object.entries(variant.replacedImages).forEach(([index, file]) => {
-        formData.append("images", file);
-        formData.append("imageIndexes", index);
+        fd.append("images", file);
+        fd.append("imageIndexes", index);
       });
     }
-
-    dispatch(updateProductVariant(variant._id, formData));
+    dispatch(updateProductVariant(variant._id, fd));
   };
 
-  // ================= UI STATES =================
-  if (loading) {
+  if (loading)
     return (
       <Flex justify="center" mt={20}>
         <Spinner size="xl" />
       </Flex>
     );
-  }
-
-  if (error) {
+  if (error)
     return (
       <Text color="red.500" textAlign="center">
         {error}
       </Text>
     );
-  }
 
-  // ================= JSX =================
   return (
     <Box p={6}>
-      {/* ================= GROUP COMMON ================= */}
+      {/* GROUP COMMON */}
       <Box
         border="1px solid"
         borderColor="gray.200"
@@ -402,11 +375,9 @@ const EditVariantProduct = () => {
         <Heading mb={4} mt={3}>
           Edit Product Group
         </Heading>
-
-        {/* ===== BASIC DETAILS ===== */}
         <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={6}>
           <FormControl>
-            <FormLabel>Brand Name :</FormLabel>
+            <FormLabel>Brand Name</FormLabel>
             <Input
               value={commonState.brandname}
               onChange={(e) =>
@@ -414,9 +385,8 @@ const EditVariantProduct = () => {
               }
             />
           </FormControl>
-
           <FormControl>
-            <FormLabel>Description :</FormLabel>
+            <FormLabel>Description</FormLabel>
             <Input
               value={commonState.description}
               onChange={(e) =>
@@ -425,29 +395,36 @@ const EditVariantProduct = () => {
             />
           </FormControl>
 
-          <FormControl>
-            <FormLabel>Gender</FormLabel>
-            <Input
-              as="select"
-              value={commonState.productdetails.gender}
-              onChange={(e) =>
-                setCommonState({
-                  ...commonState,
-                  productdetails: {
-                    ...commonState.productdetails,
-                    gender: e.target.value,
-                  },
-                })
-              }
-            >
-              <option value="">Select Gender</option>
-              {options.gender.map((g) => (
-                <option key={g} value={g}>
-                  {g}
-                </option>
-              ))}
-            </Input>
-          </FormControl>
+          {[
+            { label: "Gender", key: "gender", opts: OPTIONS.gender },
+            { label: "Type", key: "type", opts: OPTIONS.type },
+            { label: "Age Range", key: "ageRange", opts: OPTIONS.ageRange },
+            { label: "Fabric", key: "fabric", opts: OPTIONS.fabric },
+          ].map(({ label, key, opts }) => (
+            <FormControl key={key}>
+              <FormLabel>{label}</FormLabel>
+              <Input
+                as="select"
+                value={commonState.productdetails[key]}
+                onChange={(e) =>
+                  setCommonState({
+                    ...commonState,
+                    productdetails: {
+                      ...commonState.productdetails,
+                      [key]: e.target.value,
+                    },
+                  })
+                }
+              >
+                <option value="">Select {label}</option>
+                {opts.map((o) => (
+                  <option key={o} value={o}>
+                    {o}
+                  </option>
+                ))}
+              </Input>
+            </FormControl>
+          ))}
 
           <FormControl>
             <FormLabel>Category</FormLabel>
@@ -460,15 +437,15 @@ const EditVariantProduct = () => {
                   productdetails: {
                     ...commonState.productdetails,
                     category: e.target.value,
-                    subcategory: "", // category change aana subcategory reset
+                    subcategory: "",
                   },
                 })
               }
             >
               <option value="">Select Category</option>
-              {CATEGORY_DATA.map((cat) => (
-                <option key={cat.name} value={cat.name}>
-                  {cat.name}
+              {CATEGORY_DATA.map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.name}
                 </option>
               ))}
             </Input>
@@ -492,111 +469,34 @@ const EditVariantProduct = () => {
               <option value="">Select Subcategory</option>
               {CATEGORY_DATA.find(
                 (c) => c.name === commonState.productdetails.category,
-              )?.subcategories.map((sub) => (
-                <option key={sub} value={sub}>
-                  {sub}
+              )?.subcategories.map((s) => (
+                <option key={s} value={s}>
+                  {s}
                 </option>
               ))}
             </Input>
           </FormControl>
 
-          <FormControl>
-            <FormLabel>Type</FormLabel>
-            <Input
-              as="select"
-              value={commonState.productdetails.type}
-              onChange={(e) =>
-                setCommonState({
-                  ...commonState,
-                  productdetails: {
-                    ...commonState.productdetails,
-                    type: e.target.value,
-                  },
-                })
-              }
-            >
-              <option value="">Select Type</option>
-              {options.type.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </Input>
-          </FormControl>
-          <FormControl>
-            <FormLabel>Age Range</FormLabel>
-            <Input
-              as="select"
-              value={commonState.productdetails.ageRange}
-              onChange={(e) =>
-                setCommonState({
-                  ...commonState,
-                  productdetails: {
-                    ...commonState.productdetails,
-                    ageRange: e.target.value,
-                  },
-                })
-              }
-            >
-              <option value="">Select Age Range</option>
-              {options.ageRange.map((age) => (
-                <option key={age} value={age}>
-                  {age}
-                </option>
-              ))}
-            </Input>
-          </FormControl>
-          <FormControl>
-            <FormLabel>Fabric</FormLabel>
-            <Input
-              as="select"
-              value={commonState.productdetails.fabric}
-              onChange={(e) =>
-                setCommonState({
-                  ...commonState,
-                  productdetails: {
-                    ...commonState.productdetails,
-                    fabric: e.target.value,
-                  },
-                })
-              }
-            >
-              <option value="">Select Fabric</option>
-              {options.fabric.map((fabric) => (
-                <option key={fabric} value={fabric}>
-                  {fabric}
-                </option>
-              ))}
-            </Input>
-          </FormControl>
-
-          {/* ===== SIZE CHART FULL WIDTH ===== */}
           <FormControl gridColumn="1 / -1">
             <FormLabel>Size Chart</FormLabel>
-
             {commonState.sizeChart && (
-              <Box mb={3}>
-                <Text fontSize="sm" color="gray.600">
-                  Uploaded Size Chart:
+              <Box mb={2}>
+                <Text fontSize="sm" color="gray.500">
+                  Current:
                 </Text>
-
                 <Text fontWeight="bold">
-                  {
-                    commonState.sizeChartFile
-                      ? commonState.sizeChartFile.name // show newly selected file name
-                      : commonState.sizeChart.split("/").pop() // existing file from backend
-                  }
+                  {commonState.sizeChartFile
+                    ? commonState.sizeChartFile.name
+                    : commonState.sizeChart.split("/").pop()}
                 </Text>
               </Box>
             )}
-
             <Input
               type="file"
               accept="application/pdf,image/*"
               onChange={(e) => {
                 const file = e.target.files[0];
                 if (!file) return;
-
                 setCommonState((prev) => ({
                   ...prev,
                   sizeChartFile: file,
@@ -610,12 +510,12 @@ const EditVariantProduct = () => {
         <Heading size="md" mt={6} mb={3}>
           🚚 Shipping Details
         </Heading>
-
         <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
           <FormControl>
             <FormLabel>Weight (kg)</FormLabel>
             <Input
               type="number"
+              onWheel={disableNumberScroll}
               value={commonState.shippingDetails.weight}
               onChange={(e) =>
                 setCommonState({
@@ -628,159 +528,69 @@ const EditVariantProduct = () => {
               }
             />
           </FormControl>
-
           <SimpleGrid columns={3} spacing={3}>
-            <FormControl>
-              <FormLabel>Length (cm)</FormLabel>
-              <Input
-                type="number"
-                value={commonState.shippingDetails.dimensions.length}
-                onChange={(e) =>
-                  setCommonState({
-                    ...commonState,
-                    shippingDetails: {
-                      ...commonState.shippingDetails,
-                      dimensions: {
-                        ...commonState.shippingDetails.dimensions,
-                        length: e.target.value,
+            {["length", "width", "height"].map((dim) => (
+              <FormControl key={dim}>
+                <FormLabel>
+                  {dim.charAt(0).toUpperCase() + dim.slice(1)} (cm)
+                </FormLabel>
+                <Input
+                  type="number"
+                  onWheel={disableNumberScroll}
+                  value={commonState.shippingDetails.dimensions[dim]}
+                  onChange={(e) =>
+                    setCommonState({
+                      ...commonState,
+                      shippingDetails: {
+                        ...commonState.shippingDetails,
+                        dimensions: {
+                          ...commonState.shippingDetails.dimensions,
+                          [dim]: e.target.value,
+                        },
                       },
-                    },
-                  })
-                }
-              />
-            </FormControl>
-
-            <FormControl>
-              <FormLabel>Width (cm)</FormLabel>
-              <Input
-                type="number"
-                value={commonState.shippingDetails.dimensions.width}
-                onChange={(e) =>
-                  setCommonState({
-                    ...commonState,
-                    shippingDetails: {
-                      ...commonState.shippingDetails,
-                      dimensions: {
-                        ...commonState.shippingDetails.dimensions,
-                        width: e.target.value,
-                      },
-                    },
-                  })
-                }
-              />
-            </FormControl>
-
-            <FormControl>
-              <FormLabel>Height (cm)</FormLabel>
-              <Input
-                type="number"
-                value={commonState.shippingDetails.dimensions.height}
-                onChange={(e) =>
-                  setCommonState({
-                    ...commonState,
-                    shippingDetails: {
-                      ...commonState.shippingDetails,
-                      dimensions: {
-                        ...commonState.shippingDetails.dimensions,
-                        height: e.target.value,
-                      },
-                    },
-                  })
-                }
-              />
-            </FormControl>
+                    })
+                  }
+                />
+              </FormControl>
+            ))}
           </SimpleGrid>
         </SimpleGrid>
 
         <Heading size="md" mt={6} mb={3}>
           📍 Origin Address
         </Heading>
-
         <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-          <FormControl>
-            <FormLabel>Street</FormLabel>
-            <Input
-              value={commonState.shippingDetails.originAddress.street1}
-              onChange={(e) =>
-                setCommonState({
-                  ...commonState,
-                  shippingDetails: {
-                    ...commonState.shippingDetails,
-                    originAddress: {
-                      ...commonState.shippingDetails.originAddress,
-                      street1: e.target.value,
+          {[
+            { label: "Street", key: "street1" },
+            { label: "City", key: "city" },
+            { label: "State", key: "state" },
+            { label: "ZIP", key: "zip" },
+          ].map(({ label, key }) => (
+            <FormControl key={key}>
+              <FormLabel>{label}</FormLabel>
+              <Input
+                value={commonState.shippingDetails.originAddress[key]}
+                onChange={(e) =>
+                  setCommonState({
+                    ...commonState,
+                    shippingDetails: {
+                      ...commonState.shippingDetails,
+                      originAddress: {
+                        ...commonState.shippingDetails.originAddress,
+                        [key]: e.target.value,
+                      },
                     },
-                  },
-                })
-              }
-            />
-          </FormControl>
-
-          <FormControl>
-            <FormLabel>City</FormLabel>
-            <Input
-              value={commonState.shippingDetails.originAddress.city}
-              onChange={(e) =>
-                setCommonState({
-                  ...commonState,
-                  shippingDetails: {
-                    ...commonState.shippingDetails,
-                    originAddress: {
-                      ...commonState.shippingDetails.originAddress,
-                      city: e.target.value,
-                    },
-                  },
-                })
-              }
-            />
-          </FormControl>
-
-          <FormControl>
-            <FormLabel>State</FormLabel>
-            <Input
-              value={commonState.shippingDetails.originAddress.state}
-              onChange={(e) =>
-                setCommonState({
-                  ...commonState,
-                  shippingDetails: {
-                    ...commonState.shippingDetails,
-                    originAddress: {
-                      ...commonState.shippingDetails.originAddress,
-                      state: e.target.value,
-                    },
-                  },
-                })
-              }
-            />
-          </FormControl>
-
-          <FormControl>
-            <FormLabel>ZIP</FormLabel>
-            <Input
-              value={commonState.shippingDetails.originAddress.zip}
-              onChange={(e) =>
-                setCommonState({
-                  ...commonState,
-                  shippingDetails: {
-                    ...commonState.shippingDetails,
-                    originAddress: {
-                      ...commonState.shippingDetails.originAddress,
-                      zip: e.target.value,
-                    },
-                  },
-                })
-              }
-            />
-          </FormControl>
+                  })
+                }
+              />
+            </FormControl>
+          ))}
         </SimpleGrid>
 
-        <Flex justify="space-between" align="center" mt={4}>
-          {/* Save Group Details */}
+        <Flex justify="space-between" align="center" mt={6}>
           <Button colorScheme="blue" onClick={updateGroupHandler}>
             Save Group Details
           </Button>
-
-          {/* ➕ Add Variant Button */}
           <Button
             size="sm"
             leftIcon={<AddIcon />}
@@ -792,9 +602,8 @@ const EditVariantProduct = () => {
         </Flex>
       </Box>
 
-      {/* ================= VARIANTS ================= */}
+      {/* VARIANTS */}
       <Box
-        minW="340px"
         border="1px solid"
         borderColor="gray.200"
         borderRadius="lg"
@@ -802,10 +611,9 @@ const EditVariantProduct = () => {
         bg="white"
         boxShadow="sm"
       >
-        <Heading size="md" mb={3} mt={6}>
+        <Heading size="md" mb={4}>
           Variants
         </Heading>
-
         <Flex gap={4} overflowX="auto" pb={4}>
           {variantState.map((variant) => (
             <Box
@@ -819,7 +627,6 @@ const EditVariantProduct = () => {
               boxShadow="sm"
             >
               <Stack spacing={3}>
-                {/* Header */}
                 <Flex justify="space-between" align="center">
                   <Text fontWeight="bold">
                     Color: {variant.productdetails?.color || "N/A"}
@@ -830,73 +637,92 @@ const EditVariantProduct = () => {
                 </Flex>
 
                 {/* Images */}
-                <Flex gap={2}>
-                  {(variant.images || []).slice(0, 5).map((img, index) => (
-                    <Image
-                      key={index}
-                      src={
-                        img.startsWith("blob:")
-                          ? img
-                          : `${API}/${img.replace(/\\/g, "/")}`
-                      }
-                      boxSize="70px"
-                      objectFit="cover"
-                      borderRadius="md"
-                      cursor="pointer"
-                      onClick={() => {
-                        setActiveImage({ variantId: variant._id, index });
-                        openImagePicker(variant._id);
-                      }}
-                    />
-                  ))}
+                <Box>
+                  <FormLabel fontSize="sm">
+                    Images ({variant.images?.filter(Boolean).length || 0}/
+                    {MAX_IMAGES}) — click to replace
+                  </FormLabel>
+                  <Flex gap={2} flexWrap="wrap" align="center">
+                    {(variant.images || []).map((img, index) => (
+                      <Box key={index} position="relative">
+                        <Image
+                          src={getImageSrc(img)}
+                          boxSize="70px"
+                          objectFit="cover"
+                          borderRadius="md"
+                          cursor="pointer"
+                          border="2px solid"
+                          borderColor={
+                            variant.replacedImages?.[index]
+                              ? "orange.400"
+                              : "gray.200"
+                          }
+                          _hover={{ borderColor: "blue.400" }}
+                          onClick={() => openImagePicker(variant._id, index)}
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = getImageSrc(null);
+                          }}
+                        />
+                        <Text
+                          position="absolute"
+                          bottom="0"
+                          right="0"
+                          bg="blackAlpha.600"
+                          color="white"
+                          fontSize="9px"
+                          px={1}
+                          borderTopLeftRadius="md"
+                        >
+                          {index + 1}
+                        </Text>
+                      </Box>
+                    ))}
 
-                  {variant.images?.length > 5 && (
-                    <Flex
-                      boxSize="70px"
-                      align="center"
-                      justify="center"
-                      bg="gray.100"
-                      borderRadius="md"
-                      cursor="pointer"
-                      onClick={() => openImagePicker(variant._id)}
-                    >
-                      +{variant.images.length - 5}
-                    </Flex>
-                  )}
-                </Flex>
+                    {/* ✅ + button — only shown when image count < MAX_IMAGES */}
+                    {(variant.images?.length || 0) < MAX_IMAGES && (
+                      <Box
+                        boxSize="70px"
+                        borderRadius="md"
+                        border="2px dashed"
+                        borderColor="gray.300"
+                        display="flex"
+                        flexDirection="column"
+                        alignItems="center"
+                        justifyContent="center"
+                        cursor="pointer"
+                        bg="gray.50"
+                        _hover={{ borderColor: "blue.400", bg: "blue.50" }}
+                        onClick={() => openAddImagePicker(variant._id)}
+                      >
+                        <AddIcon color="gray.400" boxSize={4} />
+                        <Text fontSize="9px" color="gray.400" mt={1}>
+                          Add
+                        </Text>
+                      </Box>
+                    )}
+                  </Flex>
 
-                {/* Hidden file input */}
-                <Input
-                  type="file"
-                  hidden
-                  ref={(el) => (fileInputRefs.current[variant._id] = el)}
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
+                  {/* Single hidden file input per variant — shared for both replace and add */}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    ref={(el) => {
+                      if (el) fileInputRefs.current[variant._id] = el;
+                    }}
+                    onChange={handleImageChange}
+                  />
 
-                    const previewUrl = URL.createObjectURL(file);
+                  {variant.replacedImages &&
+                    Object.keys(variant.replacedImages).length > 0 && (
+                      <Text fontSize="xs" color="orange.500" mt={1}>
+                        {Object.keys(variant.replacedImages).length} image(s)
+                        pending save
+                      </Text>
+                    )}
+                </Box>
 
-                    setVariantState((prev) =>
-                      prev.map((v) => {
-                        if (v._id !== activeImage.variantId) return v;
-
-                        const updatedImages = [...v.images];
-                        updatedImages[activeImage.index] = previewUrl;
-
-                        return {
-                          ...v,
-                          images: updatedImages,
-                          replacedImages: {
-                            ...(v.replacedImages || {}),
-                            [activeImage.index]: file, // 👈 track by index
-                          },
-                        };
-                      }),
-                    );
-                  }}
-                />
-
-                {/* Inputs */}
                 <SimpleGrid columns={2} spacing={2}>
                   <FormControl>
                     <FormLabel fontSize="xs">Color</FormLabel>
@@ -912,7 +738,6 @@ const EditVariantProduct = () => {
                       }
                     />
                   </FormControl>
-
                   <FormControl>
                     <FormLabel fontSize="xs">Old Price</FormLabel>
                     <Input
@@ -922,19 +747,16 @@ const EditVariantProduct = () => {
                       min={0}
                       value={variant.oldPrice || ""}
                       onChange={(e) => {
-                        const oldPrice = Number(e.target.value);
-                        const discount = variant.discount || 0;
-
-                        updateVariantField(variant._id, "oldPrice", oldPrice);
+                        const op = Number(e.target.value);
+                        updateVariantField(variant._id, "oldPrice", op);
                         updateVariantField(
                           variant._id,
                           "price",
-                          calculatePrice(oldPrice, discount),
+                          calculatePrice(op, variant.discount || 0),
                         );
                       }}
                     />
                   </FormControl>
-
                   <FormControl>
                     <FormLabel fontSize="xs">Discount (%)</FormLabel>
                     <Input
@@ -945,86 +767,74 @@ const EditVariantProduct = () => {
                       max={100}
                       value={variant.discount || ""}
                       onChange={(e) => {
-                        const discount = Number(e.target.value);
-                        const oldPrice = variant.oldPrice || 0;
-
-                        updateVariantField(variant._id, "discount", discount);
+                        const d = Number(e.target.value);
+                        updateVariantField(variant._id, "discount", d);
                         updateVariantField(
                           variant._id,
                           "price",
-                          calculatePrice(oldPrice, discount),
+                          calculatePrice(variant.oldPrice || 0, d),
                         );
                       }}
                     />
                   </FormControl>
-
                   <FormControl>
                     <FormLabel fontSize="xs">Price</FormLabel>
                     <Input
                       size="sm"
-                      type="number"
+                      type="number" 
                       onWheel={disableNumberScroll}
                       min={0}
                       value={variant.price || ""}
                       onChange={(e) => {
-                        const price = Number(e.target.value);
-                        const oldPrice = variant.oldPrice || 0;
-
-                        updateVariantField(variant._id, "price", price);
+                        const p = Number(e.target.value);
+                        updateVariantField(variant._id, "price", p);
                         updateVariantField(
                           variant._id,
                           "discount",
-                          calculateDiscount(oldPrice, price),
+                          calculateDiscount(variant.oldPrice || 0, p),
                         );
                       }}
                     />
                   </FormControl>
-
-                  {/* ===== Sizes & Stock ===== */}
-                  {/* Sizes */}
-                  <Box>
-                    <FormLabel fontSize="sm">Sizes</FormLabel>
-
-                    <Stack direction="row" wrap="wrap" mb={3}>
-                      {options.sizes.map((size) => (
-                        <Checkbox
-                          key={size}
-                          isChecked={variant.productdetails.sizes.includes(
-                            size,
-                          )}
-                          onChange={() => toggleSize(variant._id, size)}
-                        >
-                          {size}
-                        </Checkbox>
-                      ))}
-                    </Stack>
-
-                    {/* Stock inputs */}
-                    <Stack spacing={2}>
-                      {variant.productdetails.stockBySize.map((item) => (
-                        <FormControl key={item.size}>
-                          <FormLabel fontSize="xs">
-                            Stock for {item.size}
-                          </FormLabel>
-                          <Input
-                            size="sm"
-                            type="number"
-                            onWheel={disableNumberScroll}
-                            min={0}
-                            value={item.stock}
-                            onChange={(e) =>
-                              updateStockBySize(
-                                variant._id,
-                                item.size,
-                                Number(e.target.value),
-                              )
-                            }
-                          />
-                        </FormControl>
-                      ))}
-                    </Stack>
-                  </Box>
                 </SimpleGrid>
+
+                <Box>
+                  <FormLabel fontSize="sm">Sizes</FormLabel>
+                  <Stack direction="row" wrap="wrap" mb={3}>
+                    {OPTIONS.sizes.map((size) => (
+                      <Checkbox
+                        key={size}
+                        isChecked={variant.productdetails.sizes.includes(size)}
+                        onChange={() => toggleSize(variant._id, size)}
+                      >
+                        {size}
+                      </Checkbox>
+                    ))}
+                  </Stack>
+                  <Stack spacing={2}>
+                    {variant.productdetails.stockBySize.map((item) => (
+                      <FormControl key={item.size}>
+                        <FormLabel fontSize="xs">
+                          Stock for {item.size}
+                        </FormLabel>
+                        <Input
+                          size="sm"
+                          type="number"
+                          onWheel={disableNumberScroll}
+                          min={0}
+                          value={item.stock}
+                          onChange={(e) =>
+                            updateStockBySize(
+                              variant._id,
+                              item.size,
+                              e.target.value,
+                            )
+                          }
+                        />
+                      </FormControl>
+                    ))}
+                  </Stack>
+                </Box>
 
                 <Button
                   size="sm"

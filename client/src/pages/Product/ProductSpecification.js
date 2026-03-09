@@ -10,19 +10,20 @@ import {
   Collapse,
   Box,
   Text,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
+  useDisclosure,
 } from "@chakra-ui/react";
 import { useState } from "react";
 import { ChevronUpIcon, ChevronDownIcon } from "@chakra-ui/icons";
 
 const ProductSpecification = ({ product }) => {
   const [showMore, setShowMore] = useState(false);
-  const [showMobileSizeChart, setShowMobileSizeChart] = useState(false);
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   const toggleView = () => setShowMore(!showMore);
 
@@ -32,7 +33,7 @@ const ProductSpecification = ({ product }) => {
         <TabList>
           <Tab className="product-info-header">SPECIFICATION</Tab>
           <Tab className="product-info-header">DESCRIPTION</Tab>
-          <Tab className="product-info-header desktop-only">SIZE CHART</Tab>
+          <Tab className="product-info-header">SIZE CHART</Tab>
         </TabList>
 
         <TabPanels>
@@ -167,111 +168,110 @@ const ProductSpecification = ({ product }) => {
               </Button>
             </Box>
           </TabPanel>
-          {/* Size Chart Tab */}
-          <TabPanel className="desktop-only">
-            <SizeChart product={product} />
+
+          {/* Size Chart Tab — shows button that opens modal */}
+          <TabPanel>
+            <Box textAlign="center" py={6}>
+              {product?.sizeChart ? (
+                <>
+                  <Text mb={4} color="gray.600" fontSize="sm">
+                    Click below to view the size chart
+                  </Text>
+                  <Button
+                    colorScheme="blackAlpha"
+                    bg="black"
+                    color="white"
+                    size="md"
+                    px={8}
+                    _hover={{ bg: "gray.800" }}
+                    onClick={onOpen}
+                  >
+                    View Size Chart
+                  </Button>
+                </>
+              ) : (
+                <Text color="gray.500" fontWeight="medium">
+                  Size Chart not available for this product
+                </Text>
+              )}
+            </Box>
           </TabPanel>
         </TabPanels>
       </Tabs>
 
-      <Button
-        display={{ base: "block", md: "none" }}
-        width="100%"
-        mt={4}
-        colorScheme="gray"
-        onClick={() => setShowMobileSizeChart(true)}
+      {/* ── Size Chart Modal ── */}
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        size="4xl"
+        scrollBehavior="inside"
       >
-        View Size Chart
-      </Button>
-
-      {showMobileSizeChart && (
-        <Box className="mobile-size-chart" position="relative">
-          {/* Close Button */}
-          <Button
-            size="sm"
-            position="absolute"
-            top="8px"
-            right="8px"
-            zIndex="10"
-            onClick={() => setShowMobileSizeChart(false)}
-          >
-            ✕
-          </Button>
-
-          <SizeChart product={product} />
-        </Box>
-      )}
-
-      {/* <div className="product-info-table">
-        <div className="product-info-content">
-    
-          <span>Product Code</span>
-          <strong>{product?.SKU || "Not available"}</strong>
-          <div className="info-item">
-            <span>Product Code</span>
-            <strong>{product?.SKU || "Not available"}</strong>
-          </div>
-        </div>
-        <div className="info-item">
-          <span>Origin Country</span>
-          <strong>{product?.shippingDetails?.originAddress?.country}</strong>
-        </div>
-
-       
-
-        <div className="info-item">
-          <span>Origin Address</span>
-          <strong>
-            {product?.shippingDetails?.originAddress?.street1
-              ? `${product.shippingDetails.originAddress.street1}, 
-               ${product.shippingDetails.originAddress.city}, 
-               ${product.shippingDetails.originAddress.state}, 
-               ${product.shippingDetails.originAddress.zip}, 
-               ${product.shippingDetails.originAddress.country}`
-              : "Not available"}
-          </strong>
-        </div>
-      </div> */}
+        <ModalOverlay bg="blackAlpha.700" backdropFilter="blur(4px)" />
+        <ModalContent mx={4} borderRadius="xl" overflow="hidden">
+          <ModalHeader bg="black" color="white" fontSize="md" py={4}>
+            Size Chart
+          </ModalHeader>
+          <ModalCloseButton color="white" top={3} />
+          <ModalBody p={0}>
+            <SizeChart product={product} />
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </>
   );
 };
 
 export default ProductSpecification;
 
+/* ── Size Chart Viewer — handles both PDF and image ── */
 const SizeChart = ({ product }) => {
   if (!product?.sizeChart) {
-    return <Text fontWeight="bold">Size Chart: Not Available</Text>;
+    return (
+      <Box p={6}>
+        <Text fontWeight="bold">Size Chart: Not Available</Text>
+      </Box>
+    );
   }
 
-  const API_URL = process.env.REACT_APP_API_URL;
+  const API_URL = (process.env.REACT_APP_API_URL || "").replace(/\/$/, "");
+  const cleanPath = product.sizeChart.replace(/\\/g, "/");
+  const fileUrl = `${API_URL}/${cleanPath}`;
+  const isPdf = cleanPath.toLowerCase().endsWith(".pdf");
 
-  const fileUrl = `${API_URL}/${product.sizeChart.replace(/\\/g, "/")}#toolbar=0&navpanes=0&scrollbar=1`;
-
-  return (
-    <Box
-      mt={4}
-      border="1px solid #e2e8f0"
-      borderRadius="md"
-      overflow="hidden"
-      height="600px"
-    >
-      <Box bg="black" color="white" p={3} fontWeight="bold">
-        Size Chart
-      </Box>
-
-      <Box height="100%" className="pdf-scroll-container">
-        {" "}
-        {/* 🔴 SCROLL ENABLE */}
+  if (isPdf) {
+    return (
+      <Box height="80vh">
         <iframe
-          src={fileUrl}
+          src={`${fileUrl}#toolbar=0&navpanes=0&scrollbar=1`}
           width="100%"
           height="100%"
-          style={{
-            border: "none",
-          }}
+          style={{ border: "none", display: "block" }}
           title="Size Chart PDF"
         />
       </Box>
+    );
+  }
+
+  // ✅ Image — contain inside modal, no zoom, no crop
+  return (
+    <Box
+      p={4}
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      maxH="80vh"
+      overflowY="auto"
+    >
+      <img
+        src={fileUrl}
+        alt="Size Chart"
+        style={{
+          maxWidth: "100%",
+          maxHeight: "75vh",
+          objectFit: "contain",
+          display: "block",
+        }}
+      />
     </Box>
   );
 };
