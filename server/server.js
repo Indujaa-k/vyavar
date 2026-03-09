@@ -36,7 +36,8 @@ app.use(
 // https://vyavar.vercel.app
 
 app.options("*", cors());
-app.use(express.json());
+app.use(express.json({ limit: "500mb" }));
+app.use(express.urlencoded({ limit: "500mb", extended: true }));
 
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
