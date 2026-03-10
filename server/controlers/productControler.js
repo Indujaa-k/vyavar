@@ -338,88 +338,111 @@ const getProductBySku = asyncHandler(async (req, res) => {
 // });
 
 const addToCart = asyncHandler(async (req, res) => {
-  const userId = req.user._id;
-  const { qty = 1, size, action = "add", cartItemId } = req.body;
+  try {
+    const userId = req.user._id;
+    const { qty = 1, size, action = "add", cartItemId } = req.body;
 
-  if (!size) return res.status(400).json({ message: "Size is required" });
-  if (qty < 0) return res.status(400).json({ message: "Invalid quantity" });
-
-  const product = await Product.findById(req.params.id);
-  if (!product) return res.status(404).json({ message: "Product not found" });
-
-  const user = await User.findById(userId);
-  if (!user) return res.status(404).json({ message: "User not found" });
-
-  user.cartItems = user.cartItems || [];
-
-  const sizeStock = product.productdetails?.stockBySize?.find(
-    (s) => s.size === size,
-  );
-
-  if (!sizeStock)
-    return res.status(400).json({ message: "Size not available" });
-
-  let existingCartItem = null;
-
-  // 1️⃣ If cartItemId exists → update THAT item
-  if (cartItemId) {
-    existingCartItem = user.cartItems.id(cartItemId);
-
-    if (!existingCartItem) {
-      return res.status(404).json({ message: "Cart item not found" });
-    }
-  }
-
-  // 2️⃣ Else → find by product + size
-  if (!existingCartItem) {
-    existingCartItem = user.cartItems.find(
-      (item) =>
-        item.product.toString() === product._id.toString() &&
-        item.size === size,
-    );
-  }
-
-  if (existingCartItem && qty === 0) {
-    user.cartItems = user.cartItems.filter(
-      (item) => item._id.toString() !== existingCartItem._id.toString(),
-    );
-  } else if (existingCartItem) {
-    const pricedProduct = applySubscriptionPrice(product.toObject(), user);
-
-    existingCartItem.size = size;
-
-    if (action === "set") {
-      existingCartItem.qty = qty;
-    } else {
-      existingCartItem.qty += 1;
-    }
-
-    if (existingCartItem.qty > sizeStock.stock) {
-      return res.status(400).json({ message: "Not enough stock available" });
-    }
-
-    existingCartItem.price =
-      existingCartItem.qty * pricedProduct.subscriptionPrice;
-  } else {
-    const pricedProduct = applySubscriptionPrice(product.toObject(), user);
-
-    user.cartItems.push({
-      product: product._id,
+    console.log("📦 addToCart called:", {
+      userId,
       qty,
       size,
-      price: qty * pricedProduct.subscriptionPrice,
+      action,
+      cartItemId,
     });
+
+    if (!size) return res.status(400).json({ message: "Size is required" });
+    if (qty < 0) return res.status(400).json({ message: "Invalid quantity" });
+
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ message: "Product not found" });
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    console.log("👤 User found, cartItems count:", user.cartItems?.length);
+    console.log("📦 Product stockBySize:", product.productdetails?.stockBySize);
+
+    user.cartItems = user.cartItems || [];
+
+    const sizeStock = product.productdetails?.stockBySize?.find(
+      (s) => s.size === size,
+    );
+
+    console.log("📏 sizeStock found:", sizeStock);
+
+    if (!sizeStock)
+      return res.status(400).json({ message: "Size not available" });
+
+    let existingCartItem = null;
+
+    if (cartItemId) {
+      existingCartItem = user.cartItems.id(cartItemId);
+      if (!existingCartItem)
+        return res.status(404).json({ message: "Cart item not found" });
+    }
+
+    if (!existingCartItem) {
+      existingCartItem = user.cartItems.find(
+        (item) =>
+          item.product.toString() === product._id.toString() &&
+          item.size === size,
+      );
+    }
+
+    console.log("🛒 existingCartItem:", existingCartItem);
+
+    if (existingCartItem && qty === 0) {
+      user.cartItems = user.cartItems.filter(
+        (item) => item._id.toString() !== existingCartItem._id.toString(),
+      );
+    } else if (existingCartItem) {
+      const pricedProduct = applySubscriptionPrice(product.toObject(), user);
+      console.log(
+        "💰 pricedProduct.subscriptionPrice:",
+        pricedProduct.subscriptionPrice,
+      );
+
+      existingCartItem.size = size;
+      existingCartItem.qty = action === "set" ? qty : existingCartItem.qty + 1;
+
+      if (existingCartItem.qty > sizeStock.stock) {
+        return res.status(400).json({ message: "Not enough stock available" });
+      }
+
+      existingCartItem.price =
+        existingCartItem.qty * pricedProduct.subscriptionPrice;
+    } else {
+      const pricedProduct = applySubscriptionPrice(product.toObject(), user);
+      console.log(
+        "💰 new item pricedProduct.subscriptionPrice:",
+        pricedProduct.subscriptionPrice,
+      );
+
+      user.cartItems.push({
+        product: product._id,
+        qty,
+        size,
+        price: qty * pricedProduct.subscriptionPrice,
+      });
+    }
+
+    console.log("💾 Saving user...");
+    await user.save();
+    console.log("✅ User saved");
+
+    const updatedUser = await User.findById(userId).populate({
+      path: "cartItems.product",
+      select:
+        "name brandname images oldPrice isSubscriptionApplied subscriptionDiscountPercent productdetails",
+    });
+
+    res.status(200).json({ cartItems: updatedUser.cartItems });
+  } catch (err) {
+    // ✅ This will show the REAL error in your terminal
+    console.error("💥 addToCart CRASH:", err.message);
+    console.error(err.stack);
+    res.status(500).json({ message: err.message });
   }
-
-  await user.save();
-
-  const updatedUser = await User.findById(userId).populate({
-    path: "cartItems.product",
-    select:
-      "name brandname images oldPrice isSubscriptionApplied subscriptionDiscountPercent productdetails",
-  });
-
-  res.status(200).json({ cartItems: updatedUser.cartItems });
 });
 
 // @desc get cart product

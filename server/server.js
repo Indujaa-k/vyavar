@@ -65,7 +65,7 @@ app.get("/api/config/paypal", (req, res) =>
 );
 import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);  // ← always the folder server.js is IN
+const __dirname = path.dirname(__filename); // ← always the folder server.js is IN
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // if (process.env.NODE_ENV === "production") {
@@ -87,3 +87,11 @@ app.listen(
 );
 
 //runingin
+// In server.js — add AFTER all routes
+app.use((err, req, res, next) => {
+  console.error("💥 SERVER ERROR:", err.stack); // ← shows exact line
+  res.status(500).json({
+    message: err.message,
+    stack: process.env.NODE_ENV === "development" ? err.stack : undefined,
+  });
+});

@@ -16,7 +16,7 @@ const userSubscriptionSchema = mongoose.Schema(
     startDate: Date,
     endDate: Date,
   },
-  { _id: false }
+  { _id: false },
 );
 
 const userSchema = mongoose.Schema(
@@ -116,27 +116,18 @@ const userSchema = mongoose.Schema(
 
   {
     timestamps: true,
-  }
+  },
 );
 
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-userSchema.pre("save", async function (next) {
-  // Skip hashing if password not modified or if only OTP is being updated
-  if (!this.isModified("password")) {
-    return next();
-  }
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
 
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
-  }
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
 });
-
 const User = mongoose.model("User", userSchema);
 export default User;

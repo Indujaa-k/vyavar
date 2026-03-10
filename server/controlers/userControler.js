@@ -6,7 +6,8 @@ import RegisterEmailOtp from "../utils/registerEmailOtp.js";
 import ResetEmailOtp from "../utils/resetEmailOtp.js";
 import Subscription from "../models/subscriptionModel.js";
 import Order from "../models/orderModel.js";
-
+import path from "path";
+import fs from "fs";
 // @desc Auth user & get token
 // @route POST /api/users/login
 // @access Public
@@ -478,7 +479,7 @@ const getUsers = asyncHandler(async (req, res) => {
         ...user.toObject(),
         orderCount,
       };
-    })
+    }),
   );
 
   res.json(usersWithOrderCount);

@@ -50,6 +50,7 @@ const CardProduct = ({ product }) => {
   const addcart = (e) => {
     e.preventDefault();
     e.stopPropagation();
+
     if (!userInfo) {
       toast({
         title: "Login Required",
@@ -62,17 +63,9 @@ const CardProduct = ({ product }) => {
       navigate("/login");
       return;
     }
-    toast({
-      title: "Product added to cart.",
-      description: `Click to view details.`,
-      status: "success",
-      duration: 5000,
-      position: "top",
-      isClosable: true,
-    });
-    setIncart(true);
-    dispatch(addToCart(product._id, 1));
-    dispatch(toggleFavorite(product._id));
+
+    // ✅ Don't add to cart from card — navigate to product page to select size
+    navigate(`/product/${product._id}`);
   };
   const handlePrevImage = () => {
     setCurrentImageIndex((prev) =>
