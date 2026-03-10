@@ -7,7 +7,7 @@ const Categorylist = ({ isMobile, onItemClick }) => {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const gender = searchParams.get("gender") || "Men";
-
+  const API_URL = process.env.REACT_APP_API_URL;
   const [categoryMap, setCategoryMap] = useState({});
   const [loading, setLoading] = useState(false);
 
@@ -16,7 +16,7 @@ const Categorylist = ({ isMobile, onItemClick }) => {
       setLoading(true);
       try {
         const { data } = await axios.get(
-          `/api/products/categories${gender ? `?gender=${gender}` : ""}`,
+          `${API_URL}/api/products/categories${gender ? `?gender=${gender}` : ""}`,
         );
         setCategoryMap(data); // ✅ already { cat: [sub1, sub2] } — no client-side processing needed
       } catch (err) {
