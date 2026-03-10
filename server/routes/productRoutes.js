@@ -4,6 +4,7 @@ import zipUpload from "../multer/zipUpload.js";
 
 import {
   getProducts,
+  getCategories,
   deleteProduct,
   createProduct,
   updateProduct,
@@ -68,7 +69,7 @@ router.post(
   zipUpload.single("file"),
   uploadProducts,
 );
-
+router.get("/categories", optionalAuth, getCategories);
 // ── 5. Group routes (all fixed, must be before /:id) ──
 // ⚠️  /group/comman/:groupId must be before /group/:groupId
 // ⚠️  /group/variant/:id   must be before /group/:groupId

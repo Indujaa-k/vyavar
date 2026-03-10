@@ -33,3 +33,66 @@
   max-width: 260px;
   height: auto;
 }
+.discount-container {
+  position: fixed;
+  top: 35%;
+  right: 0;
+  transform: translateY(-50%);
+  z-index: 3000;
+}
+
+.discount-button {
+  background-color: #000346;
+  color: white;
+  transform: rotate(-90deg);
+  transform-origin: right center;
+  width: 250px;
+  height: 50px;
+  font-weight: 800;
+  font-size: 20px;
+  border-radius: 0;
+}
+
+/* Banner container */
+.discount-banner {
+  position: absolute;
+  top: 100%;
+  right: 25px;
+  transform: translateY(-50%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+
+  /* IMPORTANT */
+  position: relative;
+}
+
+/* Image */
+.discount-banner img {
+  display: block;
+  max-width: 160px!important ;
+  max-height: 260px;
+  border-radius: 8px;
+}
+
+/* Close icon */
+.discount-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: white;
+  border: none;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  font-size: 16px;
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.discount-close:hover {
+  background: #f0f0f0;
+}

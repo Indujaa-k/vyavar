@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Box, Button, Image, Icon } from "@chakra-ui/react";
+import { Box, Button, Image, Icon, IconButton } from "@chakra-ui/react";
 import { useNavigate, useLocation } from "react-router-dom";
 import DiscountImage from "../assets/discountposter.jpeg";
-import { FaCaretUp } from "react-icons/fa";
+import { FaCaretUp, FaTimes } from "react-icons/fa";
 import { px } from "framer-motion";
 
 const DiscountTag = () => {
@@ -78,9 +78,17 @@ const DiscountTag = () => {
           borderRadius="md"
           zIndex="2000"
         >
-          <Button onClick={handleNavigate} bg="transparent" p="0">
-            <Image src={DiscountImage} alt="Discount Offer" />
-          </Button>
+          <Box position="relative">
+            {/* Image Button */}
+            <Button onClick={handleNavigate} bg="transparent" p="0">
+              <Image
+                src={DiscountImage}
+                alt="Discount Offer"
+                borderRadius="md"
+                width="600px"
+              />
+            </Button>
+          </Box>
         </Box>
       )}
     </Box>

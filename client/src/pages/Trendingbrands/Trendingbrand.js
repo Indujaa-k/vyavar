@@ -12,6 +12,7 @@ const Trendingbrand = ({ category }) => {
     { imgSrc: Menimg1, discount: "The Man", brand: "The Man" },
     { imgSrc: Menimg2, discount: "The Man", brand: "The Man" },
     { imgSrc: Menimg3, discount: "Rise Up", brand: "Rise Up" },
+    { imgSrc: Menimg4, discount: "Rise Up", brand: "Rise Up" },
   ];
   
   const selectedCategories =
@@ -22,7 +23,7 @@ const Trendingbrand = ({ category }) => {
 
   return (
     <div className="brand">
-      <h2>Trending Brands</h2>
+      <h2>Embroidery Tees</h2>
       <div className="brand-grid">
         {selectedCategories.map((category, index) => (
           <div

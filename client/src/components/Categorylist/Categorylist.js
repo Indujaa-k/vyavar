@@ -15,34 +15,16 @@ const Categorylist = ({ isMobile, onItemClick }) => {
     const fetchCategories = async () => {
       setLoading(true);
       try {
-        const genderQuery = gender ? `?gender=${gender}` : "";
-        const { data } = await axios.get(`/api/products${genderQuery}`);
-
-        // Build category → subcategories map from real products (same logic as FilterPage)
-        const map = {};
-        data.forEach((product) => {
-          const cat = product.productdetails?.category;
-          const sub = product.productdetails?.subcategory;
-          if (cat) {
-            if (!map[cat]) map[cat] = new Set();
-            if (sub) map[cat].add(sub);
-          }
-        });
-
-        // Convert Sets to Arrays
-        const resolved = {};
-        Object.entries(map).forEach(([cat, subs]) => {
-          resolved[cat] = [...subs];
-        });
-
-        setCategoryMap(resolved);
+        const { data } = await axios.get(
+          `/api/products/categories${gender ? `?gender=${gender}` : ""}`,
+        );
+        setCategoryMap(data); // ✅ already { cat: [sub1, sub2] } — no client-side processing needed
       } catch (err) {
         console.error("Failed to fetch categories:", err);
       } finally {
         setLoading(false);
       }
     };
-
     fetchCategories();
   }, [gender]);
 
