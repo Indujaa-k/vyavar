@@ -23,7 +23,7 @@ const FilterPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { category } = useParams();
-
+ const API_URL = process.env.REACT_APP_API_URL;
   const forcedGender =
     category === "Men" ? "Men" : category === "Women" ? "Women" : "";
 
@@ -52,7 +52,7 @@ const FilterPage = () => {
       setFilterOptions((prev) => ({ ...prev, loading: true }));
       try {
         const { data } = await axios.get(
-          `/api/products/categories${forcedGender ? `?gender=${forcedGender}` : ""}`,
+          `${API_URL}/api/products/categories${forcedGender ? `?gender=${forcedGender}` : ""}`,
         );
         setFilterOptions({
           categories: Object.keys(data),
