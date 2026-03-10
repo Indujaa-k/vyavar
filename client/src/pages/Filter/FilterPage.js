@@ -47,7 +47,6 @@ const FilterPage = () => {
     rating: getArrayParam("rating"),
   });
 
-  // ✅ Use lean /categories endpoint — no longer fetches all product data
   useEffect(() => {
     const fetchFilterOptions = async () => {
       setFilterOptions((prev) => ({ ...prev, loading: true }));
@@ -55,7 +54,6 @@ const FilterPage = () => {
         const { data } = await axios.get(
           `/api/products/categories${forcedGender ? `?gender=${forcedGender}` : ""}`,
         );
-        // data shape: { "Topwear": ["T-Shirts", "Oversized"], "Hoodies": [...] }
         setFilterOptions({
           categories: Object.keys(data),
           subcategoryMap: data,
@@ -66,20 +64,23 @@ const FilterPage = () => {
         setFilterOptions((prev) => ({ ...prev, loading: false }));
       }
     };
-
     fetchFilterOptions();
   }, [forcedGender]);
 
-  // ✅ Available subcategories based on selected categories
-  const availableSubcategories =
-    filters.category.length > 0
-      ? filters.category.flatMap(
-          (cat) => filterOptions.subcategoryMap?.[cat] || [],
-        )
-      : Object.values(filterOptions.subcategoryMap || {}).flat();
+  // ✅ Compute available subcategories based on selected categories
+  const availableSubcategories = React.useMemo(() => {
+    if (filters.category.length > 0) {
+      return filters.category.flatMap(
+        (cat) => filterOptions.subcategoryMap?.[cat] || [],
+      );
+    }
+    // Show all subcategories when no category selected
+    return Object.values(filterOptions.subcategoryMap || {}).flat();
+  }, [filters.category, filterOptions.subcategoryMap]);
 
-  // ✅ Remove invalid subcategories when category changes
+  // ✅ Remove subcategories that are no longer valid when category changes
   useEffect(() => {
+    if (availableSubcategories.length === 0) return;
     setFilters((prev) => ({
       ...prev,
       subcategory: prev.subcategory.filter((sub) =>
@@ -89,7 +90,7 @@ const FilterPage = () => {
   }, [filters.category]);
 
   useEffect(() => {
-    if (forcedGender && filters.gender !== forcedGender) {
+    if (forcedGender) {
       setFilters((prev) => ({ ...prev, gender: forcedGender }));
     }
   }, [category]);
@@ -131,7 +132,6 @@ const FilterPage = () => {
       sortBy: "",
     };
     setFilters(clearedFilters);
-
     const searchParams = new URLSearchParams();
     if (forcedGender) searchParams.set("gender", forcedGender);
     navigate({ search: `?${searchParams.toString()}` });
@@ -199,6 +199,7 @@ const FilterPage = () => {
 
         <Stack spacing={3}>
           {renderCheckboxList("Category", "category", filterOptions.categories)}
+          {/* ✅ Subcategories now dynamically show based on selected categories */}
           {renderCheckboxList(
             "Subcategory",
             "subcategory",

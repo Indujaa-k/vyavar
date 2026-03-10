@@ -1594,8 +1594,9 @@ const getCategories = asyncHandler(async (req, res) => {
   const { gender } = req.query;
   const filter = gender ? { "productdetails.gender": gender } : {};
 
+  // ✅ Fix: select the full productdetails object, not nested paths
   const products = await Product.find(filter)
-    .select("productdetails.category productdetails.subcategory -_id")
+    .select("productdetails -_id")
     .lean();
 
   const map = {};
