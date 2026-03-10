@@ -15,6 +15,7 @@ import { GiPositionMarker } from "react-icons/gi";
 import { HiOutlinePhone } from "react-icons/hi";
 import { useDispatch, useSelector } from "react-redux";
 import { sendContactMessage, resetContact } from "../../actions/contactActions";
+import contactimg from "../../assets/contact-us-banner.jpg";
 import "./contactuscss.css";
 
 const Contactus = () => {
@@ -71,12 +72,12 @@ const Contactus = () => {
   return (
     <div className="contactUscontainer">
       <Helmet>
-        <title>Contact</title>
+        <title>Contact Us</title>
       </Helmet>
       <div className="headerContact">
         <Image
           className="imageContact"
-          src="https://i.imgur.com/7rwaigw.jpg"
+          src={contactimg}
           alt="contactImage"
           objectFit="cover"
         />
