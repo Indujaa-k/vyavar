@@ -33,11 +33,12 @@ const ProductSpecification = ({ product }) => {
         <TabList>
           <Tab className="product-info-header">SPECIFICATION</Tab>
           <Tab className="product-info-header">DESCRIPTION</Tab>
-          <Tab className="product-info-header">SIZE CHART</Tab>
+          {/* ✅ Hide SIZE CHART tab on mobile since we show it below */}
+          <Tab className="product-info-header desktop-only">SIZE CHART</Tab>
         </TabList>
 
         <TabPanels>
-          {/* Specification Tab */}
+          {/* Specification Tab — unchanged */}
           <TabPanel>
             <div className="product-info-content two-column-layout">
               <div className="info-item">
@@ -116,24 +117,23 @@ const ProductSpecification = ({ product }) => {
             </Button>
           </TabPanel>
 
-          {/* Description Tab */}
+          {/* Description Tab — unchanged */}
           <TabPanel>
             <Box>
               <Text fontWeight="bold">Product Description</Text>
               <Text>{product.description}</Text>
               <Text fontWeight="bold">Product Code</Text>
               <Text>{product?.SKU || "Not available"}</Text>
-
               <Text fontSize="lg" fontWeight="bold" mt={4}>
                 Manufactured By:
               </Text>
               <Text>
                 {product?.shippingDetails?.originAddress
                   ? `${product.shippingDetails.originAddress.street1}, 
-           ${product.shippingDetails.originAddress.city}, 
-           ${product.shippingDetails.originAddress.state}, 
-           ${product.shippingDetails.originAddress.zip}, 
-           ${product.shippingDetails.originAddress.country}`
+                     ${product.shippingDetails.originAddress.city}, 
+                     ${product.shippingDetails.originAddress.state}, 
+                     ${product.shippingDetails.originAddress.zip}, 
+                     ${product.shippingDetails.originAddress.country}`
                   : "Manufacturer details not available"}
               </Text>
               <Collapse in={showMore}>
@@ -148,7 +148,6 @@ const ProductSpecification = ({ product }) => {
                   due to different lighting.
                 </Text>
               </Collapse>
-
               <Button
                 size="md"
                 mt="4"
@@ -169,8 +168,8 @@ const ProductSpecification = ({ product }) => {
             </Box>
           </TabPanel>
 
-          {/* Size Chart Tab — shows button that opens modal */}
-          <TabPanel>
+          {/* ✅ Size Chart Tab — desktop only (hidden on mobile via CSS) */}
+          <TabPanel className="desktop-only">
             <Box textAlign="center" py={6}>
               {product?.sizeChart ? (
                 <>
@@ -199,7 +198,21 @@ const ProductSpecification = ({ product }) => {
         </TabPanels>
       </Tabs>
 
-      {/* ── Size Chart Modal ── */}
+      {/* ✅ Mobile/Tablet size chart — always visible below tabs on small screens */}
+      <div className="mobile-size-chart">
+        <Text fontWeight="bold" fontSize="md" mb={3} px={2}>
+          Size Chart
+        </Text>
+        {product?.sizeChart ? (
+          <SizeChart product={product} />
+        ) : (
+          <Text color="gray.500" px={2}>
+            Size Chart not available for this product
+          </Text>
+        )}
+      </div>
+
+      {/* Size Chart Modal — desktop */}
       <Modal
         isOpen={isOpen}
         onClose={onClose}
@@ -224,7 +237,7 @@ const ProductSpecification = ({ product }) => {
 export default ProductSpecification;
 
 /* ── Size Chart Viewer — handles both PDF and image ── */
-const SizeChart = ({ product }) => {
+const SizeChart = ({ product, inline = false }) => {
   if (!product?.sizeChart) {
     return (
       <Box p={6}>
@@ -240,7 +253,7 @@ const SizeChart = ({ product }) => {
 
   if (isPdf) {
     return (
-      <Box height="80vh">
+      <Box height={inline ? "350px" : "80vh"} width="100%">
         <iframe
           src={`${fileUrl}#toolbar=0&navpanes=0&scrollbar=1`}
           width="100%"
@@ -252,7 +265,25 @@ const SizeChart = ({ product }) => {
     );
   }
 
-  // ✅ Image — contain inside modal, no zoom, no crop
+  // ✅ Inline (mobile): full width, natural height, no constraints
+  if (inline) {
+    return (
+      <Box width="100%" p={2}>
+        <img
+          src={fileUrl}
+          alt="Size Chart"
+          style={{
+            width: "100%" /* ✅ Full width on mobile */,
+            height: "auto" /* ✅ Natural aspect ratio */,
+            objectFit: "contain",
+            display: "block",
+          }}
+        />
+      </Box>
+    );
+  }
+
+  // Modal (desktop): contained inside modal bounds
   return (
     <Box
       p={4}

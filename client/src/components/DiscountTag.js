@@ -55,7 +55,7 @@ const DiscountTag = () => {
         position="fixed"
         right="6"
         top="40%"
-        width="240px"
+        width="250px"
         height="50px"
         fontWeight="800"
         fontSize={20}
@@ -64,7 +64,7 @@ const DiscountTag = () => {
         _hover={{ bg: "#ffb700" }}
         rightIcon={<Icon as={FaCaretUp} />}
       >
-        Membership at ₹9/-
+        Get 20% Extra at ₹9/-
       </Button>
 
       {/* Popup */}
