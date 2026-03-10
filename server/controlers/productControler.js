@@ -855,7 +855,7 @@ const uploadProducts = asyncHandler(async (req, res) => {
     }
 
     if (!groupMap[row.productGroupId]) {
-      groupMap[row.productGroupId] = row.productGroupId;
+      groupMap[row.productGroupId] = new mongoose.Types.ObjectId().toString();
     }
 
     // ✅ Skip duplicate SKUs
@@ -900,7 +900,7 @@ const uploadProducts = asyncHandler(async (req, res) => {
 
     await Product.create({
       user: req.user._id,
-      SKU: row.SKU,
+      SKU: `${row.SKU}-${(row.color || "DEFAULT").toUpperCase()}-${Date.now()}`,
       productGroupId: groupMap[row.productGroupId],
       brandname: row.brandname || "Default Brand",
       description: row.description || "",
@@ -1590,7 +1590,25 @@ const getAllReviews = asyncHandler(async (req, res) => {
 
   res.json(allReviews);
 });
+const getCategories = asyncHandler(async (req, res) => {
+  const { gender } = req.query;
+  const filter = gender ? { "productdetails.gender": gender } : {};
 
+  const products = await Product.find(filter)
+    .select("productdetails.category productdetails.subcategory -_id")
+    .lean();
+
+  const map = {};
+  products.forEach((p) => {
+    const cat = p.productdetails?.category;
+    const sub = p.productdetails?.subcategory;
+    if (!cat) return;
+    if (!map[cat]) map[cat] = [];
+    if (sub && !map[cat].includes(sub)) map[cat].push(sub);
+  });
+
+  res.json(map);
+});
 export {
   getProducts,
   deleteProduct,
@@ -1616,4 +1634,5 @@ export {
   createProductReview,
   unapproveReview,
   getAllReviews,
+  getCategories,
 };

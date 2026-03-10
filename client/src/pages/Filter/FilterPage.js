@@ -33,10 +33,9 @@ const FilterPage = () => {
     return value ? value.split(",") : [];
   };
 
-  // ✅ Dynamic options from DB
   const [filterOptions, setFilterOptions] = useState({
     categories: [],
-    subcategories: [],
+    subcategoryMap: {},
     loading: false,
   });
 
@@ -48,33 +47,20 @@ const FilterPage = () => {
     rating: getArrayParam("rating"),
   });
 
-  // ✅ Fetch all products and extract unique categories/subcategories
+  // ✅ Use lean /categories endpoint — no longer fetches all product data
   useEffect(() => {
     const fetchFilterOptions = async () => {
       setFilterOptions((prev) => ({ ...prev, loading: true }));
       try {
-        const genderQuery = forcedGender ? `?gender=${forcedGender}` : "";
-        const { data } = await axios.get(`/api/products${genderQuery}`);
-
-        // ✅ Build category → subcategory map from real products
-        const categoryMap = {};
-        data.forEach((product) => {
-          const cat = product.productdetails?.category;
-          const sub = product.productdetails?.subcategory;
-          if (cat) {
-            if (!categoryMap[cat]) categoryMap[cat] = new Set();
-            if (sub) categoryMap[cat].add(sub);
-          }
+        const { data } = await axios.get(
+          `/api/products/categories${forcedGender ? `?gender=${forcedGender}` : ""}`,
+        );
+        // data shape: { "Topwear": ["T-Shirts", "Oversized"], "Hoodies": [...] }
+        setFilterOptions({
+          categories: Object.keys(data),
+          subcategoryMap: data,
+          loading: false,
         });
-
-        // Convert Set → Array
-        const categories = Object.keys(categoryMap);
-        const subcategoryMap = {};
-        Object.entries(categoryMap).forEach(([cat, subs]) => {
-          subcategoryMap[cat] = [...subs];
-        });
-
-        setFilterOptions({ categories, subcategoryMap, loading: false });
       } catch (err) {
         console.error("Failed to fetch filter options:", err);
         setFilterOptions((prev) => ({ ...prev, loading: false }));
@@ -212,17 +198,12 @@ const FilterPage = () => {
         </Flex>
 
         <Stack spacing={3}>
-          {/* ✅ Dynamic Category */}
           {renderCheckboxList("Category", "category", filterOptions.categories)}
-
-          {/* ✅ Dynamic Subcategory — filtered by selected categories */}
           {renderCheckboxList(
             "Subcategory",
             "subcategory",
             availableSubcategories,
           )}
-
-          {/* ✅ Static Filters */}
           {renderCheckboxList("Size", "sizes", ["S", "M", "L", "XL"])}
           {renderCheckboxList("Minimum Discount", "discount", [
             "10",
