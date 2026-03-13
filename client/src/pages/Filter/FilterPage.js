@@ -205,7 +205,7 @@ const FilterPage = () => {
             "subcategory",
             availableSubcategories,
           )}
-          {renderCheckboxList("Size", "sizes", ["S", "M", "L", "XL"])}
+          {renderCheckboxList("Size", "sizes", ["S", "M", "L", "XL", "2XL"])}
           {renderCheckboxList("Minimum Discount", "discount", [
             "10",
             "20",

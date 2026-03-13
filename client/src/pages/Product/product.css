@@ -12,17 +12,6 @@
   margin-top: 5px;
   background-color: white;
 }
-/* .card-wrapper {
-  margin-top: 130px;
-  max-width: 1400px; 
-  margin-left: auto;
-  margin-right: auto;
-  padding: 0 20px;
-  box-sizing: border-box;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-} */
 
 .card-wrapper {
   display: flex;
@@ -31,18 +20,18 @@
   box-sizing: border-box;
   padding: 10px 20px 0 20px;
   overflow-x: visible;
-  /* overflow-y: visible; */
 }
 
-/* image */
+/* ================================================================
+   DESKTOP image section
+   ================================================================ */
 .img-display {
-  width: 520px; /* FIXED WIDTH */
-  height: 700px; /* FIXED HEIGHT */
+  width: 520px;
+  height: 700px;
   display: flex;
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  /* background-color: #f5f5f5; */
 }
 .img-showcase {
   width: 100%;
@@ -52,31 +41,14 @@
 .img-showcase img {
   width: 100%;
   height: 100%;
-  object-fit: contain; /* 🔥 KEY LINE */
+  object-fit: contain;
 }
 .img-select {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 700px; /* same as main image */
+  max-height: 700px;
 }
-
-/* .img-item img {
-  width: 400px; 
-  height: 200px; 
-  object-fit: cover;
-} */
-/* .img-item img {
-  width: 270px;
-  height: 120px;
-  object-fit: cover;
-  border-radius: 6px;
-}
-
-.img-item {
-  margin: 0;
-  cursor: pointer;
-} */
 
 .img-item {
   width: 90px;
@@ -91,11 +63,6 @@
   object-fit: cover;
 }
 
-.img-item:nth-child(1),
-.img-item:nth-child(2),
-.img-item:nth-child(3) {
-  margin-right: 0;
-}
 .img-item:hover {
   opacity: 0.8;
 }
@@ -104,22 +71,237 @@
   border: 2px solid transparent;
   transition: border 0.3s ease-in-out;
 }
-
 .img-item a:hover {
   border: 2px solid #256eff;
 }
-/* .zoomed-image {
-  width: 700px;
-  height: 600px;
-  border: 2px solid #ddd;
+
+/* ================================================================
+   MOBILE / TABLET IMAGE SECTION
+   Thumbnail strip on LEFT + swipe slider on RIGHT
+   ================================================================ */
+
+/* Wrapper: hidden on desktop, shown on mobile/tablet */
+.mobile-img-wrapper {
+  display: none;
+  flex-direction: row;
+  gap: 10px;
+  width: 100%;
+  align-items: flex-start;
+}
+
+/* ── Left thumbnail strip ── */
+.mobile-thumb-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+  width: 70px;
+  max-height: 420px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.mobile-thumb-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-thumb-item {
+  width: 70px;
+  height: 80px;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  opacity: 0.6;
+  flex-shrink: 0;
+  transition: border-color 0.2s ease, opacity 0.2s ease;
+}
+.mobile-thumb-item--active {
+  border-color: #039cc3;
+  opacity: 1;
+}
+.mobile-thumb-item:hover {
+  opacity: 0.85;
+}
+
+/* ── Right swipe slider ── */
+.mobile-slider {
+  position: relative;
+  flex: 1;
+  min-width: 0;          /* allow flex child to shrink */
+  overflow: hidden;
+  border-radius: 10px;
+  background: #f9f9f9;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y pinch-zoom;
+}
+
+/* Slide track — all images in a row, translateX moves them */
+.mobile-slider__track {
+  display: flex;
+  width: 100%;
+  transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
+}
+
+/* Each individual slide */
+.mobile-slider__slide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 420px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* Prev / Next arrow buttons */
+.mobile-slider__arrow {
   position: absolute;
-  top: 15px;
-  right: -100px;
-  background-repeat: no-repeat;
-  display: block;
-  pointer-events: none;
-  z-index: 900;
-} */
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.85);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 20px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: background 0.2s ease, transform 0.15s ease;
+  padding: 0;
+  color: #333;
+}
+.mobile-slider__arrow:active {
+  transform: translateY(-50%) scale(0.9);
+  background: rgba(255, 255, 255, 1);
+}
+.mobile-slider__arrow--prev {
+  left: 8px;
+}
+.mobile-slider__arrow--next {
+  right: 8px;
+}
+
+/* Dot indicator row */
+.mobile-slider__dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 0 6px;
+}
+
+.mobile-slider__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ccc;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.25s ease, transform 0.2s ease;
+}
+.mobile-slider__dot--active {
+  background: #039cc3;
+  transform: scale(1.4);
+}
+
+/* ================================================================
+   DESKTOP (≥ 1024px): show original layout, hide mobile section
+   ================================================================ */
+@media screen and (min-width: 1024px) {
+  .mobile-img-wrapper {
+    display: none;
+  }
+  .img-select--desktop {
+    display: flex;
+  }
+  .img-display--desktop {
+    display: flex;
+  }
+}
+
+/* ================================================================
+   TABLET (768px – 1023px): show mobile section, hide desktop
+   ================================================================ */
+@media screen and (min-width: 768px) and (max-width: 1023px) {
+  .mobile-img-wrapper {
+    display: flex;
+  }
+  .img-select--desktop,
+  .img-display--desktop {
+    display: none !important;
+  }
+
+  .mobile-thumb-strip {
+    width: 85px;
+    max-height: 540px;
+  }
+  .mobile-thumb-item {
+    width: 85px;
+    height: 95px;
+  }
+  .mobile-slider__slide {
+    height: 540px;
+  }
+  .mobile-slider__arrow {
+    width: 38px;
+    height: 38px;
+    font-size: 24px;
+  }
+  .mobile-slider__dot {
+    width: 9px;
+    height: 9px;
+  }
+}
+
+/* ================================================================
+   MOBILE (< 768px): show mobile section, hide desktop
+   ================================================================ */
+@media screen and (max-width: 767px) {
+  .mobile-img-wrapper {
+    display: flex;
+  }
+  .img-select--desktop,
+  .img-display--desktop {
+    display: none !important;
+  }
+
+  .mobile-thumb-strip {
+    width: 62px;
+    max-height: 340px;
+  }
+  .mobile-thumb-item {
+    width: 62px;
+    height: 70px;
+  }
+  .mobile-slider__slide {
+    height: 340px;
+  }
+}
+
+/* Small phones */
+@media screen and (max-width: 380px) {
+  .mobile-thumb-strip {
+    width: 52px;
+  }
+  .mobile-thumb-item {
+    width: 52px;
+    height: 60px;
+  }
+  .mobile-slider__slide {
+    height: 290px;
+  }
+}
+
+/* ================================================================
+   The rest of your original styles below (unchanged)
+   ================================================================ */
 
 .fullscreen-zoom-image {
   animation: zoomIn 0.35s ease-out;
@@ -175,10 +357,8 @@
 }
 .review {
   display: grid;
-  /* height: 100px; */
   height: fit-content;
   grid-template-columns: 1fr 1fr;
-  /* background-color: rgb(243, 243, 243); */
   border-bottom: rgb(3, 156, 195) 2px solid;
   margin: 0px 5px 5px 5px;
 }
@@ -193,15 +373,6 @@
   backdrop-filter: blur(4px);
 }
 
-/* .product-title::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  height: 4px;
-  width: 80px;
-  background: #12263a;
-} */
 .product-link {
   text-decoration: none;
   text-transform: uppercase;
@@ -341,6 +512,7 @@
 .submitbutton {
   margin: 20px;
 }
+
 /* relatedproducts */
 .related-products-section {
   margin-top: 40px;
@@ -351,16 +523,13 @@
   gap: 40px;
   overflow-x: auto;
   padding: 10px;
-  /* margin-left: 60px;
-  margin-right: 60px; */
   box-sizing: border-box;
   overflow-x: auto;
   scrollbar-width: none;
 }
 
-/* ===== FIX RECOMMENDED CARD WIDTH ONLY ===== */
 .related-products-container > a {
-  flex: 0 0 260px; /* card width */
+  flex: 0 0 260px;
   max-width: 260px;
 }
 
@@ -377,11 +546,10 @@
 
 @media (max-width: 768px) {
   .related-products-container {
-    gap: 16px; /* instead of 40px */
+    gap: 16px;
   }
 }
 
-/* FORCE card sizing ONLY for related products */
 .related-products-container .cardProduct {
   width: 100% !important;
   height: auto !important;
@@ -389,25 +557,42 @@
   margin: 0 !important;
 }
 
-/* Fix anchor wrapper spacing */
 .related-products-container > a {
-  flex: 0 0 220px; /* smaller card on mobile */
+  flex: 0 0 220px;
   max-width: 220px;
 }
 
-/* Image fix */
 .related-products-container .imgProduct {
-  height: 240px !important; /* reduce height on mobile */
+  height: 240px !important;
 }
 
+/* Allow zoom panel to escape the container */
 .product-imgs {
   display: flex;
   gap: 15px;
   align-items: flex-start;
   width: 100%;
   max-width: 100%;
-  overflow: hidden;
+  overflow: visible !important;
+  position: relative;
 }
+
+.img-display {
+  position: relative;
+  overflow: visible !important;
+}
+
+.zoomed-image {
+  overflow: hidden;
+  background-color: #fff;
+}
+
+@media screen and (max-width: 1023px) {
+  .zoomed-image {
+    display: none !important;
+  }
+}
+
 .card {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -427,21 +612,10 @@
   }
   .product-imgs {
     display: flex;
-    flex-direction: row;
-    gap: 12px;
+    flex-direction: column;
+    gap: 0;
     width: 100%;
-    overflow: hidden;
-  }
-  .img-select {
-    width: 80px;
-    flex-shrink: 0;
-    max-height: none;
     overflow: visible;
-  }
-
-  .img-item {
-    width: 80px;
-    height: 80px;
   }
 
   .product-title {
@@ -458,10 +632,6 @@
     overflow-y: visible;
   }
 
-  .img-select {
-    max-height: none;
-    overflow-y: visible;
-  }
   .purchase-info {
     flex-direction: column;
   }
@@ -472,22 +642,14 @@
   }
 }
 
-@media screen and (max-width: 768px) {
-  .img-display {
-    width: 80%;
-    height: 420px;
-  }
-}
-
 /* Review Card Container */
 .review-card {
   display: flex;
-  gap: 15px; /* space between avatar and content */
+  gap: 15px;
   padding: 15px;
   border-bottom: 1px solid #e0e0e0;
 }
 
-/* Avatar */
 .review-avatar-container {
   flex-shrink: 0;
 }
@@ -512,12 +674,10 @@
   color: #555;
 }
 
-/* Content Area */
 .review-content {
   flex: 1;
 }
 
-/* Review Header */
 .review-header {
   display: flex;
   justify-content: space-between;
@@ -525,7 +685,6 @@
   margin-bottom: 5px;
 }
 
-/* User Info */
 .review-user {
   display: flex;
   flex-direction: column;
@@ -542,7 +701,6 @@
   margin-top: 2px;
 }
 
-/* Review Meta (Stars + Date) */
 .review-meta {
   display: flex;
   align-items: center;
@@ -554,7 +712,6 @@
   color: #888;
 }
 
-/* Review Comment */
 .review-comment {
   margin: 5px 0 0 0;
   font-size: 14px;
@@ -562,19 +719,16 @@
   color: #333;
 }
 
-/*  */
-
 .review-card {
   display: flex;
   font-family: Arial, sans-serif;
   padding: 20px 0;
 }
 
-/* Left Section */
 .profile-section {
   display: flex;
   align-items: center;
-  width: 200px; /* Fixed width for alignment */
+  width: 200px;
   flex-shrink: 0;
 }
 
@@ -599,7 +753,6 @@
   margin-left: 20px;
 }
 
-/* Right Section */
 .content-section {
   flex-grow: 1;
   padding-left: 20px;
@@ -613,7 +766,7 @@
 }
 
 .stars {
-  color: #ffb400; /* Gold color */
+  color: #ffb400;
   font-size: 18px;
   letter-spacing: 2px;
 }
@@ -639,56 +792,37 @@
 
 @media screen and (min-width: 821px) and (max-width: 1024px) {
   .card {
-    grid-template-columns: 1fr 1fr; /* side-by-side */
+    grid-template-columns: 1fr;
     gap: 20px;
   }
 
-  .img-display {
-    width: 100%;
-    height: 600px;
-  }
-
-  .img-select {
-    max-height: 600px;
-  }
-
   .product-content {
-    max-height: 600px;
-    overflow-y: auto;
+    max-height: none;
+    overflow-y: visible;
   }
 }
-/* iPad Mini & iPad Air – double image FIX without layout change */
+
 @media screen and (min-width: 768px) and (max-width: 820px) {
-  /* keep everything same, just prevent side duplication */
-  .img-display {
-    flex: 1;
-    max-width: 100%;
-  }
-
-  .img-select {
-    flex-shrink: 0;
-  }
-
-  /* IMPORTANT: stop row overflow illusion */
   .product-imgs {
     overflow-x: hidden;
   }
 }
+
 .main-product-image {
   transition: transform 0.3s ease;
   cursor: zoom-in;
 }
 
 .main-product-image.zoom-active {
-  transform: scale(1.3); /* 👈 slight zoom (adjust 1.2–1.5 if needed) */
+  transform: scale(1.3);
 }
-/* 🔥 Disable zoom panel on tablet & mobile */
+
 @media screen and (max-width: 1023px) {
   .zoomed-image {
     display: none !important;
   }
 }
-/* Mobile + Tablet */
+
 @media (max-width: 1023px) {
   .product-content,
   .product-details,
@@ -698,7 +832,6 @@
   }
 }
 
-/* Desktop only */
 @media (min-width: 1024px) {
   .product-content,
   .product-details,
@@ -708,7 +841,6 @@
   }
 }
 
-/* ========== TABLET RESPONSIVE (768px - 1023px) ========== */
 @media screen and (min-width: 768px) and (max-width: 1023px) {
   .card-wrapper {
     padding: 10px 15px;
@@ -723,51 +855,12 @@
 
   .product-imgs {
     display: flex;
-    flex-direction: row;
-    gap: 12px;
+    flex-direction: column;
+    gap: 0;
     width: 100%;
     max-width: 100%;
     overflow: visible;
     position: relative;
-  }
-
-  .img-select {
-    width: 100px;
-    flex-shrink: 0;
-    max-height: 550px;
-    overflow-y: auto;
-    overflow-x: visible;
-  }
-
-  .img-item {
-    width: 100px;
-    height: 110px;
-  }
-
-  .img-display {
-    flex: 1;
-    width: calc(100% - 112px); /* 100px thumbnail width + 12px gap */
-    max-width: calc(100% - 112px);
-    height: 550px;
-    overflow: hidden; /* Hide overflow on tablets */
-    position: relative;
-  }
-
-  .img-showcase {
-    width: 100%;
-    height: 100%;
-    overflow: hidden !important;
-  }
-
-  .img-showcase img,
-  .img-showcase .chakra-image {
-    display: block !important;
-    width: 100% !important;
-    height: 100% !important;
-    max-width: 100% !important;
-    max-height: 100% !important;
-    object-fit: contain !important;
-    flex-shrink: 0 !important;
   }
 
   .product-content {
@@ -781,26 +874,16 @@
     font-size: 22px;
   }
 
-  /* Related products carousel */
   .related-products-container {
     margin-left: 20px;
     margin-right: 20px;
   }
 
-  /* Review section adjustments */
   .REVIEWS {
     margin: 30px 20px;
   }
-
-  /* Prevent any overflow from images */
-  .chakra-image,
-  .css-0 {
-    max-width: 100% !important;
-    overflow: hidden !important;
-  }
 }
 
-/* ========== LARGE TABLET (iPad Pro 11" & 12.9") ========== */
 @media screen and (min-width: 1024px) and (max-width: 1366px) {
   .card {
     grid-template-columns: auto 1fr;
@@ -830,58 +913,59 @@
     max-height: 600px;
     overflow-y: auto;
   }
-
-  /* Adjust zoom panel for large tablets */
-  .zoomed-image {
-    width: 550px !important;
-    height: 550px !important;
-    right: 100px !important;
-  }
 }
-
-.main-product-image {
-  transition: transform 0.3s ease;
-  cursor: zoom-in;
-}
-
-.main-product-image.zoom-active {
-  transform: scale(1.3);
-}
-
-/* 🔥 Disable zoom panel on tablet & mobile */
-@media screen and (max-width: 1023px) {
-  .zoomed-image {
-    display: none !important;
-  }
-}
-
-/* Mobile + Tablet - Remove sticky positioning */
-@media (max-width: 1023px) {
-  .product-content,
-  .product-details,
-  .buy-section {
-    position: static !important;
-    top: auto !important;
-  }
-}
-
 
 /* Mobile (small phones) */
 @media (max-width: 480px) {
- .product-title{
+  .product-title {
     font-size: 18px;
   }
 }
 
 /* Mobile (large phones) */
 @media (max-width: 576px) {
-  .product-title{
+  .product-title {
     font-size: 20px;
-  
   }
 }
 
-/* Tablets */
-@media (max-width: 768px) {
-  
+/* ── Zoom lens cursor frame ── */
+.zoom-lens {
+  cursor: crosshair;
+  transition: left 0.05s, top 0.05s;
+}
+
+.img-display {
+  position: relative;
+  overflow: visible !important;
+}
+
+/* Zoom panel fade-in animation */
+@keyframes zoomPanelPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes zoomPanelClose {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
 }

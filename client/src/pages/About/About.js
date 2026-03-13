@@ -5,13 +5,13 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import "./aboutcss.css";
 
-import img1 from "../../assets/about/DSC01964.JPG";
-import img2 from "../../assets/about/DSC01966.JPG";
-import img3 from "../../assets/about/DSC02055.JPG";
-import img4 from "../../assets/about/DSC02095.JPG";
-import img5 from "../../assets/about/DSC02575.JPG";
-import img6 from "../../assets/about/DSC02570.JPG";
-import img7 from "../../assets/about/DSC02581.JPG";
+import img1 from "../../assets/about/white-tee-standing-pose.jpeg";
+import img2 from "../../assets/about/white-tee-side-pose.jpeg";
+import img3 from "../../assets/about/two-mens-back-pose.jpeg";
+import img4 from "../../assets/about/standing-black-img.jpeg";
+import img5 from "../../assets/about/opposit-side-of-diff-color-tee2.jpeg";
+import img6 from "../../assets/about/opposit-side-of-diff-color-tee1.jpeg";
+import img7 from "../../assets/about/fear-is-a-reaction.jpeg";
 
 const About = () => {
   useEffect(() => {
