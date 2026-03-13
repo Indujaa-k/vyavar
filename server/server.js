@@ -15,6 +15,7 @@ import subscriptionsRoutes from "./routes/subscriptionRoutes.js";
 import offerRoutes from "./routes/offerRoutes.js";
 import shippingRoutes from "./routes/shippingRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
+import enquiryRoutes from "./routes/Enquiryroutes.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import cors from "cors";
 import "./utils/subscriptionCron.js";
@@ -42,6 +43,7 @@ app.use(express.urlencoded({ limit: "500mb", extended: true }));
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
+
 app.get("/", (req, res) => {
   res.send("Backend is running!");
 });
@@ -56,7 +58,7 @@ app.use("/api/subscriptions", subscriptionsRoutes);
 // app.use("/api/transactions", transactionRoutes);
 app.use("/api", transactionRoutes);
 app.use("/api/offers", offerRoutes);
-
+app.use("/api/enquiry", enquiryRoutes);
 app.use("/api/shipping", shippingRoutes);
 app.use("/api/contact", contactRoutes);
 

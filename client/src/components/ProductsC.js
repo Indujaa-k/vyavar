@@ -4,9 +4,7 @@ import { Listproductbyfiters } from "../actions/productActions";
 import { useHistory, useLocation } from "react-router-dom";
 import QuickPicks from "../pages/QuickPicks/QuickPicks";
 import Slider from "./Slider";
-import Cardscg from "./Cardscg";
-import womenImg from "../assets/women.png";
-import menImg from "../assets/men.png";
+
 import "../pages/Home.css";
 import Trust from "./Trustdetails/Trust";
 import VideoBanner from "./UserVideoBanner/VideoBanner";

@@ -16,17 +16,12 @@ import {
   AlertDialogFooter,
 } from "@chakra-ui/react";
 import { RiShoppingCart2Line } from "react-icons/ri";
-import { MdHome } from "react-icons/md";
 import { BiSearch } from "react-icons/bi";
-import { BsArrowRightShort } from "react-icons/bs";
-import { MdKeyboardArrowRight } from "react-icons/md";
-import { IoLogOutOutline } from "react-icons/io5";
+import { AiOutlineHeart } from "react-icons/ai";
 import { CgProfile } from "react-icons/cg";
 import { logout } from "../actions/userActions";
 import Logo from "../assets/viyavar.png";
-import navheart from "../assets/navheart.svg";
 import Categorylist from "./Categorylist/Categorylist";
-import CategoryImg from "../../src/assets/categoryimg.svg";
 import "./Nav.css";
 import { getUserDetails } from "../actions/userActions";
 import { getActiveOfferBanner } from "../actions/bannerActions";
@@ -50,24 +45,24 @@ const Nav = () => {
   const [incart, setincart] = useState(0);
   const cart = useSelector((state) => state.cart);
   const { cartItems } = cart;
-  const [nav, setNav] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const searchRef = useRef(null);
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const gender = searchParams.get("gender") || "Men";
   const [searchKeyword, setSearchKeyword] = useState("");
-  const [signin, setSignin] = useState(null);
+  const [showSearch, setShowSearch] = useState(false);
   const userProfile = useSelector((state) => state.userDetails);
   const { user } = userProfile;
-  const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const btnRef = useRef();
-  const [showCategory, setShowCategory] = useState(false);
-  const [showMobileCategory, setShowMobileCategory] = useState(false);
+  const [isDrawerOpen, setDrawerOpen] = useState(false);
+  const menuBtnRef = useRef();
+  const [isCategoryExpanded, setCategoryExpanded] = useState(false);
 
   const onSearchSubmit = (e) => {
     e.preventDefault();
     if (searchKeyword.trim()) {
       navigate(`/products?keyword=${searchKeyword.trim()}&gender=${gender}`);
+      setShowSearch(false);
     }
     setSearchKeyword("");
   };
@@ -110,150 +105,129 @@ const Nav = () => {
 
   return (
     <>
-      <nav className={`nav ${nav ? "active" : ""}`}>
-        <Box className="hamburger">
+      <header className={`topbar ${isScrolled ? "topbar--scrolled" : ""}`}>
+        {/* ── Left cluster: Hamburger + Search (mobile) ── */}
+        <div className="topbar__left-cluster">
           <IconButton
             icon={<GiHamburgerMenu />}
-            ref={btnRef}
-            onClick={() => setMobileMenuOpen(true)}
-            variant="outline"
+            ref={menuBtnRef}
+            onClick={() => setDrawerOpen(true)}
+            variant="ghost"
             color="white"
             aria-label="Open menu"
+            _hover={{ bg: "rgba(255,255,255,0.12)" }}
           />
-        </Box>
 
-        <NavLink to="/" className="logo">
-          <img src={Logo} alt="logo" />
+          {/* Search button — sits right next to hamburger on mobile */}
+          <button
+            className="topbar__action-btn topbar__search-left"
+            onClick={() => setShowSearch((v) => !v)}
+            aria-label="Search"
+          >
+            <BiSearch size={22} />
+          </button>
+        </div>
+
+        {/* Logo — centered */}
+        <NavLink to="/" className="topbar__brand">
+          <img src={Logo} alt="logo" className="topbar__brand-img" />
         </NavLink>
 
-        <div className="search-container">
-          <form onSubmit={onSearchSubmit}>
-            <InputGroup>
-              <Input
-                type="text"
-                placeholder="Search products, brands and more..."
-                value={searchKeyword}
-                onChange={onSearchChange}
-                ref={searchRef}
-                color="white"
-              />
-              <InputLeftElement>
-                <Button className="search-button" type="submit" size="40">
-                  <BiSearch />
-                </Button>
-              </InputLeftElement>
-            </InputGroup>
-          </form>
-        </div>
-
-        <ul className="navLinks">
-          <li>
-            <NavLink to="/" activeClassName="activlink" className="nav-item">
-              <div className="nav-content">
-                <MdHome size="20" className="nav-icon" />
-                <span>Home</span>
-              </div>
-            </NavLink>
-          </li>
-
-          <li
-            className="dropdown nav-item"
-            onMouseEnter={() => setShowCategory(true)}
-            onMouseLeave={() => setShowCategory(false)}
+        {/* ── Right icons ── */}
+        <div className="topbar__actions">
+          {/* Search icon — desktop only (hidden on mobile, shown above instead) */}
+          <button
+            className="topbar__action-btn topbar__search-desktop"
+            onClick={() => setShowSearch((v) => !v)}
+            aria-label="Search"
           >
-            <NavLink to="/products?productMode=combo" className="nav-item">
-              <div className="nav-content">
-                <img src={CategoryImg} alt="Categories" className="nav-img" />
-                <span>Categories</span>
-              </div>
-            </NavLink>
-            {showCategory && <Categorylist />}
-          </li>
+            <BiSearch size={22} />
+          </button>
 
-          <li>
-            <NavLink
-              to="/Favorites"
-              activeClassName="activlink"
-              className="nav-item"
-            >
-              <div className="nav-content">
-                <img
-                  src={navheart}
-                  alt="Wishlist"
-                  width="26"
-                  height="26"
-                  className="nav-icon"
-                />
-                <span>Wishlist</span>
-              </div>
-            </NavLink>
-          </li>
-
-          <li>
-            <NavLink
-              to="/cart"
-              activeClassName="activlink"
-              className="nav-item"
-            >
-              <div className="nav-content">
-                <RiShoppingCart2Line className="nav-icon" size="20" />
-                <span>Bag</span>
-                {userInfo && !userInfo.isAdmin && incart > 0 && (
-                  <div className="dotcart">{incart}</div>
-                )}
-              </div>
-            </NavLink>
-          </li>
-        </ul>
-
-        <div className="rightComp">
+          {/* Profile icon — desktop only */}
           {userInfo ? (
-            <div className="ic_sett_dis">
-              <Link to="/profile" className="user-profile">
-                {user?.profilePicture ? (
-                  <img
-                    src={
-                      user.profilePicture.startsWith("http")
-                        ? user.profilePicture
-                        : `${process.env.REACT_APP_API_URL}${user.profilePicture}`
-                    }
-                    alt="Profile"
-                    className="profile-img"
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.style.display = "none";
-                    }}
-                  />
-                ) : (
-                  <CgProfile size={25} className="settingIcon" />
-                )}
-                <span className="user-name">{user?.name}</span>
-              </Link>
-
-              <IoLogOutOutline
-                size={30}
-                className="displayIcon"
-                onClick={onOpen}
-                title="Logout"
-              />
-            </div>
+            <Link
+              to="/profile"
+              className="topbar__action-btn topbar__profile-desktop"
+              aria-label="Profile"
+            >
+              {user?.profilePicture ? (
+                <img
+                  src={
+                    user.profilePicture.startsWith("http")
+                      ? user.profilePicture
+                      : `${process.env.REACT_APP_API_URL}${user.profilePicture}`
+                  }
+                  alt="Profile"
+                  className="topbar__avatar"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+              ) : (
+                <CgProfile size={22} />
+              )}
+            </Link>
           ) : (
-            <Link to="/login">
-              <div
-                className="signin"
-                onMouseEnter={() => setSignin(true)}
-                onMouseLeave={() => setSignin(false)}
-              >
-                Sign in
-                {!signin ? (
-                  <BsArrowRightShort size={25} />
-                ) : (
-                  <MdKeyboardArrowRight size={25} />
-                )}
-              </div>
+            <Link
+              to="/login"
+              className="topbar__action-btn topbar__profile-desktop"
+              aria-label="Sign in"
+            >
+              <CgProfile size={22} />
             </Link>
           )}
+
+          <Link
+            to="/Favorites"
+            className="topbar__action-btn"
+            aria-label="Wishlist"
+          >
+            <AiOutlineHeart size={22} />
+          </Link>
+
+          <Link
+            to="/cart"
+            className="topbar__action-btn topbar__action-btn--cart"
+            aria-label="Cart"
+          >
+            <RiShoppingCart2Line size={22} />
+            {userInfo && !userInfo.isAdmin && incart > 0 && (
+              <span className="topbar__cart-badge">{incart}</span>
+            )}
+          </Link>
         </div>
+
+        {/* Search overlay */}
+        {showSearch && (
+          <div className="search-bar">
+            <form onSubmit={onSearchSubmit} className="search-bar__form">
+              <InputGroup>
+                <InputLeftElement pointerEvents="none">
+                  <BiSearch color="gray" />
+                </InputLeftElement>
+                <Input
+                  type="text"
+                  placeholder="Search products, brands and more..."
+                  value={searchKeyword}
+                  onChange={onSearchChange}
+                  ref={searchRef}
+                  autoFocus
+                  bg="white"
+                  color="black"
+                  borderRadius="full"
+                />
+              </InputGroup>
+            </form>
+            <button
+              className="search-bar__close"
+              onClick={() => setShowSearch(false)}
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* Logout Dialog */}
         <AlertDialog
@@ -267,7 +241,6 @@ const Nav = () => {
               boxShadow="lg"
               bg="white"
               maxW="320px"
-              height={80}
               p={6}
             >
               <AlertDialogHeader
@@ -308,35 +281,27 @@ const Nav = () => {
           </AlertDialogOverlay>
         </AlertDialog>
 
-        {/* Mobile Drawer */}
+        {/* Side Drawer */}
         <Drawer
-          isOpen={isMobileMenuOpen}
+          isOpen={isDrawerOpen}
           placement="left"
-          onClose={() => setMobileMenuOpen(false)}
-          finalFocusRef={btnRef}
+          onClose={() => setDrawerOpen(false)}
+          finalFocusRef={menuBtnRef}
         >
           <DrawerOverlay />
           <DrawerContent bg="rgb(9, 37, 74)" color="white">
-            <DrawerCloseButton />
+            <DrawerCloseButton color="white" />
             <DrawerBody
               display="flex"
               flexDirection="column"
-              height="100%"
               paddingTop="20px"
               paddingBottom="20px"
             >
               {userInfo && (
                 <Link
                   to="/profile"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    marginBottom: "30px",
-                    textDecoration: "none",
-                    color: "white",
-                  }}
-                  onClick={() => setMobileMenuOpen(false)}
+                  className="drawer__profile-link"
+                  onClick={() => setDrawerOpen(false)}
                 >
                   {user?.profilePicture ? (
                     <img
@@ -346,125 +311,128 @@ const Nav = () => {
                           : `${process.env.REACT_APP_API_URL}${user.profilePicture}`
                       }
                       alt="Profile"
-                      style={{
-                        width: "40px",
-                        height: "40px",
-                        borderRadius: "50%",
-                        objectFit: "cover",
-                      }}
+                      className="drawer__profile-img"
                     />
                   ) : (
                     <CgProfile size={40} />
                   )}
-                  <span style={{ fontSize: "18px", fontWeight: "bold" }}>
+                  <span className="drawer__profile-name">
                     {user?.name || userInfo.name || "Profile"}
                   </span>
                 </Link>
               )}
 
-              <ul
-                style={{
-                  listStyle: "none",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "20px",
-                  paddingLeft: "0",
-                }}
-              >
-                <li>
+              <ul className="drawer__nav-list">
+                <li className="drawer__nav-item">
                   <NavLink
-                    style={{ color: "white", fontSize: "18px" }}
+                    className="drawer__nav-link"
                     to="/"
-                    onClick={() => setMobileMenuOpen(false)}
+                    onClick={() => setDrawerOpen(false)}
                   >
                     Home
                   </NavLink>
                 </li>
 
-                <li
-                  style={{
-                    color: "white",
-                    cursor: "pointer",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <span
-                    onClick={() => {
-                      navigate("/products?productMode=combo");
-                      setMobileMenuOpen(false);
-                    }}
+                <li className="drawer__nav-item drawer__cat-accordion">
+                  <button
+                    className={`drawer__cat-header ${isCategoryExpanded ? "drawer__cat-header--open" : ""}`}
+                    onClick={() => setCategoryExpanded(!isCategoryExpanded)}
+                    type="button"
                   >
-                    Categories
-                  </span>
-                  <span
-                    onClick={() => setShowMobileCategory(!showMobileCategory)}
-                    style={{ fontSize: "22px", paddingLeft: "10px" }}
-                  >
-                    ▾
-                  </span>
+                    <span className="drawer__cat-header-left">Categories</span>
+                    <span
+                      className={`drawer__cat-arrow ${isCategoryExpanded ? "drawer__cat-arrow--up" : ""}`}
+                    >
+                      ›
+                    </span>
+                  </button>
+
+                  {isCategoryExpanded && (
+                    <div className="drawer__cat-panel">
+                      <button
+                        className="drawer__cat-view-all"
+                        onClick={() => {
+                          navigate("/products?productMode=combo");
+                          setDrawerOpen(false);
+                        }}
+                        type="button"
+                      >
+                        View All →
+                      </button>
+                      <div className="drawer__cat-list-wrap">
+                        <Categorylist
+                          isMobile
+                          onItemClick={() => {
+                            setCategoryExpanded(false);
+                            setDrawerOpen(false);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </li>
 
-                {showMobileCategory && (
-                  <Box pl="15px" mt="10px">
-                    <Categorylist
-                      isMobile
-                      onItemClick={() => {
-                        setShowMobileCategory(false);
-                        setMobileMenuOpen(false);
-                      }}
-                    />
-                  </Box>
-                )}
-
-                <li>
+                <li className="drawer__nav-item">
                   <NavLink
-                    style={{ color: "white", fontSize: "18px" }}
+                    className="drawer__nav-link"
                     to="/Favorites"
-                    onClick={() => setMobileMenuOpen(false)}
+                    onClick={() => setDrawerOpen(false)}
                   >
                     Wishlist
                   </NavLink>
                 </li>
 
-                <li>
+                <li className="drawer__nav-item">
                   <NavLink
-                    style={{ color: "white", fontSize: "18px" }}
+                    className="drawer__nav-link"
                     to="/cart"
-                    onClick={() => setMobileMenuOpen(false)}
+                    onClick={() => setDrawerOpen(false)}
                   >
                     Bag {incart > 0 && `(${incart})`}
                   </NavLink>
                 </li>
 
+                <li className="drawer__nav-item drawer__nav-item--divider" />
+
+                <li className="drawer__nav-item drawer__nav-item--section-label">
+                  More
+                </li>
+
+                <li className="drawer__nav-item">
+                  <NavLink
+                    className="drawer__nav-link"
+                    to="/bulkpurchase"
+                    onClick={() => setDrawerOpen(false)}
+                  >
+                    📦 Bulk/Corporate Orders
+                  </NavLink>
+                </li>
+
+                <li className="drawer__nav-item">
+                  <NavLink
+                    className="drawer__nav-link"
+                    to="/internationalpurchase"
+                    onClick={() => setDrawerOpen(false)}
+                  >
+                    🌐 International Purchase
+                  </NavLink>
+                </li>
+
                 {userInfo && (
                   <li
+                    className="drawer__nav-item drawer__nav-item--logout"
                     onClick={onOpen}
-                    style={{
-                      color: "white",
-                      fontWeight: "bold",
-                      cursor: "pointer",
-                      borderRadius: "8px",
-                      transition: "text-decoration 0.2s",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.textDecoration = "underline")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.textDecoration = "none")
-                    }
                   >
                     Logout
                   </li>
                 )}
 
                 {!userInfo && (
-                  <li>
+                  <li className="drawer__nav-item">
                     <NavLink
-                      style={{ color: "white", fontSize: "18px" }}
+                      className="drawer__nav-link"
                       to="/login"
-                      onClick={() => setMobileMenuOpen(false)}
+                      onClick={() => setDrawerOpen(false)}
                     >
                       Sign In
                     </NavLink>
@@ -474,12 +442,12 @@ const Nav = () => {
             </DrawerBody>
           </DrawerContent>
         </Drawer>
-      </nav>
+      </header>
 
-      {/* ===== OFFER BANNER ===== */}
+      {/* Offer Banner */}
       {!shouldHideBanner && (
-        <div className="offer-banner">
-          <div className="offer-banner-track">
+        <div className="promo-strip">
+          <div className="promo-strip__track">
             {banner
               ? `${banner.offerText} • ${banner.offerText} • ${banner.offerText}`
               : "Stay tuned for exciting offers! • Stay tuned for exciting offers! • Stay tuned for exciting offers!"}

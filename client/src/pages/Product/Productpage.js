@@ -70,7 +70,7 @@ const Productpage = () => {
   const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 });
   const [isZoomVisible, setIsZoomVisible] = useState(false);
   const [hoveredImageIndex, setHoveredImageIndex] = useState(0);
-
+  const [isZoomClosing, setIsZoomClosing] = useState(false);
   const relatedProductsList = useSelector((state) => state.productList);
   const { products: relatedProducts, loading: relatedLoading } =
     relatedProductsList;
@@ -82,7 +82,8 @@ const Productpage = () => {
   const [rating, setrating] = useState(0);
   const [comment, setcomment] = useState("");
   const toast = useToast();
-
+  const imgDisplayRef = useRef(null);
+  const [zoomPanelPos, setZoomPanelPos] = useState({ top: 0, left: 0 });
   const dispatch = useDispatch();
   const productDetails = useSelector((state) => state.productDetails);
   const { loading, error, product } = productDetails;
@@ -113,14 +114,36 @@ const Productpage = () => {
     onOpen();
   };
 
+  // ── Touch / swipe state for mobile & tablet slider ──
+  const touchStartX = useRef(null);
+  const touchEndX = useRef(null);
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchMove = (e) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartX.current === null || touchEndX.current === null) return;
+    const diff = touchStartX.current - touchEndX.current;
+    const totalImages = product?.images?.length || 0;
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) {
+        // swipe left → next image
+        setHoveredImageIndex((prev) => (prev + 1) % totalImages);
+      } else {
+        // swipe right → previous image
+        setHoveredImageIndex((prev) => (prev - 1 + totalImages) % totalImages);
+      }
+    }
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
+
   const [showAllReviews, setShowAllReviews] = useState(false);
-  // const [reviewStats, setReviewStats] = useState([]);
-  // const handleHelpful = (reviewId) => {
-  //   dispatch(markReviewHelpful(product._id, reviewId));
-  // };
-  // const handleNotHelpful = (reviewId) => {
-  //   dispatch(markReviewNotHelpful(product._id, reviewId));
-  // };
 
   const isDisabled = !selectedSize || sizeStock[selectedSize] === 0;
   // Check if logged-in user already reviewed this product
@@ -282,7 +305,7 @@ const Productpage = () => {
       formData.append("photos", photo);
     });
 
-    setReviewLoading(true); // 🔥 START LOADING
+    setReviewLoading(true);
 
     try {
       await dispatch(createproductReview(id, formData));
@@ -310,7 +333,7 @@ const Productpage = () => {
         duration: 3000,
       });
     } finally {
-      setReviewLoading(false); // 🔥 STOP LOADING
+      setReviewLoading(false);
     }
   };
 
@@ -353,7 +376,6 @@ const Productpage = () => {
       return;
     }
 
-    // dispatch(addToCart(product._id, qty, selectedSize));
     dispatch(
       addToCart(product._id, {
         qty: 1,
@@ -375,28 +397,40 @@ const Productpage = () => {
   };
 
   const handleMouseMove = (e) => {
-    const { left, top, width, height } = e.target.getBoundingClientRect();
-    const x = ((e.pageX - left) / width) * 100;
-    const y = ((e.pageY - top) / height) * 100;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
     setZoomPosition({ x, y });
   };
-
   const handleMouseEnter = (index) => {
     if (!isDesktop) return;
-    setIsZoomVisible(true);
     setHoveredImageIndex(index);
+
+    if (imgDisplayRef.current) {
+      const rect = imgDisplayRef.current.getBoundingClientRect();
+      setZoomPanelPos({
+        top: rect.top,
+        left: rect.right + 20,
+      });
+    }
+
+    setIsZoomVisible(true);
   };
   const handleMouseLeave = () => {
     if (!isDesktop) return;
-    setIsZoomVisible(false);
+    setIsZoomClosing(true);
+    setTimeout(() => {
+      setIsZoomVisible(false);
+      setIsZoomClosing(false);
+    }, 200);
   };
 
   const isAllSizesOutOfStock =
     Object.values(sizeStock).length > 0 &&
     Object.values(sizeStock).every((stock) => stock === 0);
 
-  const mrp = product?.oldPrice ?? 0; // Old / MRP
-  const sellingPrice = product?.price ?? 0; // Normal price
+  const mrp = product?.oldPrice ?? 0;
+  const sellingPrice = product?.price ?? 0;
 
   const hasSubscriptionDiscount =
     product?.subscriptionDiscountPercent > 0 &&
@@ -406,30 +440,28 @@ const Productpage = () => {
     ? product.subscriptionPrice
     : sellingPrice;
 
-  // Show strike for BOTH subscribed & non-subscribed
   const showMrpStrike = mrp > finalPrice;
   const normalizeImagePath = (path) => {
     if (!path) return "";
 
-    // Convert backslashes to forward slashes
     let normalized = path.replace(/\\/g, "/");
 
-    // already correct (has /uploads/)
     if (normalized.includes("/uploads/")) return normalized;
 
-    // fix broken path
     normalized = normalized
       .replace("/uploadsproductsimages", "/uploads/products/images/")
       .replace("uploadsproductsimages", "/uploads/products/images/")
-      .replace("uploads/products/images/", "/uploads/products/images/"); // ensure leading slash
+      .replace("uploads/products/images/", "/uploads/products/images/");
 
-    // Ensure path starts with /
     if (!normalized.startsWith("/")) {
       normalized = "/" + normalized;
     }
 
     return normalized;
   };
+
+  const totalImages = product?.images?.length || 0;
+
   return (
     <>
       <Helmet>
@@ -445,8 +477,12 @@ const Productpage = () => {
         ) : (
           <div className="card-wrapper">
             <div className="card">
-              <div className="product-imgs">
-                <div className="img-select">
+              <div
+                className="product-imgs"
+                style={{ position: "relative", overflow: "visible" }}
+              >
+                {/* ── DESKTOP: vertical thumbnail strip ── */}
+                <div className="img-select img-select--desktop">
                   {product?.images?.map((image, index) => (
                     <div
                       className="img-item"
@@ -464,38 +500,176 @@ const Productpage = () => {
                   ))}
                 </div>
 
-                <div className="img-display">
+                {/* ── MOBILE / TABLET: thumbnail strip (left) + swipe slider (right) ── */}
+                <div className="mobile-img-wrapper">
+                  {/* Left: vertical thumbnail strip */}
+                  <div className="mobile-thumb-strip">
+                    {product?.images?.map((image, index) => (
+                      <div
+                        key={index}
+                        className={`mobile-thumb-item${
+                          hoveredImageIndex === index
+                            ? " mobile-thumb-item--active"
+                            : ""
+                        }`}
+                        onClick={() => setHoveredImageIndex(index)}
+                      >
+                        <Image
+                          src={`${API_URL}/${image}`}
+                          alt={`Thumb-${index}`}
+                          objectFit="cover"
+                          w="100%"
+                          h="100%"
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Right: swipe slider */}
+                  <div
+                    className="mobile-slider"
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                  >
+                    {/* Slide track */}
+                    <div
+                      className="mobile-slider__track"
+                      style={{
+                        transform: `translateX(-${hoveredImageIndex * 100}%)`,
+                      }}
+                    >
+                      {product?.images?.map((image, index) => (
+                        <div className="mobile-slider__slide" key={index}>
+                          <Image
+                            src={`${API_URL}/${image}`}
+                            alt={`Product-${index}`}
+                            objectFit="contain"
+                            w="100%"
+                            h="100%"
+                          />
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Prev / Next arrow buttons */}
+                    {totalImages > 1 && (
+                      <>
+                        <button
+                          className="mobile-slider__arrow mobile-slider__arrow--prev"
+                          onClick={() =>
+                            setHoveredImageIndex(
+                              (prev) => (prev - 1 + totalImages) % totalImages,
+                            )
+                          }
+                          aria-label="Previous image"
+                        >
+                          &#8249;
+                        </button>
+                        <button
+                          className="mobile-slider__arrow mobile-slider__arrow--next"
+                          onClick={() =>
+                            setHoveredImageIndex(
+                              (prev) => (prev + 1) % totalImages,
+                            )
+                          }
+                          aria-label="Next image"
+                        >
+                          &#8250;
+                        </button>
+                      </>
+                    )}
+
+                    {/* Dot indicators */}
+                    {totalImages > 1 && (
+                      <div className="mobile-slider__dots">
+                        {product.images.map((_, index) => (
+                          <button
+                            key={index}
+                            className={`mobile-slider__dot${
+                              hoveredImageIndex === index
+                                ? " mobile-slider__dot--active"
+                                : ""
+                            }`}
+                            onClick={() => setHoveredImageIndex(index)}
+                            aria-label={`Go to image ${index + 1}`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* ── DESKTOP: main image with zoom lens ── */}
+                <div
+                  className="img-display img-display--desktop"
+                  ref={imgDisplayRef}
+                  style={{
+                    position: "relative",
+                    overflow: "visible",
+                    cursor: "crosshair",
+                  }}
+                  onMouseMove={handleMouseMove}
+                  onMouseEnter={() => handleMouseEnter(hoveredImageIndex)}
+                  onMouseLeave={handleMouseLeave}
+                >
                   <Image
                     src={`${API_URL}/${product.images[hoveredImageIndex]}`}
                     alt="Main Product"
                     w="100%"
                     h="100%"
                     objectFit="contain"
-                    onMouseMove={handleMouseMove}
-                    onMouseEnter={() => handleMouseEnter(hoveredImageIndex)}
-                    onMouseLeave={handleMouseLeave}
+                    style={{ display: "block", pointerEvents: "none" }}
                   />
+
+                  {/* Lens frame */}
+                  {isZoomVisible && !isZoomClosing && isDesktop && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        width: "130px",
+                        height: "130px",
+                        border: "2px solid rgba(255,255,255,0.9)",
+                        borderRadius: "4px",
+                        backgroundColor: "rgba(255, 255, 255, 0.15)",
+                        backdropFilter: "blur(1px)",
+                        pointerEvents: "none",
+                        transform: "translate(-50%, -50%)",
+                        left: `${zoomPosition.x}%`,
+                        top: `${zoomPosition.y}%`,
+                        zIndex: 10,
+                        boxShadow:
+                          "0 0 0 1px rgba(0,0,0,0.15), 0 2px 12px rgba(0,0,0,0.2)",
+                      }}
+                    />
+                  )}
                 </div>
 
-                {/* Zoomed Image View */}
-                {isZoomVisible && isDesktop && (
+                {/* ✅ Zoomed panel — fixed + pop animation */}
+                {(isZoomVisible || isZoomClosing) && isDesktop && (
                   <div
-                    className="zoomed-image"
                     style={{
-                      position: "absolute",
-                      top: "120px",
-                      right: "0px",
-                      width: "650px",
-                      height: "950px",
-                      border: "2px solid #ddd",
+                      position: "fixed",
+                      top: `${zoomPanelPos.top}px`,
+                      left: `${zoomPanelPos.left}px`,
+                      width: "420px",
+                      height: "450px",
+                      border: "1px solid #e2e8f0",
+                      borderRadius: "8px",
                       backgroundImage: `url(${API_URL}${normalizeImagePath(
                         product.images[hoveredImageIndex],
                       )})`,
                       backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
-                      backgroundSize: "300%",
+                      backgroundSize: "280%",
                       backgroundRepeat: "no-repeat",
                       pointerEvents: "none",
-                      zIndex: 998,
+                      zIndex: 999,
+                      boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+                      backgroundColor: "#fff",
+                      overflow: "hidden",
+                      animation: isZoomClosing
+                        ? "zoomPanelClose 0.2s cubic-bezier(0.36, 0, 0.66, -0.56) forwards"
+                        : "zoomPanelPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
                     }}
                   />
                 )}
@@ -540,9 +714,6 @@ const Productpage = () => {
                     <MdVerified color="green" />
                   </Flex>
                 )}
-                {/* <Text fontSize="13px" color="#ffb700" mb={3}>
-                  (Inclusive of all taxes)
-                </Text> */}
                 <p
                   style={{
                     fontWeight: "bold",
@@ -561,7 +732,7 @@ const Productpage = () => {
                       <Flex gap={2} wrap="wrap" mb={4}>
                         {variants.map((variant) => {
                           const isCurrent = variant._id === product._id;
-                          const thumbnail = variant.images[0] || ""; // Use first image as thumbnail
+                          const thumbnail = variant.images[0] || "";
 
                           return (
                             <Box
@@ -640,7 +811,6 @@ const Productpage = () => {
                         >
                           {size}
 
-                          {/* Desktop only text */}
                           {sizeStock[size] === 0 && (
                             <Text
                               as="span"
@@ -652,7 +822,6 @@ const Productpage = () => {
                             </Text>
                           )}
 
-                          {/* 🔥 FULL WIDTH STRIKE (Mobile only) */}
                           {sizeStock[size] === 0 && (
                             <Box
                               position="absolute"
@@ -689,9 +858,9 @@ const Productpage = () => {
                           bg="white"
                           color="black"
                           fontWeight="bold"
-                          px={8} // Increase padding for width
-                          py={5} // Increase padding for height
-                          minW="150px" // Ensures buttons are wider
+                          px={8}
+                          py={5}
+                          minW="150px"
                           minH="60px"
                           borderRadius="md"
                           _hover={{ bg: "gray.100" }}
@@ -713,9 +882,9 @@ const Productpage = () => {
                           }
                           bg="black"
                           color="white"
-                          px={8} // Increase padding for width
-                          py={5} // Increase padding for height
-                          minW="150px" // Ensures buttons are wider
+                          px={8}
+                          py={5}
+                          minW="150px"
                           minH="60px"
                           borderRadius="md"
                           _hover={{ bg: "gray.800" }}
@@ -752,17 +921,15 @@ const Productpage = () => {
 
         {/* === REVIEW SECTION === */}
         <Box className="REVIEWS" mt={8}>
-          {/* Top Nav / Tabs */}
           <Flex
             mb={4}
-            direction={{ base: "column", md: "row" }} // column on mobile, row on desktop
-            align={{ base: "stretch", md: "center" }} // stretch full width on mobile
+            direction={{ base: "column", md: "row" }}
+            align={{ base: "stretch", md: "center" }}
             justify="space-between"
             gap={2}
           >
-            {/* Tabs */}
             <Flex
-              direction={{ base: "column", md: "row" }} // stack on mobile
+              direction={{ base: "column", md: "row" }}
               gap={2}
               w={{ base: "100%", md: "auto" }}
             >
@@ -772,17 +939,16 @@ const Productpage = () => {
                   size="sm"
                   variant={activeTab === tab ? "solid" : "outline"}
                   colorScheme="blue"
-                  w={{ base: "100%", md: "auto" }} // full width on mobile
+                  w={{ base: "100%", md: "auto" }}
                 >
                   {tab} {tab === "All Reviews" && `(${product.numReviews})`}
                 </Button>
               ))}
             </Flex>
 
-            {/* Write Review Button */}
             <Button
-              mt={{ base: 2, md: 0 }} // spacing on mobile
-              w={{ base: "100%", md: "auto" }} // full width on mobile
+              mt={{ base: 2, md: 0 }}
+              w={{ base: "100%", md: "auto" }}
               colorScheme="blue"
               onClick={() => setShowCreateReview((prev) => !prev)}
             >
@@ -792,14 +958,14 @@ const Productpage = () => {
 
           {/* === OVERALL RATING SECTION === */}
           <Flex
-            direction={{ base: "column", md: "row" }} // column on mobile, row on desktop
+            direction={{ base: "column", md: "row" }}
             justify="space-between"
             align={{ base: "flex-start", md: "center" }}
             p={4}
             bg="gray.50"
             borderRadius="md"
             mb={6}
-            gap={3} // spacing between stacked items on mobile
+            gap={3}
           >
             <Box>
               <Text fontSize="lg" fontWeight="bold">
@@ -807,32 +973,28 @@ const Productpage = () => {
               </Text>
 
               <Flex
-                direction={{ base: "column", md: "row" }} // stack vertically on mobile
+                direction={{ base: "column", md: "row" }}
                 align={{ base: "flex-start", md: "center" }}
-                gap={2} // spacing between number, stars, and review count
+                gap={2}
                 mt={1}
               >
-                {/* Rating number */}
                 <Text fontSize={{ base: "xl", md: "2xl" }} fontWeight="bold">
                   {product.rating?.toFixed(1)}
                 </Text>
 
-                {/* Stars */}
                 <Rating value={product.rating} />
 
-                {/* Total reviews */}
                 <Text color="gray.500" fontSize={{ base: "sm", md: "md" }}>
                   ({product.numReviews} reviews)
                 </Text>
               </Flex>
 
-              {/* Product image + rating (optional) */}
               {product.images?.length > 0 && (
                 <Flex
                   mt={2}
                   align="center"
                   gap={2}
-                  direction={{ base: "column", md: "row" }} // stack on mobile
+                  direction={{ base: "column", md: "row" }}
                 >
                   <Image
                     src={`${process.env.REACT_APP_API_URL}/${product.images[0]}`}
@@ -861,10 +1023,9 @@ const Productpage = () => {
               </Flex>
             ) : (
               <>
-                {/* Left Arrow */}
                 {product.reviews.length >= 5 && (
                   <Button
-                    display="flex" // always visible
+                    display="flex"
                     position="absolute"
                     left={-2}
                     top="50%"
@@ -886,7 +1047,6 @@ const Productpage = () => {
                     &lt;
                   </Button>
                 )}
-                {/* Carousel */}
                 <Box
                   ref={carouselRef}
                   display="flex"
@@ -948,7 +1108,7 @@ const Productpage = () => {
                                 objectFit="cover"
                                 borderRadius="md"
                                 cursor="pointer"
-                                onClick={() => openImageModal(photo)} // <-- open modal now
+                                onClick={() => openImageModal(photo)}
                               />
                             ))}
                           </Flex>
@@ -981,10 +1141,9 @@ const Productpage = () => {
                     ))}
                 </Box>
 
-                {/* Right Arrow */}
                 {product.reviews.length >= 5 && (
                   <Button
-                    display="flex" // always visible
+                    display="flex"
                     position="absolute"
                     right={-2}
                     top="50%"
@@ -1132,8 +1291,8 @@ const Productpage = () => {
           ) : (
             <div className="related-products-container">
               {relatedProducts
-                .filter((p) => p._id !== product._id) // Exclude current product
-                .slice(0, 6) // Show only 6 related products
+                .filter((p) => p._id !== product._id)
+                .slice(0, 6)
                 .map((relatedProduct) => (
                   <CardProduct
                     key={relatedProduct._id}

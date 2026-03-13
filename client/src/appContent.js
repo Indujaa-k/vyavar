@@ -64,6 +64,8 @@ import CreateOfferpage from "./pages/OffersPage/CreateOfferpage";
 import TermsandCondition from "./pages/Userslist/terms/TermsandCondition";
 import Privatepolicy from "./pages/Userslist/terms/Privatepolicy";
 import ShippingCost from "./pages/Delivery/ShippingCost";
+import BulkPurchase from "./pages/purchases/BulkPurchase";
+import InternationalPurchase from "./pages/purchases/InternationalPurchase";
 // import ProtectedRoute from "./pages/ProtectedRoutes";
 const appContent = () => {
   const { userInfo } = useSelector((state) => state.userLogin);
@@ -205,7 +207,8 @@ const appContent = () => {
             <Route path="/profile" element={<ProfileScreen />} />
 
             <Route path="/subscription" element={<SubscriptionPayment />} />
-
+            <Route path="/internationalpurchase" element={<InternationalPurchase />} />
+            <Route path="/bulkpurchase" element={<BulkPurchase />} />
             <Route path="/shipping" element={<Checkout />} />
             <Route path="/placeorder" element={<Placeorder />} />
             <Route path="/order/:id" element={<Order />} />
