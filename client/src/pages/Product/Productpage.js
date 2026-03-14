@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, Profiler } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Rating from "../../components/Rating";
 import { useDispatch, useSelector } from "react-redux";
 import { Helmet } from "react-helmet";
@@ -9,33 +9,24 @@ import {
   markReviewHelpful,
   markReviewNotHelpful,
 } from "../../actions/productActions";
-import { IoLogoFacebook } from "react-icons/io";
 import { AiFillStar, AiOutlineStar } from "react-icons/ai";
 import { addToCart } from "../../actions/cartActions";
-import { AiFillShop } from "react-icons/ai";
 import ShareButton from "./ShareButton";
-import { MdDoNotDisturb } from "react-icons/md";
-import { MdVerified } from "react-icons/md";
-import axios from "axios";
-
-// import { FaCheckCircle } from "react-icons/fa";
-import { FaThumbsUp, FaThumbsDown, FaCheckCircle } from "react-icons/fa";
-
+import { MdDoNotDisturb, MdVerified } from "react-icons/md";
+import { FaThumbsUp, FaThumbsDown } from "react-icons/fa";
 import {
   Image,
-  Select,
   Button,
   FormControl,
   FormLabel,
   Textarea,
-  toast,
-  Flex,
   useToast,
   Heading,
   HStack,
   Text,
   Divider,
   Box,
+  Flex,
   Tooltip,
   Modal,
   ModalOverlay,
@@ -45,13 +36,11 @@ import {
   useDisclosure,
   ModalHeader,
   Avatar,
+  Skeleton,
+  SkeletonText,
 } from "@chakra-ui/react";
 import HashLoader from "react-spinners/HashLoader";
 import { useParams } from "react-router-dom";
-import {
-  PRODUCT_CREATE_RESET,
-  PRODUCT_CREATE_REVIEW_RESET,
-} from "../../constants/productConstants";
 import "./product.css";
 import { Link } from "react-router-dom";
 import { Listproductbyfiters } from "../../actions/productActions";
@@ -63,6 +52,96 @@ import { listMyOrders } from "../../actions/orderActions";
 import ProductSpecification from "./ProductSpecification";
 import FavoriteButton from "../../pages/Favourites/Favorites";
 
+// ── Shimmer skeleton for image slots ────────────────────────────────────────
+const ImageSkeleton = ({ w, h, borderRadius = "md" }) => (
+  <Skeleton
+    w={w}
+    h={h}
+    borderRadius={borderRadius}
+    startColor="gray.100"
+    endColor="gray.300"
+    style={{ flexShrink: 0 }}
+  />
+);
+
+// ── Single image with loading state ─────────────────────────────────────────
+const LoadableImage = ({
+  src,
+  alt,
+  skeletonW,
+  skeletonH,
+  borderRadius = "md",
+  style = {},
+  objectFit = "cover",
+  ...rest
+}) => {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+
+  // reset when src changes (new image selected)
+  useEffect(() => {
+    setLoaded(false);
+    setError(false);
+  }, [src]);
+
+  return (
+    <Box
+      position="relative"
+      w={skeletonW}
+      h={skeletonH}
+      style={style}
+      {...rest}
+    >
+      {/* Skeleton shown while loading */}
+      {!loaded && !error && (
+        <Skeleton
+          position="absolute"
+          inset={0}
+          borderRadius={borderRadius}
+          startColor="gray.100"
+          endColor="gray.300"
+        />
+      )}
+
+      {/* Actual image — invisible until loaded */}
+      <Image
+        src={src}
+        alt={alt}
+        w="100%"
+        h="100%"
+        objectFit={objectFit}
+        borderRadius={borderRadius}
+        onLoad={() => setLoaded(true)}
+        onError={() => {
+          setLoaded(true);
+          setError(true);
+        }}
+        style={{
+          opacity: loaded ? 1 : 0,
+          transition: "opacity 0.3s ease",
+          display: "block",
+        }}
+      />
+
+      {/* Error fallback */}
+      {error && (
+        <Flex
+          position="absolute"
+          inset={0}
+          align="center"
+          justify="center"
+          bg="gray.100"
+          borderRadius={borderRadius}
+        >
+          <Text fontSize="xs" color="gray.400">
+            No image
+          </Text>
+        </Flex>
+      )}
+    </Box>
+  );
+};
+
 const Productpage = () => {
   const { id } = useParams();
   const API_URL = process.env.REACT_APP_API_URL;
@@ -71,6 +150,11 @@ const Productpage = () => {
   const [isZoomVisible, setIsZoomVisible] = useState(false);
   const [hoveredImageIndex, setHoveredImageIndex] = useState(0);
   const [isZoomClosing, setIsZoomClosing] = useState(false);
+
+  // ── Track which images have fully loaded ──
+  const [loadedImages, setLoadedImages] = useState({}); // { [index]: true }
+  const [mainImgLoaded, setMainImgLoaded] = useState(false);
+
   const relatedProductsList = useSelector((state) => state.productList);
   const { products: relatedProducts, loading: relatedLoading } =
     relatedProductsList;
@@ -97,47 +181,50 @@ const Productpage = () => {
   const [selectedSize, setSelectedSize] = useState("");
   const [sizeStock, setSizeStock] = useState({});
   const [showPDF, setShowPDF] = useState(false);
-  const [reviewPhotos, setReviewPhotos] = useState([]);
-  const [photoPreviews, setPhotoPreviews] = useState([]);
   const [photos, setPhotos] = useState([]);
   const [previewImages, setPreviewImages] = useState([]);
-  const [activeTab, setActiveTab] = useState("All Reviews"); // default tab
+  const [activeTab, setActiveTab] = useState("All Reviews");
   const [showCreateReview, setShowCreateReview] = useState(false);
   const carouselRef = useRef();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [modalImage, setModalImage] = useState(null);
-  const [images, setImages] = useState([]);
   const [reviewLoading, setReviewLoading] = useState(false);
   const isDesktop = window.innerWidth >= 1024;
+
+  // reset loaded state whenever product changes
+  useEffect(() => {
+    setLoadedImages({});
+    setMainImgLoaded(false);
+    setHoveredImageIndex(0);
+  }, [product?._id]);
+
+  // reset main image loaded state on thumbnail change
+  useEffect(() => {
+    setMainImgLoaded(false);
+  }, [hoveredImageIndex]);
+
   const openImageModal = (img) => {
     setModalImage(img);
     onOpen();
   };
 
-  // ── Touch / swipe state for mobile & tablet slider ──
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
 
   const handleTouchStart = (e) => {
     touchStartX.current = e.targetTouches[0].clientX;
   };
-
   const handleTouchMove = (e) => {
     touchEndX.current = e.targetTouches[0].clientX;
   };
-
   const handleTouchEnd = () => {
     if (touchStartX.current === null || touchEndX.current === null) return;
     const diff = touchStartX.current - touchEndX.current;
     const totalImages = product?.images?.length || 0;
     if (Math.abs(diff) > 40) {
-      if (diff > 0) {
-        // swipe left → next image
-        setHoveredImageIndex((prev) => (prev + 1) % totalImages);
-      } else {
-        // swipe right → previous image
+      if (diff > 0) setHoveredImageIndex((prev) => (prev + 1) % totalImages);
+      else
         setHoveredImageIndex((prev) => (prev - 1 + totalImages) % totalImages);
-      }
     }
     touchStartX.current = null;
     touchEndX.current = null;
@@ -146,12 +233,10 @@ const Productpage = () => {
   const [showAllReviews, setShowAllReviews] = useState(false);
 
   const isDisabled = !selectedSize || sizeStock[selectedSize] === 0;
-  // Check if logged-in user already reviewed this product
+
   const hasUserReviewed =
     userInfo &&
-    product?.reviews?.some(
-      (review) => review.user?.toString() === userInfo._id,
-    );
+    product?.reviews?.some((r) => r.user?.toString() === userInfo._id);
 
   const handleHelpful = (reviewId) => {
     if (!userInfo) {
@@ -163,15 +248,12 @@ const Productpage = () => {
       });
       return;
     }
-
     dispatch(markReviewHelpful(product._id, reviewId));
   };
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-
     if (!files.length) return;
-
     if (photos.length + files.length > 3) {
       toast({
         title: "Limit exceeded",
@@ -181,12 +263,10 @@ const Productpage = () => {
       });
       return;
     }
-
     files.forEach((file) => {
       setPhotos((prev) => [...prev, file]);
       setPreviewImages((prev) => [...prev, URL.createObjectURL(file)]);
     });
-
     e.target.value = "";
   };
 
@@ -200,66 +280,43 @@ const Productpage = () => {
       });
       return;
     }
-
     dispatch(markReviewNotHelpful(product._id, reviewId));
   };
 
-  // Update the useEffect that checks for purchased products
   useEffect(() => {
     if (!orders || orders.length === 0) return;
-
     const purchased = orders.some((order) => {
       if (!order?.isDelivered || !order?.orderItems) return false;
-
       return order.orderItems.some((item) => {
         if (!item || !item.product) return false;
-
         const productId =
           typeof item.product === "object"
             ? item.product._id?.toString()
             : item.product?.toString();
-
         return productId === id;
       });
     });
-
     setIsPurchased(purchased);
   }, [orders, id]);
 
   useEffect(() => {
     dispatch(listProductDetails(id));
-
-    if (userInfo) {
-      dispatch(listMyOrders());
-    }
-
-    if (product.category) {
+    if (userInfo) dispatch(listMyOrders());
+    if (product.category)
       dispatch(Listproductbyfiters({ category: product.category }));
-    }
   }, [dispatch, id, successProductReview, userInfo, product.category]);
+
   useEffect(() => {
-    if (product?._id && product.category) {
+    if (product?._id && product.category)
       dispatch(Listproductbyfiters({ category: product.category }));
-    }
   }, [dispatch, product]);
 
   useEffect(() => {
-    if (product?.variants) {
-      console.log("Product:", product.SKU);
-      console.log(
-        "Variants:",
-        product.variants.map((v) => v.SKU),
-      );
-    }
-  }, [product]);
-  useEffect(() => {
     if (product?.productdetails?.stockBySize) {
       const stockMap = {};
-
       product.productdetails.stockBySize.forEach((item) => {
         stockMap[item.size] = item.stock;
       });
-
       setSizeStock(stockMap);
     }
   }, [product]);
@@ -272,44 +329,29 @@ const Productpage = () => {
   } = productListByGroup;
 
   useEffect(() => {
-    if (product?.productGroupId) {
+    if (product?.productGroupId)
       dispatch(listProductsByGroupId(product.productGroupId));
-    }
   }, [dispatch, product?.productGroupId, userInfo]);
+
   const submitHandler = async (e) => {
     e.preventDefault();
-
     if (rating === 0) {
-      toast({
-        title: "Rating required",
-        status: "warning",
-        duration: 2000,
-      });
+      toast({ title: "Rating required", status: "warning", duration: 2000 });
       return;
     }
-
     if (!comment.trim()) {
-      toast({
-        title: "Comment required",
-        status: "warning",
-        duration: 2000,
-      });
+      toast({ title: "Comment required", status: "warning", duration: 2000 });
       return;
     }
 
     const formData = new FormData();
     formData.append("rating", rating);
     formData.append("comment", comment);
-
-    photos.forEach((photo) => {
-      formData.append("photos", photo);
-    });
+    photos.forEach((photo) => formData.append("photos", photo));
 
     setReviewLoading(true);
-
     try {
       await dispatch(createproductReview(id, formData));
-
       toast({
         title: "Review submitted",
         description: "Thanks for your feedback!",
@@ -318,8 +360,6 @@ const Productpage = () => {
         position: "top-right",
         isClosable: true,
       });
-
-      // reset UI
       setrating(0);
       setcomment("");
       setPhotos([]);
@@ -337,7 +377,6 @@ const Productpage = () => {
     }
   };
 
-  //Handler of button add to cart
   const addToCartHandler = () => {
     if (!userInfo) {
       toast({
@@ -351,7 +390,6 @@ const Productpage = () => {
       navigate("/login");
       return;
     }
-
     if (!selectedSize) {
       toast({
         title: "Size Required",
@@ -363,7 +401,6 @@ const Productpage = () => {
       });
       return;
     }
-
     if (qty > sizeStock[selectedSize]) {
       toast({
         title: "Quantity exceeds stock",
@@ -375,17 +412,10 @@ const Productpage = () => {
       });
       return;
     }
-
     dispatch(
-      addToCart(product._id, {
-        qty: 1,
-        size: selectedSize,
-        action: "add",
-      }),
+      addToCart(product._id, { qty: 1, size: selectedSize, action: "add" }),
     );
-
     navigate("/cart");
-
     toast({
       title: "Product added to cart",
       description: "View your product in the cart page.",
@@ -402,20 +432,17 @@ const Productpage = () => {
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     setZoomPosition({ x, y });
   };
+
   const handleMouseEnter = (index) => {
     if (!isDesktop) return;
     setHoveredImageIndex(index);
-
     if (imgDisplayRef.current) {
       const rect = imgDisplayRef.current.getBoundingClientRect();
-      setZoomPanelPos({
-        top: rect.top,
-        left: rect.right + 20,
-      });
+      setZoomPanelPos({ top: rect.top, left: rect.right + 20 });
     }
-
     setIsZoomVisible(true);
   };
+
   const handleMouseLeave = () => {
     if (!isDesktop) return;
     setIsZoomClosing(true);
@@ -427,53 +454,48 @@ const Productpage = () => {
 
   const isAllSizesOutOfStock =
     Object.values(sizeStock).length > 0 &&
-    Object.values(sizeStock).every((stock) => stock === 0);
+    Object.values(sizeStock).every((s) => s === 0);
 
   const mrp = product?.oldPrice ?? 0;
   const sellingPrice = product?.price ?? 0;
-
   const hasSubscriptionDiscount =
     product?.subscriptionDiscountPercent > 0 &&
     product?.subscriptionPrice < sellingPrice;
-
   const finalPrice = hasSubscriptionDiscount
     ? product.subscriptionPrice
     : sellingPrice;
-
   const showMrpStrike = mrp > finalPrice;
+
   const normalizeImagePath = (path) => {
     if (!path) return "";
-
     let normalized = path.replace(/\\/g, "/");
-
     if (normalized.includes("/uploads/")) return normalized;
-
     normalized = normalized
       .replace("/uploadsproductsimages", "/uploads/products/images/")
       .replace("uploadsproductsimages", "/uploads/products/images/")
       .replace("uploads/products/images/", "/uploads/products/images/");
-
-    if (!normalized.startsWith("/")) {
-      normalized = "/" + normalized;
-    }
-
+    if (!normalized.startsWith("/")) normalized = "/" + normalized;
     return normalized;
   };
 
   const totalImages = product?.images?.length || 0;
+
+  // ── How many thumbnails to show as skeletons before images load ──
+  const THUMB_SKELETON_COUNT = 4;
 
   return (
     <>
       <Helmet>
         <title>{product?.brandname || "Product"}</title>
       </Helmet>
+
       <div className="productpage">
         {loading ? (
           <div className="loading-product">
             <HashLoader color={"#1e1e2c"} loading={loading} size={50} />
           </div>
         ) : error ? (
-          <h2>{error} </h2>
+          <h2>{error}</h2>
         ) : (
           <div className="card-wrapper">
             <div className="card">
@@ -483,46 +505,125 @@ const Productpage = () => {
               >
                 {/* ── DESKTOP: vertical thumbnail strip ── */}
                 <div className="img-select img-select--desktop">
-                  {product?.images?.map((image, index) => (
-                    <div
-                      className="img-item"
-                      key={index}
-                      onClick={() => setHoveredImageIndex(index)}
-                    >
-                      <Image
-                        objectFit="cover"
-                        width="100%"
-                        height="100%"
-                        src={`${API_URL}/${image}`}
-                        alt={`Thumbnail-${index}`}
-                      />
-                    </div>
-                  ))}
+                  {loading
+                    ? // Show skeletons while product is loading
+                      Array.from({ length: THUMB_SKELETON_COUNT }).map(
+                        (_, i) => (
+                          <div className="img-item" key={`skel-${i}`}>
+                            <Skeleton
+                              w="100%"
+                              h="100%"
+                              borderRadius="md"
+                              startColor="gray.100"
+                              endColor="gray.300"
+                            />
+                          </div>
+                        ),
+                      )
+                    : product?.images?.map((image, index) => (
+                        <div
+                          className="img-item"
+                          key={index}
+                          onClick={() => setHoveredImageIndex(index)}
+                          style={{
+                            outline:
+                              hoveredImageIndex === index
+                                ? "2px solid #039cc3"
+                                : "none",
+                            borderRadius: 6,
+                            overflow: "hidden",
+                          }}
+                        >
+                          {/* Skeleton behind thumbnail until it loads */}
+                          <Box position="relative" w="100%" h="100%">
+                            {!loadedImages[index] && (
+                              <Skeleton
+                                position="absolute"
+                                inset={0}
+                                startColor="gray.100"
+                                endColor="gray.300"
+                                borderRadius="md"
+                              />
+                            )}
+                            <Image
+                              objectFit="cover"
+                              width="100%"
+                              height="100%"
+                              src={`${API_URL}/${image}`}
+                              alt={`Thumbnail-${index}`}
+                              onLoad={() =>
+                                setLoadedImages((prev) => ({
+                                  ...prev,
+                                  [index]: true,
+                                }))
+                              }
+                              style={{
+                                opacity: loadedImages[index] ? 1 : 0,
+                                transition: "opacity 0.25s ease",
+                              }}
+                            />
+                          </Box>
+                        </div>
+                      ))}
                 </div>
 
-                {/* ── MOBILE / TABLET: thumbnail strip (left) + swipe slider (right) ── */}
+                {/* ── MOBILE / TABLET: thumbnail strip + swipe slider ── */}
                 <div className="mobile-img-wrapper">
                   {/* Left: vertical thumbnail strip */}
                   <div className="mobile-thumb-strip">
-                    {product?.images?.map((image, index) => (
-                      <div
-                        key={index}
-                        className={`mobile-thumb-item${
-                          hoveredImageIndex === index
-                            ? " mobile-thumb-item--active"
-                            : ""
-                        }`}
-                        onClick={() => setHoveredImageIndex(index)}
-                      >
-                        <Image
-                          src={`${API_URL}/${image}`}
-                          alt={`Thumb-${index}`}
-                          objectFit="cover"
-                          w="100%"
-                          h="100%"
-                        />
-                      </div>
-                    ))}
+                    {loading
+                      ? Array.from({ length: THUMB_SKELETON_COUNT }).map(
+                          (_, i) => (
+                            <div
+                              key={`mskel-${i}`}
+                              className="mobile-thumb-item"
+                            >
+                              <Skeleton
+                                w="100%"
+                                h="100%"
+                                borderRadius="md"
+                                startColor="gray.100"
+                                endColor="gray.300"
+                              />
+                            </div>
+                          ),
+                        )
+                      : product?.images?.map((image, index) => (
+                          <div
+                            key={index}
+                            className={`mobile-thumb-item${hoveredImageIndex === index ? " mobile-thumb-item--active" : ""}`}
+                            onClick={() => setHoveredImageIndex(index)}
+                          >
+                            <Box position="relative" w="100%" h="100%">
+                              {!loadedImages[`mob-${index}`] && (
+                                <Skeleton
+                                  position="absolute"
+                                  inset={0}
+                                  startColor="gray.100"
+                                  endColor="gray.300"
+                                  borderRadius="md"
+                                />
+                              )}
+                              <Image
+                                src={`${API_URL}/${image}`}
+                                alt={`Thumb-${index}`}
+                                objectFit="cover"
+                                w="100%"
+                                h="100%"
+                                onLoad={() =>
+                                  setLoadedImages((prev) => ({
+                                    ...prev,
+                                    [`mob-${index}`]: true,
+                                  }))
+                                }
+                                style={{
+                                  opacity: loadedImages[`mob-${index}`] ? 1 : 0,
+                                  transition: "opacity 0.25s ease",
+                                }}
+                              />
+                            </Box>
+                          </div>
+                        ))}
                   </div>
 
                   {/* Right: swipe slider */}
@@ -532,27 +633,64 @@ const Productpage = () => {
                     onTouchMove={handleTouchMove}
                     onTouchEnd={handleTouchEnd}
                   >
-                    {/* Slide track */}
                     <div
                       className="mobile-slider__track"
                       style={{
                         transform: `translateX(-${hoveredImageIndex * 100}%)`,
                       }}
                     >
-                      {product?.images?.map((image, index) => (
-                        <div className="mobile-slider__slide" key={index}>
-                          <Image
-                            src={`${API_URL}/${image}`}
-                            alt={`Product-${index}`}
-                            objectFit="contain"
-                            w="100%"
-                            h="100%"
-                          />
-                        </div>
-                      ))}
+                      {loading
+                        ? Array.from({ length: THUMB_SKELETON_COUNT }).map(
+                            (_, i) => (
+                              <div
+                                className="mobile-slider__slide"
+                                key={`slide-skel-${i}`}
+                              >
+                                <Skeleton
+                                  w="100%"
+                                  h="100%"
+                                  startColor="gray.100"
+                                  endColor="gray.300"
+                                />
+                              </div>
+                            ),
+                          )
+                        : product?.images?.map((image, index) => (
+                            <div className="mobile-slider__slide" key={index}>
+                              <Box position="relative" w="100%" h="100%">
+                                {!loadedImages[`slide-${index}`] && (
+                                  <Skeleton
+                                    position="absolute"
+                                    inset={0}
+                                    startColor="gray.100"
+                                    endColor="gray.300"
+                                  />
+                                )}
+                                <Image
+                                  src={`${API_URL}/${image}`}
+                                  alt={`Product-${index}`}
+                                  objectFit="contain"
+                                  w="100%"
+                                  h="100%"
+                                  onLoad={() =>
+                                    setLoadedImages((prev) => ({
+                                      ...prev,
+                                      [`slide-${index}`]: true,
+                                    }))
+                                  }
+                                  style={{
+                                    opacity: loadedImages[`slide-${index}`]
+                                      ? 1
+                                      : 0,
+                                    transition: "opacity 0.25s ease",
+                                  }}
+                                />
+                              </Box>
+                            </div>
+                          ))}
                     </div>
 
-                    {/* Prev / Next arrow buttons */}
+                    {/* Prev / Next arrows */}
                     {totalImages > 1 && (
                       <>
                         <button
@@ -586,11 +724,7 @@ const Productpage = () => {
                         {product.images.map((_, index) => (
                           <button
                             key={index}
-                            className={`mobile-slider__dot${
-                              hoveredImageIndex === index
-                                ? " mobile-slider__dot--active"
-                                : ""
-                            }`}
+                            className={`mobile-slider__dot${hoveredImageIndex === index ? " mobile-slider__dot--active" : ""}`}
                             onClick={() => setHoveredImageIndex(index)}
                             aria-label={`Go to image ${index + 1}`}
                           />
@@ -600,7 +734,7 @@ const Productpage = () => {
                   </div>
                 </div>
 
-                {/* ── DESKTOP: main image with zoom lens ── */}
+                {/* ── DESKTOP: main image with zoom ── */}
                 <div
                   className="img-display img-display--desktop"
                   ref={imgDisplayRef}
@@ -613,83 +747,104 @@ const Productpage = () => {
                   onMouseEnter={() => handleMouseEnter(hoveredImageIndex)}
                   onMouseLeave={handleMouseLeave}
                 >
+                  {/* Skeleton shown until main image loads */}
+                  {!mainImgLoaded && (
+                    <Skeleton
+                      position="absolute"
+                      inset={0}
+                      startColor="gray.100"
+                      endColor="gray.300"
+                      borderRadius="md"
+                      zIndex={1}
+                    />
+                  )}
+
                   <Image
                     src={`${API_URL}/${product.images[hoveredImageIndex]}`}
                     alt="Main Product"
                     w="100%"
                     h="100%"
                     objectFit="contain"
-                    style={{ display: "block", pointerEvents: "none" }}
+                    onLoad={() => setMainImgLoaded(true)}
+                    onError={() => setMainImgLoaded(true)}
+                    style={{
+                      display: "block",
+                      pointerEvents: "none",
+                      opacity: mainImgLoaded ? 1 : 0,
+                      transition: "opacity 0.3s ease",
+                    }}
                   />
 
                   {/* Lens frame */}
-                  {isZoomVisible && !isZoomClosing && isDesktop && (
+                  {isZoomVisible &&
+                    !isZoomClosing &&
+                    isDesktop &&
+                    mainImgLoaded && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          width: "130px",
+                          height: "130px",
+                          border: "2px solid rgba(255,255,255,0.9)",
+                          borderRadius: "4px",
+                          backgroundColor: "rgba(255,255,255,0.15)",
+                          backdropFilter: "blur(1px)",
+                          pointerEvents: "none",
+                          transform: "translate(-50%, -50%)",
+                          left: `${zoomPosition.x}%`,
+                          top: `${zoomPosition.y}%`,
+                          zIndex: 10,
+                          boxShadow:
+                            "0 0 0 1px rgba(0,0,0,0.15), 0 2px 12px rgba(0,0,0,0.2)",
+                        }}
+                      />
+                    )}
+                </div>
+
+                {/* Zoomed panel — only shown after main image loads */}
+                {(isZoomVisible || isZoomClosing) &&
+                  isDesktop &&
+                  mainImgLoaded && (
                     <div
                       style={{
-                        position: "absolute",
-                        width: "130px",
-                        height: "130px",
-                        border: "2px solid rgba(255,255,255,0.9)",
-                        borderRadius: "4px",
-                        backgroundColor: "rgba(255, 255, 255, 0.15)",
-                        backdropFilter: "blur(1px)",
+                        position: "fixed",
+                        top: `${zoomPanelPos.top}px`,
+                        left: `${zoomPanelPos.left}px`,
+                        width: "420px",
+                        height: "450px",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: "8px",
+                        backgroundImage: `url(${API_URL}${normalizeImagePath(product.images[hoveredImageIndex])})`,
+                        backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
+                        backgroundSize: "280%",
+                        backgroundRepeat: "no-repeat",
                         pointerEvents: "none",
-                        transform: "translate(-50%, -50%)",
-                        left: `${zoomPosition.x}%`,
-                        top: `${zoomPosition.y}%`,
-                        zIndex: 10,
-                        boxShadow:
-                          "0 0 0 1px rgba(0,0,0,0.15), 0 2px 12px rgba(0,0,0,0.2)",
+                        zIndex: 999,
+                        boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+                        backgroundColor: "#fff",
+                        overflow: "hidden",
+                        animation: isZoomClosing
+                          ? "zoomPanelClose 0.2s cubic-bezier(0.36, 0, 0.66, -0.56) forwards"
+                          : "zoomPanelPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
                       }}
                     />
                   )}
-                </div>
-
-                {/* ✅ Zoomed panel — fixed + pop animation */}
-                {(isZoomVisible || isZoomClosing) && isDesktop && (
-                  <div
-                    style={{
-                      position: "fixed",
-                      top: `${zoomPanelPos.top}px`,
-                      left: `${zoomPanelPos.left}px`,
-                      width: "420px",
-                      height: "450px",
-                      border: "1px solid #e2e8f0",
-                      borderRadius: "8px",
-                      backgroundImage: `url(${API_URL}${normalizeImagePath(
-                        product.images[hoveredImageIndex],
-                      )})`,
-                      backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
-                      backgroundSize: "280%",
-                      backgroundRepeat: "no-repeat",
-                      pointerEvents: "none",
-                      zIndex: 999,
-                      boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
-                      backgroundColor: "#fff",
-                      overflow: "hidden",
-                      animation: isZoomClosing
-                        ? "zoomPanelClose 0.2s cubic-bezier(0.36, 0, 0.66, -0.56) forwards"
-                        : "zoomPanelPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
-                    }}
-                  />
-                )}
               </div>
 
+              {/* ── Product content ── */}
               <div className="product-content">
-                <Flex
-                  justifyContent="space-between"
-                  alignItems="center"
-                  color="#0000346"
-                >
+                <Flex justifyContent="space-between" alignItems="center">
                   <h2 className="product-title">{product.brandname}</h2>
                   <Flex gap={1} mt="2">
                     <FavoriteButton productId={product._id} />
                     <ShareButton url={window.location.href} />
                   </Flex>
                 </Flex>
+
                 <p style={{ fontSize: "20px", fontWeight: "bold" }}>
                   {product.description}
                 </p>
+
                 <Text fontSize="24px" fontWeight="bold" mt={3}>
                   ₹{finalPrice}
                   {showMrpStrike && (
@@ -705,6 +860,7 @@ const Productpage = () => {
                     </Text>
                   )}
                 </Text>
+
                 {hasSubscriptionDiscount && (
                   <Flex align="center" gap={2} mt={1}>
                     <Text fontSize="14px" color="green.600" fontWeight="bold">
@@ -714,6 +870,7 @@ const Productpage = () => {
                     <MdVerified color="green" />
                   </Flex>
                 )}
+
                 <p
                   style={{
                     fontWeight: "bold",
@@ -723,6 +880,7 @@ const Productpage = () => {
                 >
                   Color: {product.productdetails?.color || "Not Available"}
                 </p>
+
                 <>
                   {(variants || []).length > 1 && (
                     <>
@@ -733,7 +891,6 @@ const Productpage = () => {
                         {variants.map((variant) => {
                           const isCurrent = variant._id === product._id;
                           const thumbnail = variant.images[0] || "";
-
                           return (
                             <Box
                               key={variant._id}
@@ -758,12 +915,14 @@ const Productpage = () => {
                               }}
                               transition="all 0.2s ease"
                             >
-                              <Image
+                              {/* Variant thumbnail with skeleton */}
+                              <LoadableImage
                                 src={`${API_URL}/${thumbnail}`}
                                 alt={`Variant-${variant._id}`}
+                                skeletonW="60px"
+                                skeletonH="60px"
                                 objectFit="cover"
-                                width="100%"
-                                height="100%"
+                                borderRadius="md"
                               />
                               {isCurrent && (
                                 <Box
@@ -784,9 +943,9 @@ const Productpage = () => {
                       </Flex>
                     </>
                   )}
-
                   <Divider my={3} />
                 </>
+
                 <div className="product-detail">
                   <div>
                     <Text fontSize="lg" fontWeight="bold">
@@ -810,7 +969,6 @@ const Productpage = () => {
                           disabled={sizeStock[size] === 0}
                         >
                           {size}
-
                           {sizeStock[size] === 0 && (
                             <Text
                               as="span"
@@ -821,7 +979,6 @@ const Productpage = () => {
                               (Out of Stock)
                             </Text>
                           )}
-
                           {sizeStock[size] === 0 && (
                             <Box
                               position="absolute"
@@ -849,7 +1006,6 @@ const Productpage = () => {
                       >
                         <Button
                           onClick={addToCartHandler}
-                          type="button"
                           disabled={
                             !selectedSize || sizeStock[selectedSize] === 0
                           }
@@ -876,7 +1032,6 @@ const Productpage = () => {
                       >
                         <Button
                           onClick={addToCartHandler}
-                          type="button"
                           disabled={
                             !selectedSize || sizeStock[selectedSize] === 0
                           }
@@ -913,7 +1068,7 @@ const Productpage = () => {
                   </div>
                   <FeaturesSection />
                   <ProductSpecification product={product} />
-                </div>{" "}
+                </div>
               </div>
             </div>
           </div>
@@ -945,7 +1100,6 @@ const Productpage = () => {
                 </Button>
               ))}
             </Flex>
-
             <Button
               mt={{ base: 2, md: 0 }}
               w={{ base: "100%", md: "auto" }}
@@ -956,7 +1110,6 @@ const Productpage = () => {
             </Button>
           </Flex>
 
-          {/* === OVERALL RATING SECTION === */}
           <Flex
             direction={{ base: "column", md: "row" }}
             justify="space-between"
@@ -971,7 +1124,6 @@ const Productpage = () => {
               <Text fontSize="lg" fontWeight="bold">
                 Overall Rating
               </Text>
-
               <Flex
                 direction={{ base: "column", md: "row" }}
                 align={{ base: "flex-start", md: "center" }}
@@ -981,14 +1133,11 @@ const Productpage = () => {
                 <Text fontSize={{ base: "xl", md: "2xl" }} fontWeight="bold">
                   {product.rating?.toFixed(1)}
                 </Text>
-
                 <Rating value={product.rating} />
-
                 <Text color="gray.500" fontSize={{ base: "sm", md: "md" }}>
                   ({product.numReviews} reviews)
                 </Text>
               </Flex>
-
               {product.images?.length > 0 && (
                 <Flex
                   mt={2}
@@ -996,13 +1145,20 @@ const Productpage = () => {
                   gap={2}
                   direction={{ base: "column", md: "row" }}
                 >
-                  <Image
-                    src={`${process.env.REACT_APP_API_URL}/${product.images[0]}`}
-                    alt="Product"
+                  {/* Product thumbnail in rating section — with skeleton */}
+                  <Box
+                    position="relative"
                     boxSize={{ base: "30px", md: "40px" }}
-                    objectFit="cover"
-                    borderRadius="md"
-                  />
+                  >
+                    <LoadableImage
+                      src={`${process.env.REACT_APP_API_URL}/${product.images[0]}`}
+                      alt="Product"
+                      skeletonW="100%"
+                      skeletonH="100%"
+                      borderRadius="md"
+                      objectFit="cover"
+                    />
+                  </Box>
                   <Text fontSize={{ base: "xs", md: "sm" }} color="gray.600">
                     Product Rating: {product.rating?.toFixed(1)}
                   </Text>
@@ -1011,7 +1167,6 @@ const Productpage = () => {
             </Box>
           </Flex>
 
-          {/* Reviews Carousel */}
           <Box position="relative">
             {activeTab === "Overall Rating" ? (
               <Flex align="center" gap={4} p={4} bg="gray.50" borderRadius="md">
@@ -1047,6 +1202,7 @@ const Productpage = () => {
                     &lt;
                   </Button>
                 )}
+
                 <Box
                   ref={carouselRef}
                   display="flex"
@@ -1077,7 +1233,6 @@ const Productpage = () => {
                             src={review.user?.profilePicture}
                             size="sm"
                           />
-
                           <Box>
                             <Text fontWeight="bold">
                               {review.user?.name || "User"}
@@ -1100,16 +1255,26 @@ const Productpage = () => {
 
                         {review.photos?.length > 0 && (
                           <Flex mt={2} gap={2}>
-                            {review.photos?.map((photo, idx) => (
-                              <Image
+                            {review.photos.map((photo, idx) => (
+                              // Review photo thumbnails — with skeleton
+                              <Box
                                 key={idx}
-                                src={`${API_URL}/${photo}`}
                                 boxSize="60px"
-                                objectFit="cover"
+                                position="relative"
                                 borderRadius="md"
-                                cursor="pointer"
-                                onClick={() => openImageModal(photo)}
-                              />
+                                overflow="hidden"
+                              >
+                                <LoadableImage
+                                  src={`${API_URL}/${photo}`}
+                                  alt={`Review photo ${idx + 1}`}
+                                  skeletonW="60px"
+                                  skeletonH="60px"
+                                  borderRadius="md"
+                                  objectFit="cover"
+                                  cursor="pointer"
+                                  onClick={() => openImageModal(photo)}
+                                />
+                              </Box>
                             ))}
                           </Flex>
                         )}
@@ -1127,7 +1292,6 @@ const Productpage = () => {
                           >
                             Helpful {review.helpful ?? 0}
                           </Button>
-
                           <Button
                             size="xs"
                             leftIcon={<FaThumbsDown />}
@@ -1168,6 +1332,8 @@ const Productpage = () => {
               </>
             )}
           </Box>
+
+          {/* Image preview modal */}
           <Modal isOpen={isOpen} onClose={onClose} isCentered size="xl">
             <ModalOverlay />
             <ModalContent bg="transparent" boxShadow="none">
@@ -1184,7 +1350,7 @@ const Productpage = () => {
             </ModalContent>
           </Modal>
 
-          {/* === WRITE REVIEW MODAL === */}
+          {/* Write review modal */}
           <Modal
             isOpen={showCreateReview}
             onClose={() => setShowCreateReview(false)}
@@ -1195,7 +1361,6 @@ const Productpage = () => {
             <ModalContent>
               <ModalHeader>Write a Review</ModalHeader>
               <ModalCloseButton />
-
               <ModalBody pb={6}>
                 {!userInfo ? (
                   <Text>
@@ -1208,7 +1373,6 @@ const Productpage = () => {
                 ) : (
                   <FormControl>
                     <FormLabel>Rating</FormLabel>
-
                     <HStack spacing={1} mb={3}>
                       {[1, 2, 3, 4, 5].map((star) => (
                         <Box
@@ -1224,28 +1388,24 @@ const Productpage = () => {
                         </Box>
                       ))}
                     </HStack>
-
                     <FormLabel>Comment</FormLabel>
                     <Textarea
                       value={comment}
                       onChange={(e) => setcomment(e.target.value)}
                       placeholder="Share your experience"
                     />
-
                     <FormLabel mt={3}>
                       Upload Photos{" "}
                       <Text as="span" fontSize="sm" color="gray.500">
                         (optional, max 3)
                       </Text>
                     </FormLabel>
-
                     <input
                       type="file"
                       accept="image/*"
                       onChange={handleImageChange}
                       multiple
                     />
-
                     {previewImages.length > 0 && (
                       <Flex mt={3} gap={3}>
                         {previewImages.map((img, index) => (
@@ -1259,7 +1419,6 @@ const Productpage = () => {
                         ))}
                       </Flex>
                     )}
-
                     <Button
                       mt={4}
                       w="100%"
@@ -1277,7 +1436,7 @@ const Productpage = () => {
           </Modal>
         </Box>
 
-        {/* Related Products Section */}
+        {/* Related Products */}
         <div
           className="related-products-section"
           px={{ base: 4, md: 12 }}
