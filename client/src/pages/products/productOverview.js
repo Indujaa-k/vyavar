@@ -116,8 +116,7 @@ const ProductOverview = () => {
               >
                 <CardBody>
                   <Image
-                    src={product.images?.[0]}
-                    alt={product.brandname}
+                    src={`${process.env.REACT_APP_API_URL}/${product.images[0]}`}
                     boxSize="150px"
                     objectFit="cover"
                     mx="auto"
