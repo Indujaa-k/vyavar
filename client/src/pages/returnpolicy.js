@@ -4,7 +4,7 @@ import "./ReturnPolicy.css";
 const returnPolicy = {
   instructions:
     "If you need to return a product, please follow the steps below.",
-  email: "viyavarfashions@gmail.com",
+  email: "viyavarfashion@gmail.com",
   methodsToRequestReturn: [
     {
       type: "email",
