@@ -78,7 +78,6 @@ const LoadableImage = ({
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
 
-  // reset when src changes (new image selected)
   useEffect(() => {
     setLoaded(false);
     setError(false);
@@ -92,7 +91,6 @@ const LoadableImage = ({
       style={style}
       {...rest}
     >
-      {/* Skeleton shown while loading */}
       {!loaded && !error && (
         <Skeleton
           position="absolute"
@@ -103,7 +101,6 @@ const LoadableImage = ({
         />
       )}
 
-      {/* Actual image — invisible until loaded */}
       <Image
         src={src}
         alt={alt}
@@ -123,7 +120,6 @@ const LoadableImage = ({
         }}
       />
 
-      {/* Error fallback */}
       {error && (
         <Flex
           position="absolute"
@@ -151,8 +147,7 @@ const Productpage = () => {
   const [hoveredImageIndex, setHoveredImageIndex] = useState(0);
   const [isZoomClosing, setIsZoomClosing] = useState(false);
 
-  // ── Track which images have fully loaded ──
-  const [loadedImages, setLoadedImages] = useState({}); // { [index]: true }
+  const [loadedImages, setLoadedImages] = useState({});
   const [mainImgLoaded, setMainImgLoaded] = useState(false);
 
   const relatedProductsList = useSelector((state) => state.productList);
@@ -187,29 +182,28 @@ const Productpage = () => {
   const [showCreateReview, setShowCreateReview] = useState(false);
   const carouselRef = useRef();
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [modalImage, setModalImage] = useState(null);
+  const [modalIndex, setModalIndex] = useState(0);
   const [reviewLoading, setReviewLoading] = useState(false);
   const isDesktop = window.innerWidth >= 1024;
 
-  // reset loaded state whenever product changes
+  // Touch refs — shared between slider and modal
+  const touchStartX = useRef(null);
+  const touchEndX = useRef(null);
+
   useEffect(() => {
     setLoadedImages({});
     setMainImgLoaded(false);
     setHoveredImageIndex(0);
   }, [product?._id]);
 
-  // reset main image loaded state on thumbnail change
   useEffect(() => {
     setMainImgLoaded(false);
   }, [hoveredImageIndex]);
 
-  const openImageModal = (img) => {
-    setModalImage(img);
+  const openImageModal = (index) => {
+    setModalIndex(index);
     onOpen();
   };
-
-  const touchStartX = useRef(null);
-  const touchEndX = useRef(null);
 
   const handleTouchStart = (e) => {
     touchStartX.current = e.targetTouches[0].clientX;
@@ -228,6 +222,30 @@ const Productpage = () => {
     }
     touchStartX.current = null;
     touchEndX.current = null;
+  };
+
+  // Modal swipe handlers
+  const modalTouchStartX = useRef(null);
+  const modalTouchEndX = useRef(null);
+
+  const handleModalTouchStart = (e) => {
+    modalTouchStartX.current = e.targetTouches[0].clientX;
+  };
+  const handleModalTouchMove = (e) => {
+    modalTouchEndX.current = e.targetTouches[0].clientX;
+  };
+  const handleModalTouchEnd = () => {
+    if (modalTouchStartX.current === null || modalTouchEndX.current === null) return;
+    const diff = modalTouchStartX.current - modalTouchEndX.current;
+    const totalImages = product?.images?.length || 0;
+    if (Math.abs(diff) > 40) {
+      if (diff > 0)
+        setModalIndex((prev) => (prev + 1) % totalImages);
+      else
+        setModalIndex((prev) => (prev - 1 + totalImages) % totalImages);
+    }
+    modalTouchStartX.current = null;
+    modalTouchEndX.current = null;
   };
 
   const [showAllReviews, setShowAllReviews] = useState(false);
@@ -479,8 +497,6 @@ const Productpage = () => {
   };
 
   const totalImages = product?.images?.length || 0;
-
-  // ── How many thumbnails to show as skeletons before images load ──
   const THUMB_SKELETON_COUNT = 4;
 
   return (
@@ -506,8 +522,7 @@ const Productpage = () => {
                 {/* ── DESKTOP: vertical thumbnail strip ── */}
                 <div className="img-select img-select--desktop">
                   {loading
-                    ? // Show skeletons while product is loading
-                      Array.from({ length: THUMB_SKELETON_COUNT }).map(
+                    ? Array.from({ length: THUMB_SKELETON_COUNT }).map(
                         (_, i) => (
                           <div className="img-item" key={`skel-${i}`}>
                             <Skeleton
@@ -534,7 +549,6 @@ const Productpage = () => {
                             overflow: "hidden",
                           }}
                         >
-                          {/* Skeleton behind thumbnail until it loads */}
                           <Box position="relative" w="100%" h="100%">
                             {!loadedImages[index] && (
                               <Skeleton
@@ -569,7 +583,6 @@ const Productpage = () => {
 
                 {/* ── MOBILE / TABLET: thumbnail strip + swipe slider ── */}
                 <div className="mobile-img-wrapper">
-                  {/* Left: vertical thumbnail strip */}
                   <div className="mobile-thumb-strip">
                     {loading
                       ? Array.from({ length: THUMB_SKELETON_COUNT }).map(
@@ -672,6 +685,8 @@ const Productpage = () => {
                                   objectFit="contain"
                                   w="100%"
                                   h="100%"
+                                  cursor="pointer"
+                                  onClick={() => openImageModal(index)}
                                   onLoad={() =>
                                     setLoadedImages((prev) => ({
                                       ...prev,
@@ -747,7 +762,6 @@ const Productpage = () => {
                   onMouseEnter={() => handleMouseEnter(hoveredImageIndex)}
                   onMouseLeave={handleMouseLeave}
                 >
-                  {/* Skeleton shown until main image loads */}
                   {!mainImgLoaded && (
                     <Skeleton
                       position="absolute"
@@ -775,7 +789,6 @@ const Productpage = () => {
                     }}
                   />
 
-                  {/* Lens frame */}
                   {isZoomVisible &&
                     !isZoomClosing &&
                     isDesktop &&
@@ -801,7 +814,6 @@ const Productpage = () => {
                     )}
                 </div>
 
-                {/* Zoomed panel — only shown after main image loads */}
                 {(isZoomVisible || isZoomClosing) &&
                   isDesktop &&
                   mainImgLoaded && (
@@ -915,7 +927,6 @@ const Productpage = () => {
                               }}
                               transition="all 0.2s ease"
                             >
-                              {/* Variant thumbnail with skeleton */}
                               <LoadableImage
                                 src={`${API_URL}/${thumbnail}`}
                                 alt={`Variant-${variant._id}`}
@@ -1145,7 +1156,6 @@ const Productpage = () => {
                   gap={2}
                   direction={{ base: "column", md: "row" }}
                 >
-                  {/* Product thumbnail in rating section — with skeleton */}
                   <Box
                     position="relative"
                     boxSize={{ base: "30px", md: "40px" }}
@@ -1256,7 +1266,6 @@ const Productpage = () => {
                         {review.photos?.length > 0 && (
                           <Flex mt={2} gap={2}>
                             {review.photos.map((photo, idx) => (
-                              // Review photo thumbnails — with skeleton
                               <Box
                                 key={idx}
                                 boxSize="60px"
@@ -1333,19 +1342,83 @@ const Productpage = () => {
             )}
           </Box>
 
-          {/* Image preview modal */}
+          {/* ── Image preview modal (FIXED) ── */}
           <Modal isOpen={isOpen} onClose={onClose} isCentered size="xl">
-            <ModalOverlay />
-            <ModalContent bg="transparent" boxShadow="none">
-              <ModalCloseButton color="white" />
-              <ModalBody p={0}>
-                <Image
-                  src={`${API_URL}/${modalImage}`}
-                  alt="Preview"
-                  w="100%"
-                  h="auto"
-                  borderRadius="md"
-                />
+            <ModalOverlay bg="blackAlpha.800" />
+            <ModalContent
+              bg="white"
+              borderRadius="xl"
+              overflow="hidden"
+              mx={4}
+              boxShadow="2xl"
+            >
+              {/* Close button — clearly visible on white background */}
+              <ModalCloseButton
+                zIndex={20}
+                color="gray.600"
+                bg="white"
+                borderRadius="full"
+                boxShadow="md"
+                top={3}
+                right={3}
+                _hover={{ bg: "gray.100", color: "gray.800" }}
+                size="md"
+              />
+
+              <ModalBody p={4} pt={10}>
+                {/* Swipeable image area */}
+                <Box
+                  onTouchStart={handleModalTouchStart}
+                  onTouchMove={handleModalTouchMove}
+                  onTouchEnd={handleModalTouchEnd}
+                  userSelect="none"
+                >
+                  <Image
+                    src={
+                      typeof modalIndex === "number"
+                        ? `${API_URL}/${product.images[modalIndex]}`
+                        : `${API_URL}/${modalIndex}`
+                    }
+                    alt="Preview"
+                    w="100%"
+                    h="auto"
+                    maxH="70vh"
+                    objectFit="contain"
+                    borderRadius="md"
+                    draggable={false}
+                  />
+                </Box>
+
+                {/* Swipe hint text */}
+                {product.images.length > 1 && (
+                  <Text
+                    textAlign="center"
+                    fontSize="xs"
+                    color="gray.400"
+                    mt={2}
+                  >
+                    Swipe to navigate
+                  </Text>
+                )}
+
+                {/* Dot indicators */}
+                {product.images.length > 1 && (
+                  <Flex justify="center" gap={2} mt={3} pb={1}>
+                    {product.images.map((_, idx) => (
+                      <Box
+                        key={idx}
+                        w={modalIndex === idx ? "20px" : "8px"}
+                        h="8px"
+                        borderRadius="full"
+                        bg={modalIndex === idx ? "blue.500" : "gray.300"}
+                        transition="all 0.2s ease"
+                        cursor="pointer"
+                        onClick={() => setModalIndex(idx)}
+                        flexShrink={0}
+                      />
+                    ))}
+                  </Flex>
+                )}
               </ModalBody>
             </ModalContent>
           </Modal>
