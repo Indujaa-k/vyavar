@@ -1,7 +1,7 @@
 import React from "react";
 import { FiFacebook, FiInstagram, FiYoutube } from "react-icons/fi";
 import { AiOutlineTwitter, AiFillLinkedin } from "react-icons/ai";
-import logo from "../../assets/footer.jpeg";
+import logo from "../../assets/footerlogo.png";
 import "./footercss.css";
 import { Link } from "react-router-dom";
 
