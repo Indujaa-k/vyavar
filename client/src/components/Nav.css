@@ -507,7 +507,7 @@ body {
 
   .promo-strip__track {
     font-size: 12px;
-    animation: marquee 10s linear infinite, shine 2s linear infinite;
+    animation: marquee 25s linear infinite, shine 2s linear infinite;
   }
 }
 
