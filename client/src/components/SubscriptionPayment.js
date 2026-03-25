@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom"; // or useNavigate if React Router v6
 import {
   createSubscriptionOrder,
   confirmSubscriptionPayment,
@@ -17,11 +18,14 @@ import {
   ListIcon,
   HStack,
   Badge,
+  useToast, // ✅ Added
 } from "@chakra-ui/react";
 import { CheckIcon } from "@chakra-ui/icons";
 
 const SubscriptionPayment = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate(); // use useNavigate() for React Router v6
+  const toast = useToast(); // ✅ Chakra toast
 
   /* ================= REDUX STATE ================= */
   const { userInfo } = useSelector((state) => state.userLogin);
@@ -44,7 +48,6 @@ const SubscriptionPayment = () => {
   useEffect(() => {
     dispatch(getUserDetails("profile"));
 
-    // fetch active plan ONLY if user is not already subscribed
     if (!user?.isSubscribed) {
       dispatch(getActiveSubscription());
     }
@@ -59,7 +62,7 @@ const SubscriptionPayment = () => {
       new Date(p.endDate) >= today,
   );
 
-  /* ================= USER SUBSCRIPTION (FROM USER DB) ================= */
+  /* ================= USER SUBSCRIPTION ================= */
   const userSubscription = user?.isSubscribed ? user.subscription : null;
 
   /* ================= PLAN TO SHOW ================= */
@@ -67,6 +70,20 @@ const SubscriptionPayment = () => {
 
   /* ================= PAYMENT ================= */
   const handlePayment = () => {
+    // ✅ Check if user is logged in (token check)
+    if (!userInfo?.token) {
+      toast({
+        title: "Login Required",
+        description: "You need to login first to purchase a subscription.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+        position: "top",
+      });
+      navigate("/login"); // use navigate("/login") for React Router v6
+      return;
+    }
+
     if (!activeAdminPlan) return;
     dispatch(createSubscriptionOrder(activeAdminPlan._id));
   };
@@ -91,7 +108,6 @@ const SubscriptionPayment = () => {
             razorpaySignature: response.razorpay_signature,
           }),
         ).then(() => {
-          // ✅ REFRESH USER DATA AFTER SUCCESSFUL PAYMENT
           dispatch(getUserDetails("profile"));
         });
       },
@@ -115,7 +131,7 @@ const SubscriptionPayment = () => {
     );
   }
 
-  /* ================= NO PLAN AT ALL ================= */
+  /* ================= NO PLAN ================= */
   if (!planToShow) {
     return (
       <Box bg="#1a2b33" minH="100vh" py={20} px={10}>
@@ -130,7 +146,6 @@ const SubscriptionPayment = () => {
           <Text fontSize="3xl" fontWeight="bold" mb={4}>
             No Subscription Available
           </Text>
-
           <Text fontSize="lg" color="gray.300">
             Please come back later
           </Text>
@@ -177,14 +192,12 @@ const SubscriptionPayment = () => {
             ₹{planToShow.price}
           </Text>
 
-          {/* DISCOUNT */}
           {planToShow.discountPercent > 0 && (
             <Badge colorScheme="green" mb={4}>
               {planToShow.discountPercent}% OFF
             </Badge>
           )}
 
-          {/* OFFERS */}
           <List spacing={3} mb={6} color="gray.700">
             {Array.isArray(planToShow.offers) &&
               planToShow.offers.map((offer, index) => (
@@ -195,13 +208,11 @@ const SubscriptionPayment = () => {
               ))}
           </List>
 
-          {/* DATES */}
           <Text fontSize="xs" color="gray.500" mb={4}>
             Valid from {new Date(planToShow.startDate).toLocaleDateString()} –{" "}
             {new Date(planToShow.endDate).toLocaleDateString()}
           </Text>
 
-          {/* ACTION */}
           {user?.isSubscribed ? (
             <Badge
               colorScheme="green"
