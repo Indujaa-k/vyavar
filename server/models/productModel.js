@@ -101,6 +101,10 @@ const productSchema = mongoose.Schema(
       type: String,
       required: true,
     },
+    washCare: {
+      type: [String],
+      default: [],
+    },
     productdetails: {
       gender: {
         type: String,

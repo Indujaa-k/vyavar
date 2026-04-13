@@ -25,7 +25,7 @@ import {
   Image,
 } from "@chakra-ui/react";
 import "./CreateProduct.css";
-
+import WashCareInput from "../../components/WashCareInput";
 const API = process.env.REACT_APP_API_URL;
 
 const CATEGORY_DATA = [
@@ -75,7 +75,7 @@ const EditProductPage = () => {
   const [SKU, setSKU] = useState("");
   const [sizeChartFile, setSizeChartFile] = useState(null);
   const [message, setMessage] = useState(null);
-
+  const [washCare, setWashCare] = useState([]);
   const [productdetails, setProductdetails] = useState({
     gender: "",
     category: "",
@@ -107,7 +107,7 @@ const EditProductPage = () => {
   } = productUpdate;
 
   const disableNumberScroll = (e) => e.target.blur();
-
+  setWashCare(product.washCare || []);
   // ── Load product ──
   useEffect(() => {
     if (successUpdate) {
@@ -230,7 +230,7 @@ const EditProductPage = () => {
       JSON.stringify({ ...productdetails, stockBySize: selectedStock }),
     );
     formData.append("shippingDetails", JSON.stringify(shippingDetails));
-
+    formData.append("washCare", JSON.stringify(washCare));
     // ✅ Only send changed images + their slot indexes
     // Backend will splice them into the correct position
     Object.entries(replacedImages).forEach(([index, file]) => {
@@ -326,7 +326,7 @@ const EditProductPage = () => {
               placeholder="Type something about the product..."
             />
           </FormControl>
-
+          <WashCareInput value={washCare} onChange={setWashCare} />
           {/* ── Product Details ── */}
           <FormControl mt={3}>
             <FormLabel>Gender</FormLabel>

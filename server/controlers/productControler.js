@@ -574,6 +574,7 @@ const deleteProduct = asyncHandler(async (req, res) => {
 const createProduct = asyncHandler(async (req, res) => {
   console.log("BODY:", req.body);
   console.log("FILES:", req.files);
+  console.log("📦 washCare received:", req.body.washCare);
 
   try {
     const {
@@ -593,7 +594,10 @@ const createProduct = asyncHandler(async (req, res) => {
 
     const parsedProducts =
       typeof products === "string" ? JSON.parse(products) : products;
-
+    const washCare =
+      typeof req.body.washCare === "string"
+        ? JSON.parse(req.body.washCare)
+        : req.body.washCare || [];
     const parsedShippingDetails =
       typeof shippingDetails === "string"
         ? JSON.parse(shippingDetails)
@@ -654,7 +658,7 @@ const createProduct = asyncHandler(async (req, res) => {
         price: Number(variant.price),
         oldPrice: Number(variant.oldPrice),
         discount: Number(variant.discount),
-
+        washCare,
         images,
         sizeChart,
         productGroupId,
@@ -733,7 +737,12 @@ const updateProduct = asyncHandler(async (req, res) => {
     product.sizeChart = req.files.sizeChart[0].path;
     console.log("🚀 [updateProduct] Size Chart received:", product.sizeChart);
   }
-
+  if (req.body.washCare !== undefined) {
+    product.washCare =
+      typeof req.body.washCare === "string"
+        ? JSON.parse(req.body.washCare)
+        : req.body.washCare;
+  }
   const updatedProduct = await product.save();
   res.json(updatedProduct);
 });
@@ -893,7 +902,12 @@ const uploadProducts = asyncHandler(async (req, res) => {
     const images = resolveFiles(row.images, "uploads/products/images");
     const pdfPaths = resolveFiles(row.sizeChart, "uploads/pdfs");
     const sizeChart = pdfPaths[0] || "";
-
+    const washCare = row.washCare
+      ? row.washCare
+          .split("|")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [];
     // 🔹 Sizes & stock
     const sizes = row.sizes
       ? row.sizes
@@ -932,6 +946,7 @@ const uploadProducts = asyncHandler(async (req, res) => {
       price,
       oldPrice,
       discount,
+      washCare,
       productdetails: {
         gender: row.gender || "Unisex",
         category: row.category || "General",
@@ -1293,6 +1308,10 @@ const updateGroupCommonFields = asyncHandler(async (req, res) => {
     "productdetails.type": req.body.type,
     "productdetails.fabric": req.body.fabric,
     "productdetails.ageRange": req.body.ageRange,
+    washCare:
+      typeof req.body.washCare === "string"
+        ? JSON.parse(req.body.washCare)
+        : req.body.washCare || [],
   };
 
   if (sizeChartPath !== null) {
@@ -1368,7 +1387,7 @@ const addVariantToGroup = asyncHandler(async (req, res) => {
     description: baseProduct.description,
     shippingDetails: baseProduct.shippingDetails,
     isFeatured: baseProduct.isFeatured,
-
+    washCare: baseProduct.washCare || [],
     oldPrice,
     discount,
     price,
@@ -1473,6 +1492,7 @@ const getProductGroup = asyncHandler(async (req, res) => {
       shippingDetails: base.shippingDetails,
       isFeatured: base.isFeatured,
       sizeChart: base.sizeChart,
+      washCare: base.washCare || [],
       productdetails: {
         gender: base.productdetails.gender,
         category: base.productdetails.category,

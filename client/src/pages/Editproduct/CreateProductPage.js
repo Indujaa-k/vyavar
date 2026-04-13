@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { CreateProduct, listProducts } from "../../actions/productActions";
+import WashCareInput from "../../components/WashCareInput";
 import { PRODUCT_CREATE_RESET } from "../../constants/productConstants";
 import {
   Box,
@@ -75,7 +76,7 @@ const CreateProductPage = () => {
   const disableNumberScroll = (e) => {
     e.target.blur();
   };
-
+  const [washCare, setWashCare] = useState([]);
   const [newImages, setNewImages] = useState([]);
   const [message, setMessage] = useState(null);
   const [sizeChartFile, setSizeChartFile] = useState("");
@@ -280,6 +281,15 @@ const CreateProductPage = () => {
     formData.append("SKU", SKU);
     formData.append("isFeatured", isFeatured ? "true" : "false");
     formData.append("productType", productType);
+    formData.append(
+      "washCare",
+      JSON.stringify(washCare.filter((s) => s.trim() !== "")),
+    );
+    console.log(
+      "✅ washCare to send:",
+      washCare.filter((s) => s.trim() !== ""),
+    );
+    dispatch(CreateProduct(formData));
     // 🔹 SHIPPING
     formData.append("shippingDetails", JSON.stringify(shippingDetails));
 
@@ -422,6 +432,7 @@ const CreateProductPage = () => {
             </InputGroup>
           </Stack>
         </FormControl>
+        <WashCareInput value={washCare} onChange={setWashCare} />
         <FormControl>
           <FormLabel>Gender</FormLabel>
           <select
