@@ -138,6 +138,39 @@ const LoadableImage = ({
   );
 };
 
+// ── Inline review photos (flat grid, no swiper) ───────────────────────────
+const ReviewPhotoGrid = ({ photos, apiUrl, onOpenModal }) => {
+  return (
+    <Flex mt={2} gap={2} flexWrap="wrap">
+      {photos.map((photo, idx) => (
+        <Box
+          key={idx}
+          w="90px"
+          h="90px"
+          borderRadius="md"
+          overflow="hidden"
+          bg="gray.50"
+          cursor="pointer"
+          border="1px solid"
+          borderColor="gray.200"
+          flexShrink={0}
+          onClick={() => onOpenModal(photos, idx)}
+          _hover={{ opacity: 0.85 }}
+          transition="opacity 0.15s"
+        >
+          <Image
+            src={`${apiUrl}/${photo}`}
+            alt={`Review photo ${idx + 1}`}
+            w="100%"
+            h="100%"
+            objectFit="cover"
+          />
+        </Box>
+      ))}
+    </Flex>
+  );
+};
+
 const Productpage = () => {
   const { id } = useParams();
   const API_URL = process.env.REACT_APP_API_URL;
@@ -146,7 +179,11 @@ const Productpage = () => {
   const [isZoomVisible, setIsZoomVisible] = useState(false);
   const [hoveredImageIndex, setHoveredImageIndex] = useState(0);
   const [isZoomClosing, setIsZoomClosing] = useState(false);
-
+  const [reviewImageModal, setReviewImageModal] = useState({
+    isOpen: false,
+    photos: [],
+    currentIndex: 0,
+  });
   const [loadedImages, setLoadedImages] = useState({});
   const [mainImgLoaded, setMainImgLoaded] = useState(false);
 
@@ -189,6 +226,10 @@ const Productpage = () => {
   // Touch refs — shared between slider and modal
   const touchStartX = useRef(null);
   const touchEndX = useRef(null);
+
+  // Review image modal touch refs
+  const reviewModalTouchStartX = useRef(null);
+  const reviewModalTouchEndX = useRef(null);
 
   useEffect(() => {
     setLoadedImages({});
@@ -235,17 +276,49 @@ const Productpage = () => {
     modalTouchEndX.current = e.targetTouches[0].clientX;
   };
   const handleModalTouchEnd = () => {
-    if (modalTouchStartX.current === null || modalTouchEndX.current === null) return;
+    if (modalTouchStartX.current === null || modalTouchEndX.current === null)
+      return;
     const diff = modalTouchStartX.current - modalTouchEndX.current;
     const totalImages = product?.images?.length || 0;
     if (Math.abs(diff) > 40) {
-      if (diff > 0)
-        setModalIndex((prev) => (prev + 1) % totalImages);
-      else
-        setModalIndex((prev) => (prev - 1 + totalImages) % totalImages);
+      if (diff > 0) setModalIndex((prev) => (prev + 1) % totalImages);
+      else setModalIndex((prev) => (prev - 1 + totalImages) % totalImages);
     }
     modalTouchStartX.current = null;
     modalTouchEndX.current = null;
+  };
+
+  // Review image modal touch handlers
+  const handleReviewModalTouchStart = (e) => {
+    reviewModalTouchStartX.current = e.targetTouches[0].clientX;
+  };
+  const handleReviewModalTouchMove = (e) => {
+    reviewModalTouchEndX.current = e.targetTouches[0].clientX;
+  };
+  const handleReviewModalTouchEnd = () => {
+    if (
+      reviewModalTouchStartX.current === null ||
+      reviewModalTouchEndX.current === null
+    )
+      return;
+    const diff = reviewModalTouchStartX.current - reviewModalTouchEndX.current;
+    const total = reviewImageModal.photos.length;
+    if (Math.abs(diff) > 40) {
+      setReviewImageModal((prev) => ({
+        ...prev,
+        currentIndex:
+          diff > 0
+            ? (prev.currentIndex + 1) % total
+            : (prev.currentIndex - 1 + total) % total,
+      }));
+    }
+    reviewModalTouchStartX.current = null;
+    reviewModalTouchEndX.current = null;
+  };
+
+  // Open review photo modal helper
+  const openReviewPhotoModal = (photos, startIndex) => {
+    setReviewImageModal({ isOpen: true, photos, currentIndex: startIndex });
   };
 
   const [showAllReviews, setShowAllReviews] = useState(false);
@@ -1264,28 +1337,11 @@ const Productpage = () => {
                         </Text>
 
                         {review.photos?.length > 0 && (
-                          <Flex mt={2} gap={2}>
-                            {review.photos.map((photo, idx) => (
-                              <Box
-                                key={idx}
-                                boxSize="60px"
-                                position="relative"
-                                borderRadius="md"
-                                overflow="hidden"
-                              >
-                                <LoadableImage
-                                  src={`${API_URL}/${photo}`}
-                                  alt={`Review photo ${idx + 1}`}
-                                  skeletonW="60px"
-                                  skeletonH="60px"
-                                  borderRadius="md"
-                                  objectFit="cover"
-                                  cursor="pointer"
-                                  onClick={() => openImageModal(photo)}
-                                />
-                              </Box>
-                            ))}
-                          </Flex>
+                          <ReviewPhotoGrid
+                            photos={review.photos}
+                            apiUrl={API_URL}
+                            onOpenModal={openReviewPhotoModal}
+                          />
                         )}
 
                         <Text fontSize="xs" color="gray.400" mt={2}>
@@ -1342,7 +1398,143 @@ const Productpage = () => {
             )}
           </Box>
 
-          {/* ── Image preview modal (FIXED) ── */}
+          {/* ── Review Image Swiper Modal ── */}
+          <Modal
+            isOpen={reviewImageModal.isOpen}
+            onClose={() =>
+              setReviewImageModal({
+                isOpen: false,
+                photos: [],
+                currentIndex: 0,
+              })
+            }
+            isCentered
+            size="xl"
+          >
+            <ModalOverlay bg="blackAlpha.800" />
+            <ModalContent bg="white" borderRadius="xl" overflow="hidden" mx={4}>
+              <ModalCloseButton
+                zIndex={20}
+                color="gray.600"
+                bg="white"
+                borderRadius="full"
+                boxShadow="md"
+                top={3}
+                right={3}
+                _hover={{ bg: "gray.100", color: "gray.800" }}
+              />
+              <ModalBody p={6} pt={10}>
+                {/* Swipeable area */}
+                <Box
+                  position="relative"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  onTouchStart={handleReviewModalTouchStart}
+                  onTouchMove={handleReviewModalTouchMove}
+                  onTouchEnd={handleReviewModalTouchEnd}
+                  userSelect="none"
+                >
+                  {/* Left Arrow */}
+                  {reviewImageModal.photos.length > 1 && (
+                    <Box
+                      as="button"
+                      position="absolute"
+                      left="-16px"
+                      top="50%"
+                      transform="translateY(-50%)"
+                      zIndex={10}
+                      w="36px"
+                      h="36px"
+                      borderRadius="full"
+                      bg="white"
+                      border="1px solid"
+                      borderColor="gray.200"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                      boxShadow="md"
+                      _hover={{ bg: "gray.100" }}
+                      onClick={() =>
+                        setReviewImageModal((prev) => ({
+                          ...prev,
+                          currentIndex:
+                            (prev.currentIndex - 1 + prev.photos.length) %
+                            prev.photos.length,
+                        }))
+                      }
+                      aria-label="Previous image"
+                    >
+                      <Text fontSize="lg" lineHeight={1} color="gray.600">
+                        ‹
+                      </Text>
+                    </Box>
+                  )}
+
+                  {/* Main image */}
+                  <Image
+                    src={`${API_URL}/${reviewImageModal.photos[reviewImageModal.currentIndex]}`}
+                    alt="Review"
+                    maxH="65vh"
+                    maxW="100%"
+                    objectFit="contain"
+                    borderRadius="md"
+                    draggable={false}
+                  />
+
+                  {/* Right Arrow */}
+                  {reviewImageModal.photos.length > 1 && (
+                    <Box
+                      as="button"
+                      position="absolute"
+                      right="-16px"
+                      top="50%"
+                      transform="translateY(-50%)"
+                      zIndex={10}
+                      w="36px"
+                      h="36px"
+                      borderRadius="full"
+                      bg="white"
+                      border="1px solid"
+                      borderColor="gray.200"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                      boxShadow="md"
+                      _hover={{ bg: "gray.100" }}
+                      onClick={() =>
+                        setReviewImageModal((prev) => ({
+                          ...prev,
+                          currentIndex:
+                            (prev.currentIndex + 1) % prev.photos.length,
+                        }))
+                      }
+                      aria-label="Next image"
+                    >
+                      <Text fontSize="lg" lineHeight={1} color="gray.600">
+                        ›
+                      </Text>
+                    </Box>
+                  )}
+                </Box>
+
+                {/* Counter only — no dots */}
+                {reviewImageModal.photos.length > 1 && (
+                  <Text
+                    textAlign="center"
+                    fontSize="xs"
+                    color="gray.400"
+                    mt={3}
+                  >
+                    {reviewImageModal.currentIndex + 1} /{" "}
+                    {reviewImageModal.photos.length}
+                  </Text>
+                )}
+              </ModalBody>
+            </ModalContent>
+          </Modal>
+
+          {/* ── Product image preview modal ── */}
           <Modal isOpen={isOpen} onClose={onClose} isCentered size="xl">
             <ModalOverlay bg="blackAlpha.800" />
             <ModalContent
@@ -1352,7 +1544,6 @@ const Productpage = () => {
               mx={4}
               boxShadow="2xl"
             >
-              {/* Close button — clearly visible on white background */}
               <ModalCloseButton
                 zIndex={20}
                 color="gray.600"
@@ -1366,7 +1557,6 @@ const Productpage = () => {
               />
 
               <ModalBody p={4} pt={10}>
-                {/* Swipeable image area */}
                 <Box
                   onTouchStart={handleModalTouchStart}
                   onTouchMove={handleModalTouchMove}
@@ -1389,7 +1579,6 @@ const Productpage = () => {
                   />
                 </Box>
 
-                {/* Swipe hint text */}
                 {product.images.length > 1 && (
                   <Text
                     textAlign="center"
@@ -1401,7 +1590,6 @@ const Productpage = () => {
                   </Text>
                 )}
 
-                {/* Dot indicators */}
                 {product.images.length > 1 && (
                   <Flex justify="center" gap={2} mt={3} pb={1}>
                     {product.images.map((_, idx) => (
@@ -1423,7 +1611,7 @@ const Productpage = () => {
             </ModalContent>
           </Modal>
 
-          {/* Write review modal */}
+          {/* ── Write review modal ── */}
           <Modal
             isOpen={showCreateReview}
             onClose={() => setShowCreateReview(false)}
