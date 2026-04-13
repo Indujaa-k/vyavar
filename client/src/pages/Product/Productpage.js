@@ -9,6 +9,7 @@ import {
   markReviewHelpful,
   markReviewNotHelpful,
 } from "../../actions/productActions";
+import WashCareDisplay from "../../components/WashCareDisplay";
 import { AiFillStar, AiOutlineStar } from "react-icons/ai";
 import { addToCart } from "../../actions/cartActions";
 import ShareButton from "./ShareButton";
@@ -1157,7 +1158,7 @@ const Productpage = () => {
             </div>
           </div>
         )}
-
+        <WashCareDisplay washCare={product.washCare} />
         {/* === REVIEW SECTION === */}
         <Box className="REVIEWS" mt={8}>
           <Flex

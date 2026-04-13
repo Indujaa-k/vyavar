@@ -23,7 +23,7 @@ import {
   updateProductVariant,
 } from "../../actions/productActions";
 import { AddIcon } from "@chakra-ui/icons";
-
+import WashCareInput from "../../components/WashCareInput";
 const API = (process.env.REACT_APP_API_URL || "").replace(/\/$/, "");
 const MAX_IMAGES = 5;
 
@@ -79,6 +79,7 @@ const EditVariantProduct = () => {
     description: "",
     sizeChart: "",
     sizeChartFile: null,
+    washCare: [],
     shippingDetails: {
       weight: "",
       dimensions: { length: "", width: "", height: "" },
@@ -211,6 +212,7 @@ const EditVariantProduct = () => {
         brandname: common.brandname || "",
         description: common.description || "",
         sizeChart: common.sizeChart || "",
+        washCare: common.washCare || [],
         sizeChartFile: null,
         shippingDetails: common.shippingDetails || {
           weight: "",
@@ -287,6 +289,7 @@ const EditVariantProduct = () => {
     fd.append("type", commonState.productdetails.type);
     fd.append("ageRange", commonState.productdetails.ageRange);
     fd.append("fabric", commonState.productdetails.fabric);
+    fd.append("washCare", JSON.stringify(commonState.washCare));
     if (commonState.sizeChartFile)
       fd.append("sizeChart", commonState.sizeChartFile);
     dispatch(updateProductGroupCommon(groupId, fd));
@@ -391,6 +394,14 @@ const EditVariantProduct = () => {
               value={commonState.description}
               onChange={(e) =>
                 setCommonState({ ...commonState, description: e.target.value })
+              }
+            />
+          </FormControl>
+          <FormControl gridColumn="1 / -1">
+            <WashCareInput
+              value={commonState.washCare}
+              onChange={(val) =>
+                setCommonState({ ...commonState, washCare: val })
               }
             />
           </FormControl>
@@ -781,7 +792,7 @@ const EditVariantProduct = () => {
                     <FormLabel fontSize="xs">Price</FormLabel>
                     <Input
                       size="sm"
-                      type="number" 
+                      type="number"
                       onWheel={disableNumberScroll}
                       min={0}
                       value={variant.price || ""}
