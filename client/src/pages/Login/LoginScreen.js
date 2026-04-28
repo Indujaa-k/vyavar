@@ -79,7 +79,7 @@ const LoginScreen = () => {
           <div className="login-content">
             <form onSubmit={submitHandler}>
               <h1>Member Login</h1>
-              {error && <h4>{error}</h4>}
+              {error && <h4 style={{ color: "red" }}>{error}</h4>}
               <div className="">
                 <div className="i">
                   <i class="fas fa-envelope"></i>
@@ -95,7 +95,7 @@ const LoginScreen = () => {
                   />
                 </div>
               </div>
-             <div className="">
+              <div className="">
                 <div className="i">
                   <i className="fas fa-lock"></i>
                 </div>
@@ -110,12 +110,12 @@ const LoginScreen = () => {
                   />
                   <span
                     onClick={togglePasswordVisibility}
-                   className="password-toggle-icon"
+                    className="password-toggle-icon"
                   >
                     {showPassword ? "🙈" : "👁️"}
                   </span>
                 </div>
-              </div> 
+              </div>
 
               <input type="submit" className="btna" value="Login" />
 

@@ -172,6 +172,51 @@ const ReviewPhotoGrid = ({ photos, apiUrl, onOpenModal }) => {
   );
 };
 
+// ── Pinch zoom hook for mobile ────────────────────────────────────────────
+const usePinchZoom = () => {
+  const [scale, setScale] = useState(1);
+  const [translate, setTranslate] = useState({ x: 0, y: 0 });
+  const lastDist = useRef(null);
+  const lastTranslate = useRef({ x: 0, y: 0 });
+  const lastTouchMid = useRef({ x: 0, y: 0 });
+
+  const reset = () => {
+    setScale(1);
+    setTranslate({ x: 0, y: 0 });
+  };
+
+  const onTouchStart = (e) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      lastDist.current = Math.hypot(dx, dy);
+      lastTouchMid.current = {
+        x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+        y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+      };
+      lastTranslate.current = translate;
+    }
+  };
+
+  const onTouchMove = (e) => {
+    if (e.touches.length === 2 && lastDist.current) {
+      e.preventDefault(); // stop page scroll during pinch
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.hypot(dx, dy);
+      const ratio = dist / lastDist.current;
+      setScale((prev) => Math.min(Math.max(prev * ratio, 1), 4));
+      lastDist.current = dist;
+    }
+  };
+
+  const onTouchEnd = (e) => {
+    if (e.touches.length < 2) lastDist.current = null;
+  };
+
+  return { scale, translate, reset, onTouchStart, onTouchMove, onTouchEnd };
+};
+
 const Productpage = () => {
   const { id } = useParams();
   const API_URL = process.env.REACT_APP_API_URL;
@@ -187,14 +232,14 @@ const Productpage = () => {
   });
   const [loadedImages, setLoadedImages] = useState({});
   const [mainImgLoaded, setMainImgLoaded] = useState(false);
-
+  const pinch = usePinchZoom();
   const relatedProductsList = useSelector((state) => state.productList);
-  const { products: relatedProducts, loading: relatedLoading } =
-    relatedProductsList;
+  const { products: relatedProducts = [], loading: relatedLoading } =
+    relatedProductsList || {};
   const cart = useSelector((state) => state.cart);
-  const { cartItems } = cart;
+  const { cartItems = [] } = cart || {};
   const orderListMy = useSelector((state) => state.orderMylist);
-  const { orders } = orderListMy;
+  const { orders = [] } = orderListMy || {};
   const [qty, setQty] = useState(1);
   const [rating, setrating] = useState(0);
   const [comment, setcomment] = useState("");
@@ -203,13 +248,13 @@ const Productpage = () => {
   const [zoomPanelPos, setZoomPanelPos] = useState({ top: 0, left: 0 });
   const dispatch = useDispatch();
   const productDetails = useSelector((state) => state.productDetails);
-  const { loading, error, product } = productDetails;
+  const { loading = false, error, product = {} } = productDetails || {};
   const userLogin = useSelector((state) => state.userLogin);
-  const { userInfo } = userLogin;
+  const { userInfo } = userLogin || {};
   const [isPurchased, setIsPurchased] = useState(false);
   const productReviewCreate = useSelector((state) => state.productReviewCreate);
-  const { success: successProductReview, error: errorProductReview } =
-    productReviewCreate;
+  const { success: successProductReview = false, error: errorProductReview } =
+    productReviewCreate || {};
   const availableSizes = product?.productdetails?.sizes || [];
   const [selectedSize, setSelectedSize] = useState("");
   const [sizeStock, setSizeStock] = useState({});
@@ -222,7 +267,9 @@ const Productpage = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [modalIndex, setModalIndex] = useState(0);
   const [reviewLoading, setReviewLoading] = useState(false);
-  const isDesktop = window.innerWidth >= 1024;
+
+  // Check if window is available (SSR safety)
+  const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1024;
 
   // Touch refs — shared between slider and modal
   const touchStartX = useRef(null);
@@ -231,6 +278,10 @@ const Productpage = () => {
   // Review image modal touch refs
   const reviewModalTouchStartX = useRef(null);
   const reviewModalTouchEndX = useRef(null);
+
+  // Modal swipe handlers refs
+  const modalTouchStartX = useRef(null);
+  const modalTouchEndX = useRef(null);
 
   useEffect(() => {
     setLoadedImages({});
@@ -250,9 +301,11 @@ const Productpage = () => {
   const handleTouchStart = (e) => {
     touchStartX.current = e.targetTouches[0].clientX;
   };
+
   const handleTouchMove = (e) => {
     touchEndX.current = e.targetTouches[0].clientX;
   };
+
   const handleTouchEnd = () => {
     if (touchStartX.current === null || touchEndX.current === null) return;
     const diff = touchStartX.current - touchEndX.current;
@@ -266,25 +319,27 @@ const Productpage = () => {
     touchEndX.current = null;
   };
 
-  // Modal swipe handlers
-  const modalTouchStartX = useRef(null);
-  const modalTouchEndX = useRef(null);
-
   const handleModalTouchStart = (e) => {
     modalTouchStartX.current = e.targetTouches[0].clientX;
   };
+
   const handleModalTouchMove = (e) => {
     modalTouchEndX.current = e.targetTouches[0].clientX;
   };
+
   const handleModalTouchEnd = () => {
     if (modalTouchStartX.current === null || modalTouchEndX.current === null)
       return;
     const diff = modalTouchStartX.current - modalTouchEndX.current;
     const totalImages = product?.images?.length || 0;
-    if (Math.abs(diff) > 40) {
-      if (diff > 0) setModalIndex((prev) => (prev + 1) % totalImages);
-      else setModalIndex((prev) => (prev - 1 + totalImages) % totalImages);
+    if (diff > 0) {
+      setModalIndex((prev) => (prev + 1) % totalImages);
+      pinch.reset();
+    } else {
+      setModalIndex((prev) => (prev - 1 + totalImages) % totalImages);
+      pinch.reset();
     }
+
     modalTouchStartX.current = null;
     modalTouchEndX.current = null;
   };
@@ -293,9 +348,11 @@ const Productpage = () => {
   const handleReviewModalTouchStart = (e) => {
     reviewModalTouchStartX.current = e.targetTouches[0].clientX;
   };
+
   const handleReviewModalTouchMove = (e) => {
     reviewModalTouchEndX.current = e.targetTouches[0].clientX;
   };
+
   const handleReviewModalTouchEnd = () => {
     if (
       reviewModalTouchStartX.current === null ||
@@ -322,8 +379,6 @@ const Productpage = () => {
     setReviewImageModal({ isOpen: true, photos, currentIndex: startIndex });
   };
 
-  const [showAllReviews, setShowAllReviews] = useState(false);
-
   const isDisabled = !selectedSize || sizeStock[selectedSize] === 0;
 
   const hasUserReviewed =
@@ -344,7 +399,7 @@ const Productpage = () => {
   };
 
   const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
+    const files = Array.from(e.target.files || []);
     if (!files.length) return;
     if (photos.length + files.length > 3) {
       toast({
@@ -399,9 +454,9 @@ const Productpage = () => {
   }, [dispatch, id, successProductReview, userInfo, product.category]);
 
   useEffect(() => {
-    if (product?._id && product.category)
-      dispatch(Listproductbyfiters({ category: product.category }));
-  }, [dispatch, product]);
+    if (product?.productGroupId)
+      dispatch(listProductsByGroupId(product.productGroupId));
+  }, [dispatch, product?.productGroupId]);
 
   useEffect(() => {
     if (product?.productdetails?.stockBySize) {
@@ -415,15 +470,10 @@ const Productpage = () => {
 
   const productListByGroup = useSelector((state) => state.productListByGroup);
   const {
-    loading: loadingVariants,
-    products: variants,
+    loading: loadingVariants = false,
+    products: variants = [],
     error: errorVariants,
-  } = productListByGroup;
-
-  useEffect(() => {
-    if (product?.productGroupId)
-      dispatch(listProductsByGroupId(product.productGroupId));
-  }, [dispatch, product?.productGroupId, userInfo]);
+  } = productListByGroup || {};
 
   const submitHandler = async (e) => {
     e.preventDefault();
@@ -848,7 +898,7 @@ const Productpage = () => {
                   )}
 
                   <Image
-                    src={`${API_URL}/${product.images[hoveredImageIndex]}`}
+                    src={`${API_URL}/${product.images?.[hoveredImageIndex] || ""}`}
                     alt="Main Product"
                     w="100%"
                     h="100%"
@@ -900,7 +950,7 @@ const Productpage = () => {
                         height: "450px",
                         border: "1px solid #e2e8f0",
                         borderRadius: "8px",
-                        backgroundImage: `url(${API_URL}${normalizeImagePath(product.images[hoveredImageIndex])})`,
+                        backgroundImage: `url(${API_URL}${normalizeImagePath(product.images?.[hoveredImageIndex] || "")})`,
                         backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
                         backgroundSize: "280%",
                         backgroundRepeat: "no-repeat",
@@ -976,7 +1026,7 @@ const Productpage = () => {
                       <Flex gap={2} wrap="wrap" mb={4}>
                         {variants.map((variant) => {
                           const isCurrent = variant._id === product._id;
-                          const thumbnail = variant.images[0] || "";
+                          const thumbnail = variant.images?.[0] || "";
                           return (
                             <Box
                               key={variant._id}
@@ -1034,7 +1084,7 @@ const Productpage = () => {
                 <div className="product-detail">
                   <div>
                     <Text fontSize="lg" fontWeight="bold">
-                      Size: {selectedSize}
+                      Size: {selectedSize || "Not selected"}
                     </Text>
                     <HStack spacing={2} mt={2}>
                       {availableSizes.map((size) => (
@@ -1180,8 +1230,10 @@ const Productpage = () => {
                   variant={activeTab === tab ? "solid" : "outline"}
                   colorScheme="blue"
                   w={{ base: "100%", md: "auto" }}
+                  onClick={() => setActiveTab(tab)}
                 >
-                  {tab} {tab === "All Reviews" && `(${product.numReviews})`}
+                  {tab}{" "}
+                  {tab === "All Reviews" && `(${product.numReviews || 0})`}
                 </Button>
               ))}
             </Flex>
@@ -1216,11 +1268,11 @@ const Productpage = () => {
                 mt={1}
               >
                 <Text fontSize={{ base: "xl", md: "2xl" }} fontWeight="bold">
-                  {product.rating?.toFixed(1)}
+                  {product.rating?.toFixed(1) || "N/A"}
                 </Text>
-                <Rating value={product.rating} />
+                <Rating value={product.rating || 0} />
                 <Text color="gray.500" fontSize={{ base: "sm", md: "md" }}>
-                  ({product.numReviews} reviews)
+                  ({product.numReviews || 0} reviews)
                 </Text>
               </Flex>
               {product.images?.length > 0 && (
@@ -1244,7 +1296,7 @@ const Productpage = () => {
                     />
                   </Box>
                   <Text fontSize={{ base: "xs", md: "sm" }} color="gray.600">
-                    Product Rating: {product.rating?.toFixed(1)}
+                    Product Rating: {product.rating?.toFixed(1) || "N/A"}
                   </Text>
                 </Flex>
               )}
@@ -1255,14 +1307,14 @@ const Productpage = () => {
             {activeTab === "Overall Rating" ? (
               <Flex align="center" gap={4} p={4} bg="gray.50" borderRadius="md">
                 <Text fontSize="2xl" fontWeight="bold">
-                  {product.rating?.toFixed(1)}
+                  {product.rating?.toFixed(1) || "N/A"}
                 </Text>
-                <Rating value={product.rating} />
-                <Text>({product.numReviews} reviews)</Text>
+                <Rating value={product.rating || 0} />
+                <Text>({product.numReviews || 0} reviews)</Text>
               </Flex>
             ) : (
               <>
-                {product.reviews.length >= 5 && (
+                {product.reviews && product.reviews.length >= 5 && (
                   <Button
                     display="flex"
                     position="absolute"
@@ -1277,7 +1329,7 @@ const Productpage = () => {
                     bg="whiteAlpha.800"
                     _hover={{ bg: "blue.200" }}
                     onClick={() =>
-                      carouselRef.current.scrollBy({
+                      carouselRef.current?.scrollBy({
                         left: -320,
                         behavior: "smooth",
                       })
@@ -1295,83 +1347,87 @@ const Productpage = () => {
                   py={2}
                   px={1}
                 >
-                  {product.reviews
-                    .filter((r) => {
-                      if (!r.approved) return false;
-                      if (activeTab === "All Reviews") return true;
-                      if (activeTab === "Images") return r.photos?.length > 0;
-                      return true;
-                    })
-                    .map((review) => (
-                      <Box
-                        key={review._id}
-                        flex="0 0 300px"
-                        p={4}
-                        bg="white"
-                        borderRadius="md"
-                        boxShadow="sm"
-                      >
-                        <Flex gap={3} align="center" mb={2}>
-                          <Avatar
-                            name={review.user?.name}
-                            src={review.user?.profilePicture}
-                            size="sm"
-                          />
-                          <Box>
-                            <Text fontWeight="bold">
-                              {review.user?.name || "User"}
-                            </Text>
-                            <Flex
-                              align="center"
-                              gap={1}
-                              fontSize="xs"
-                              color="gray.500"
+                  {product.reviews && product.reviews.length > 0 ? (
+                    product.reviews
+                      .filter((r) => {
+                        if (!r.approved) return false;
+                        if (activeTab === "All Reviews") return true;
+                        if (activeTab === "Images") return r.photos?.length > 0;
+                        return true;
+                      })
+                      .map((review) => (
+                        <Box
+                          key={review._id}
+                          flex="0 0 300px"
+                          p={4}
+                          bg="white"
+                          borderRadius="md"
+                          boxShadow="sm"
+                        >
+                          <Flex gap={3} align="center" mb={2}>
+                            <Avatar
+                              name={review.user?.name}
+                              src={review.user?.profilePicture}
+                              size="sm"
+                            />
+                            <Box>
+                              <Text fontWeight="bold">
+                                {review.user?.name || "User"}
+                              </Text>
+                              <Flex
+                                align="center"
+                                gap={1}
+                                fontSize="xs"
+                                color="gray.500"
+                              >
+                                <MdVerified /> Verified Buyer
+                              </Flex>
+                            </Box>
+                          </Flex>
+
+                          <Rating value={review.rating} />
+                          <Text mt={2} fontSize="sm" noOfLines={3}>
+                            {review.comment}
+                          </Text>
+
+                          {review.photos?.length > 0 && (
+                            <ReviewPhotoGrid
+                              photos={review.photos}
+                              apiUrl={API_URL}
+                              onOpenModal={openReviewPhotoModal}
+                            />
+                          )}
+
+                          <Text fontSize="xs" color="gray.400" mt={2}>
+                            {review.createdAt?.substring(0, 10)}
+                          </Text>
+
+                          <Flex gap={3} mt={2} align="center">
+                            <Button
+                              size="xs"
+                              leftIcon={<FaThumbsUp />}
+                              variant="ghost"
+                              onClick={() => handleHelpful(review._id)}
                             >
-                              <MdVerified /> Verified Buyer
-                            </Flex>
-                          </Box>
-                        </Flex>
-
-                        <Rating value={review.rating} />
-                        <Text mt={2} fontSize="sm" noOfLines={3}>
-                          {review.comment}
-                        </Text>
-
-                        {review.photos?.length > 0 && (
-                          <ReviewPhotoGrid
-                            photos={review.photos}
-                            apiUrl={API_URL}
-                            onOpenModal={openReviewPhotoModal}
-                          />
-                        )}
-
-                        <Text fontSize="xs" color="gray.400" mt={2}>
-                          {review.createdAt?.substring(0, 10)}
-                        </Text>
-
-                        <Flex gap={3} mt={2} align="center">
-                          <Button
-                            size="xs"
-                            leftIcon={<FaThumbsUp />}
-                            variant="ghost"
-                            onClick={() => handleHelpful(review._id)}
-                          >
-                            Helpful {review.helpful ?? 0}
-                          </Button>
-                          <Button
-                            size="xs"
-                            leftIcon={<FaThumbsDown />}
-                            variant="ghost"
-                            onClick={() => handleNotHelpful(review._id)}
-                          >
-                            Not Helpful {review.notHelpful ?? 0}
-                          </Button>
-                        </Flex>
-                      </Box>
-                    ))}
+                              Helpful {review.helpful ?? 0}
+                            </Button>
+                            <Button
+                              size="xs"
+                              leftIcon={<FaThumbsDown />}
+                              variant="ghost"
+                              onClick={() => handleNotHelpful(review._id)}
+                            >
+                              Not Helpful {review.notHelpful ?? 0}
+                            </Button>
+                          </Flex>
+                        </Box>
+                      ))
+                  ) : (
+                    <Text>No reviews yet</Text>
+                  )}
                 </Box>
 
-                {product.reviews.length >= 5 && (
+                {product.reviews && product.reviews.length >= 5 && (
                   <Button
                     display="flex"
                     position="absolute"
@@ -1386,7 +1442,7 @@ const Productpage = () => {
                     bg="whiteAlpha.800"
                     _hover={{ bg: "blue.200" }}
                     onClick={() =>
-                      carouselRef.current.scrollBy({
+                      carouselRef.current?.scrollBy({
                         left: 320,
                         behavior: "smooth",
                       })
@@ -1559,14 +1615,28 @@ const Productpage = () => {
 
               <ModalBody p={4} pt={10}>
                 <Box
-                  onTouchStart={handleModalTouchStart}
-                  onTouchMove={handleModalTouchMove}
-                  onTouchEnd={handleModalTouchEnd}
+                  overflow="hidden"
+                  borderRadius="md"
+                  onTouchStart={(e) => {
+                    pinch.onTouchStart(e);
+                    handleModalTouchStart(e); // keep swipe working when not pinching
+                  }}
+                  onTouchMove={(e) => {
+                    if (e.touches.length === 2) {
+                      pinch.onTouchMove(e); // pinch — don't swipe
+                    } else {
+                      handleModalTouchMove(e); // single finger — swipe
+                    }
+                  }}
+                  onTouchEnd={(e) => {
+                    pinch.onTouchEnd(e);
+                    if (pinch.scale <= 1) handleModalTouchEnd(); // only swipe when not zoomed
+                  }}
                   userSelect="none"
                 >
                   <Image
                     src={
-                      typeof modalIndex === "number"
+                      typeof modalIndex === "number" && product.images
                         ? `${API_URL}/${product.images[modalIndex]}`
                         : `${API_URL}/${modalIndex}`
                     }
@@ -1577,21 +1647,44 @@ const Productpage = () => {
                     objectFit="contain"
                     borderRadius="md"
                     draggable={false}
+                    style={{
+                      transform: `scale(${pinch.scale}) translate(${pinch.translate.x}px, ${pinch.translate.y}px)`,
+                      transformOrigin: "center center",
+                      transition:
+                        pinch.scale === 1 ? "transform 0.2s ease" : "none",
+                      touchAction: "none",
+                    }}
                   />
                 </Box>
 
-                {product.images.length > 1 && (
+                {/* Double-tap to reset zoom hint */}
+                {pinch.scale > 1 && (
                   <Text
                     textAlign="center"
                     fontSize="xs"
                     color="gray.400"
-                    mt={2}
+                    mt={1}
+                    cursor="pointer"
+                    onClick={pinch.reset}
                   >
-                    Swipe to navigate
+                    Tap to reset zoom
                   </Text>
                 )}
 
-                {product.images.length > 1 && (
+                {product.images &&
+                  product.images.length > 1 &&
+                  pinch.scale === 1 && (
+                    <Text
+                      textAlign="center"
+                      fontSize="xs"
+                      color="gray.400"
+                      mt={2}
+                    >
+                      Swipe to navigate · Pinch to zoom
+                    </Text>
+                  )}
+
+                {product.images && product.images.length > 1 && (
                   <Flex justify="center" gap={2} mt={3} pb={1}>
                     {product.images.map((_, idx) => (
                       <Box
@@ -1602,7 +1695,10 @@ const Productpage = () => {
                         bg={modalIndex === idx ? "blue.500" : "gray.300"}
                         transition="all 0.2s ease"
                         cursor="pointer"
-                        onClick={() => setModalIndex(idx)}
+                        onClick={() => {
+                          setModalIndex(idx);
+                          pinch.reset();
+                        }}
                         flexShrink={0}
                       />
                     ))}
@@ -1701,8 +1797,7 @@ const Productpage = () => {
         {/* Related Products */}
         <div
           className="related-products-section"
-          px={{ base: 4, md: 12 }}
-          my={8}
+          style={{ padding: "0 1rem", margin: "2rem 0" }}
         >
           <Heading as="h3" size="sm" mb={4} ml={20}>
             Recommended Products
