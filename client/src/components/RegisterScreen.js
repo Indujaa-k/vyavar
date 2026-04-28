@@ -89,7 +89,7 @@ const RegisterScreen = () => {
       setOtpSent(true);
       toast({
         title: "OTP Sent!",
-        description: "Check your email for the OTP.",
+        description: `OTP has been sent to ${email}. Please check your inbox.`, // ← add this
         status: "success",
         duration: 4000,
         isClosable: true,
@@ -234,61 +234,77 @@ const RegisterScreen = () => {
               )}
               <div className="form-row">
                 <label>Name:</label>
-                <input
-                  type="text"
-                  value={name}
-                  className="inputa"
-                  placeholder="Enter name"
-                  onChange={(e) => setName(e.target.value)}
-                />
+                <div className="input-wrap">
+                  {" "}
+                  {/* ← add this wrapper */}
+                  <input
+                    type="text"
+                    value={name}
+                    className="inputa"
+                    placeholder="Enter name"
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </div>
               </div>
               <div className="form-row">
                 <label>Email:</label>
-                <input
-                  type="email"
-                  value={email}
-                  className="inputa"
-                  placeholder="Enter email"
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={otpSent} // prevent editing after OTP sent
-                />
+                <div className="input-wrap">
+                  {" "}
+                  {/* ← add this wrapper */}
+                  <input
+                    type="email"
+                    value={email}
+                    className="inputa"
+                    placeholder="Enter email"
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={otpSent}
+                  />
+                </div>
               </div>
               <div className="form-row">
                 <label>Phone Number:</label>
-                <input
-                  type="tel"
-                  value={phone}
-                  className="inputa"
-                  placeholder="Enter phone number"
-                  onChange={(e) => setPhone(e.target.value)}
-                  disabled={otpSent}
-                />
+                <div className="input-wrap">
+                  {" "}
+                  {/* ← add this wrapper */}
+                  <input
+                    type="tel"
+                    value={phone}
+                    className="inputa"
+                    placeholder="Enter phone number"
+                    onChange={(e) => setPhone(e.target.value)}
+                    disabled={otpSent}
+                  />
+                </div>
               </div>
               <div className="form-row">
                 <label>Password:</label>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  className="inputa"
-                  placeholder="Enter password"
-                  onChange={(e) => setPassword(e.target.value)}
-                />
+                <div className="input-wrap has-icon">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    className="inputa"
+                    placeholder="Enter password"
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <span onClick={togglePasswordVisibility} className="eye-icon">
+                    {showPassword ? "🙈" : "👁️"}
+                  </span>
+                </div>
               </div>
               <div className="form-row">
                 <label>Confirm Password:</label>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={confirmPassword}
-                  className="inputa"
-                  placeholder="Confirm password"
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
-                <span
-                  onClick={togglePasswordVisibility}
-                  className="password-toggle-icon"
-                >
-                  {showPassword ? "🙈" : "👁️"}
-                </span>
+                <div className="input-wrap has-icon">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    className="inputa"
+                    placeholder="Confirm password"
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                  <span onClick={togglePasswordVisibility} className="eye-icon">
+                    {showPassword ? "🙈" : "👁️"}
+                  </span>
+                </div>
               </div>
               <button
                 className="btna2"
@@ -299,33 +315,33 @@ const RegisterScreen = () => {
                 {otpLoading ? "Sending..." : otpSent ? "OTP Sent" : "Send OTP"}
               </button>
               {otpSent && (
-                <div
-                  style={{
-                    marginLeft: "50px",
-                    display: "flex",
-                    gap: "10px",
-                    marginTop: "15px",
-                    height: "50px",
-                  }}
-                >
-                  <input
-                    type="text"
-                    value={otp}
-                    placeholder="Enter OTP"
-                    onChange={(e) => setOtp(e.target.value)}
-                    disabled={otpVerified}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleVerifyOtp}
-                    disabled={verifyLoading || otpVerified}
-                  >
-                    {otpVerified
-                      ? "Verified ✅"
-                      : verifyLoading
-                        ? "Verifying..."
-                        : "Verify"}
-                  </button>
+                <div className="otp-section">
+                 
+                  <div className="otp-inner">
+                    <input
+                      type="text"
+                      value={otp}
+                      placeholder="Enter OTP"
+                      onChange={(e) => setOtp(e.target.value)}
+                      disabled={otpVerified}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleVerifyOtp}
+                      disabled={verifyLoading || otpVerified}
+                    >
+                      {otpVerified
+                        ? "Verified ✅"
+                        : verifyLoading
+                          ? "Verifying..."
+                          : "Verify"}
+                    </button>
+                  </div>
+                  {/* ← add this line below the OTP input */}
+                  <span /> {/* empty grid cell to fill the label column */}
+                  <p style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
+                    OTP sent to <strong>{email}</strong>
+                  </p>
                 </div>
               )}
               <button

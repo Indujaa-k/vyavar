@@ -1,159 +1,209 @@
-
-.password-toggle-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  cursor: pointer;
-  z-index: 999; 
-  font-size: 18px;
-  user-select: none;
-}
-.form-row {
+/* ===== Layout ===== */
+.registerSc {
+  min-height: 100vh;
   display: flex;
-  align-items: center;
-  margin-bottom: 1rem;
-  background-color: white;
-  border-radius: 20px;
-  position:relative;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px 16px;
+  position: relative;
 }
 
-.form-row label {
-  width: 100px; 
-  font-weight: bold;
-}
-
-.form-row input {
-  flex: 1;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-/* Add an overlay effect for better visibility */
 .registerSc::before {
   content: "";
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background: rgba(0, 0, 0, 0.3);
   z-index: 1;
 }
 
-/* Center the Form Container */
 .registerSc .containera {
-  width: 450px;
-  height: auto;
-  min-height: auto;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 40px 30px;
-  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
-  text-align: center;
+  width: 100%;
+  max-width: 480px;
+  background: rgba(255, 255, 255, 0.97);
+  padding: 36px 28px;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   position: relative;
   z-index: 2;
-  margin: 20px;
-  margin-bottom: 0px;
-  border-radius: 20px;
+  margin: 20px 0;
+  height: fit-content;
 }
 
-/* Headings */
+/* ===== Heading ===== */
 .registerSc h1 {
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 600;
-  margin-bottom: 20px;
-  color: #333;
-}
-
-/* Input Fields */
-.registerSc .input-div {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  background: #f1f1f1;
-  border-radius: 5px;
-  padding: 10px;
-  margin: 12px 0;
-  transition: 0.3s ease-in-out;
-  position: relative;
-  height: 50px;
-}
-
-.registerSc .input-div .i {
-  width: 40px;
   text-align: center;
-  font-size: 18px;
-  color: #666;
-}
-
-.registerSc .input-div .div {
-  flex: 1;
-  position: relative;
-  align-items: center;
-  position: relative;
-  width: 100%;
-}
-
-.registerSc .inputa {
-  width: 100%;
-  border: none;
-  outline: none;
-  padding: 10px;
-  font-size: 16px;
-  background: transparent;
   color: #333;
-  height: 100%;
+  margin-bottom: 22px;
 }
 
-/* Ensure password input fields have the same width */
-.registerSc .password-container {
+/* ===== Form rows ===== */
+.form-row {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  align-items: center;
+  column-gap: 8px;
+  margin-bottom: 13px;
+}
+
+.form-row label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #444;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ===== Input wrapper — eye icon positions relative to this ===== */
+.input-wrap {
+  position: relative;
   display: flex;
   align-items: center;
-  width: 100%;
-  position: relative;
 }
 
-.registerSc .toggle-password {
+.input-wrap .inputa {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  background: #fff;
+  color: #333;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-wrap.has-icon .inputa {
+  padding-right: 38px;
+}
+
+.input-wrap .inputa:focus {
+  border-color: #3182ce;
+  box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.15);
+}
+
+.input-wrap .inputa:disabled {
+  background: #f5f5f5;
+  color: #999;
+}
+
+/* ===== Eye icon — inside input-wrap, always correct ===== */
+.eye-icon {
   position: absolute;
   right: 10px;
   cursor: pointer;
-  font-size: 18px;
+  font-size: 15px;
+  user-select: none;
+  line-height: 1;
 }
 
-/* Sign-up Button */
-.registerSc .btna2 {
-  width: 80%;
-  padding: 12px;
-  border: none;
-  border-radius: 25px;
-  background-color: black;
-  color: white;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: 0.3s ease-in-out;
-  margin-top: 15px;
+/* ===== OTP section ===== */
+.otp-section {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  align-items: center;
+  column-gap: 8px;
+  margin: 14px 0;
 }
-.form-row.focus input {
+
+.otp-section label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #444;
+  text-align: right;
+}
+
+.otp-inner {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.otp-inner input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  color: #333;
+}
+
+.otp-inner input:focus {
   border-color: #3182ce;
-  box-shadow: 0 0 0 1px #3182ce;
+  box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.15);
+}
+
+.otp-inner button {
+  white-space: nowrap;
+  padding: 9px 14px;
+  border: 1px solid #555;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.otp-inner button:hover {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+.otp-inner button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== Buttons ===== */
+.registerSc .btna2 {
+  display: block;
+  width: 80%;
+  margin: 16px auto 0;
+  padding: 12px;
+  border: 2px solid #111;
+  border-radius: 25px;
+  background: #111;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, transform 0.15s;
 }
 
 .registerSc .btna2:hover {
-  background: white;
-  color: black;
-  transform: scale(1.05);
+  background: #fff;
+  color: #111;
+  transform: scale(1.02);
 }
 
-/* Responsive Fixes */
-@media (max-width: 768px) {
+.registerSc .btna2:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ===== Mobile ===== */
+@media (max-width: 460px) {
   .registerSc .containera {
-    width: 90%;
-    padding: 20px;
+    padding: 24px 14px;
   }
 
-  .registerSc .input-div {
-    padding: 8px; /* Reduce padding for better alignment */
+  .form-row,
+  .otp-section {
+    grid-template-columns: 1fr;
+    row-gap: 4px;
+  }
+
+  .form-row label,
+  .otp-section label {
+    text-align: left;
+  }
+
+  .registerSc .btna2 {
+    width: 100%;
   }
 }
