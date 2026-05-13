@@ -552,6 +552,12 @@ const createRazorpayOrder = async (req, res) => {
     }
 
     let shippingAmount = parseFloat(stateRule.cost.toFixed(2));
+    if (
+      shippingSettings.freeShippingAbove &&
+      subtotal >= shippingSettings.freeShippingAbove
+    ) {
+      shippingAmount = 0;
+    }
 
     // Coupon
     let discountAmount = 0;
@@ -775,7 +781,12 @@ const getOrderStatusCounts = asyncHandler(async (req, res) => {
   });
 
   const allOrders =
-    confirmed + packed + outForDelivery + returnApproved + returnCompleted + delivered;
+    confirmed +
+    packed +
+    outForDelivery +
+    returnApproved +
+    returnCompleted +
+    delivered;
 
   res.json({
     allOrders,
