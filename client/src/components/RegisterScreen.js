@@ -316,7 +316,6 @@ const RegisterScreen = () => {
               </button>
               {otpSent && (
                 <div className="otp-section">
-                 
                   <div className="otp-inner">
                     <input
                       type="text"
@@ -338,10 +337,15 @@ const RegisterScreen = () => {
                     </button>
                   </div>
                   {/* ← add this line below the OTP input */}
-                  <span /> {/* empty grid cell to fill the label column */}
-                  <p style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
-                    OTP sent to <strong>{email}</strong>
-                  </p>
+                  <span />
+
+                  <div>
+                    
+                    {/* empty grid cell to fill the label column */}
+                    <p style={{ fontSize: 12, color: "#666", marginTop: 4 }}>
+                      OTP sent to <strong>{email}</strong>
+                    </p>
+                  </div>
                 </div>
               )}
               <button
