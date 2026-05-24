@@ -73,9 +73,11 @@ const EditProductPage = () => {
   const [discount, setDiscount] = useState(0);
   const [isFeatured, setIsFeatured] = useState(false);
   const [SKU, setSKU] = useState("");
+  const [hsnCode, setHsnCode] = useState("6109");
   const [sizeChartFile, setSizeChartFile] = useState(null);
   const [message, setMessage] = useState(null);
   const [washCare, setWashCare] = useState([]);
+
   const [productdetails, setProductdetails] = useState({
     gender: "",
     category: "",
@@ -122,6 +124,7 @@ const EditProductPage = () => {
         setDiscount(product.discount || 0);
         setDescription(product.description || "");
         setSKU(product.SKU || "");
+        setHsnCode(product.hsnCode || "6109");
         setIsFeatured(product.isFeatured || false);
 
         // Show all existing images (up to 5)
@@ -224,6 +227,7 @@ const EditProductPage = () => {
     formData.append("discount", discount);
     formData.append("description", description);
     formData.append("SKU", SKU);
+    formData.append("hsnCode", hsnCode);
     formData.append("isFeatured", isFeatured);
     formData.append(
       "productdetails",
@@ -280,6 +284,14 @@ const EditProductPage = () => {
           <FormControl isRequired mt={3}>
             <FormLabel>SKU</FormLabel>
             <Input value={SKU} onChange={(e) => setSKU(e.target.value)} />
+          </FormControl>
+
+          <FormControl isRequired mt={3}>
+            <FormLabel>HSN Code</FormLabel>
+            <Input
+              value={hsnCode}
+              onChange={(e) => setHsnCode(e.target.value)}
+            />
           </FormControl>
 
           <Checkbox

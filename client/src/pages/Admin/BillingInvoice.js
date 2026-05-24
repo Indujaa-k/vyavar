@@ -30,10 +30,10 @@ const BillingInvoice = () => {
   const [showPDF, setShowPDF] = useState(false);
   const toast = useToast();
   const billingInvoiceCreate = useSelector(
-    (state) => state.billingInvoiceCreate
+    (state) => state.billingInvoiceCreate,
   );
   const billingInvoiceDetails = useSelector(
-    (state) => state.billingInvoiceDetails
+    (state) => state.billingInvoiceDetails,
   );
   const { invoice } = billingInvoiceDetails;
 
@@ -70,7 +70,17 @@ const BillingInvoice = () => {
     },
     invoiceNumber: "",
     date: new Date().toISOString().split("T")[0],
-    items: [{ description: "", rate: 0, qty: 1, cgst: 0, sgst: 0, amount: 0 }],
+    items: [
+      {
+        description: "",
+        hsnCode: "6109",
+        rate: 0,
+        qty: 1,
+        cgst: 0,
+        sgst: 0,
+        amount: 0,
+      },
+    ],
     notes: "",
   });
 
@@ -82,15 +92,15 @@ const BillingInvoice = () => {
   const calculateTotals = (items) => {
     const subtotal = items.reduce(
       (sum, item) => sum + calculateItemAmount(item),
-      0
+      0,
     );
     const totalCgst = items.reduce(
       (sum, item) => sum + (item.cgst / 100) * calculateItemAmount(item),
-      0
+      0,
     );
     const totalSgst = items.reduce(
       (sum, item) => sum + (item.sgst / 100) * calculateItemAmount(item),
-      0
+      0,
     );
     const total = subtotal + totalCgst + totalSgst;
     return { subtotal, totalCgst, totalSgst, total };
@@ -146,7 +156,9 @@ const BillingInvoice = () => {
   const handleItemChange = (index, field, value) => {
     const newItems = [...form.items];
     newItems[index][field] =
-      field === "description" ? value : parseFloat(value) || 0;
+      field === "description" || field === "hsnCode"
+        ? value
+        : parseFloat(value) || 0;
 
     // Calculate amount whenever rate or quantity changes
     if (field === "rate" || field === "qty") {
@@ -319,6 +331,7 @@ const BillingInvoice = () => {
           <Thead>
             <Tr>
               <Th>Description</Th>
+              <Th>HSN Code</Th>
               <Th>Rate</Th>
               <Th>Qty</Th>
               <Th>CGST (%)</Th>
@@ -335,6 +348,16 @@ const BillingInvoice = () => {
                     onChange={(e) =>
                       handleItemChange(i, "description", e.target.value)
                     }
+                  />
+                </Td>
+                <Td>
+                  <Input
+                    value={item.hsnCode || ""}
+                    onChange={(e) =>
+                      handleItemChange(i, "hsnCode", e.target.value)
+                    }
+                    placeholder="HSN"
+                    width="90px"
                   />
                 </Td>
                 <Td>

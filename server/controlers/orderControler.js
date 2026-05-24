@@ -8,16 +8,18 @@ import sendEmail from "../utils/sendEmail.js";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import ShippingCost from "../models/shippingcostModel.js";
+import Counter from "../models/counterModel.js";
 
 // @desc Create new order
 // @route POST /api/orders
-// @access Private
 // @access Private
 const addorderitems = asyncHandler(async (req, res) => {
   const {
     orderItems,
     shippingAddress,
     paymentMethod,
+    cgstPrice,
+    sgstPrice,
     taxPrice,
     shippingPrice,
     totalPrice,
@@ -30,16 +32,26 @@ const addorderitems = asyncHandler(async (req, res) => {
     throw new Error("No order items");
   }
 
+  // ✅ Generate invoice number at order creation time
+  const year = new Date().getFullYear();
+  const counter = await Counter.findByIdAndUpdate(
+    `order-invoice-${year}`,
+    { $inc: { seq: 1 } },
+    { new: true, upsert: true }
+  );
+  const invoiceNumber = `VF-${year}-${String(counter.seq).padStart(4, "0")}`;
+
   const order = new Order({
     user: req.user._id,
     orderItems,
     shippingAddress,
     paymentMethod,
+    cgstPrice,
+    sgstPrice,
     taxPrice,
     shippingPrice,
     totalPrice,
-
-    // ✅ SAFE STORAGE
+    invoiceNumber, // ✅ saved immediately on order creation
     coupon: coupon
       ? {
           code: coupon.code,
@@ -47,7 +59,6 @@ const addorderitems = asyncHandler(async (req, res) => {
           discountAmount: coupon.discountAmount,
         }
       : null,
-
     isPaid: true,
     paidAt: Date.now(),
     orderStatus: "CONFIRMED",
@@ -58,12 +69,12 @@ const addorderitems = asyncHandler(async (req, res) => {
   if (coupon?.code) {
     await Offer.findOneAndUpdate(
       { code: coupon.code },
-      { $inc: { usedCount: 1 } },
+      { $inc: { usedCount: 1 } }
     );
   }
   createdOrder = await Order.findById(createdOrder._id).populate(
     "orderItems.product",
-    "images brandname",
+    "images brandname"
   );
 
   await sendEmail({
@@ -72,33 +83,26 @@ const addorderitems = asyncHandler(async (req, res) => {
     order: createdOrder,
   });
 
-  // 🔥 REDUCE STOCK AFTER ORDER CREATION
   for (const item of orderItems) {
     const product = await Product.findById(item.product);
-
     if (!product) continue;
 
     const sizeStock = product.productdetails.stockBySize.find(
-      (s) => s.size === item.size,
+      (s) => s.size === item.size
     );
-
     if (!sizeStock) continue;
 
-    // 🚨 Stock validation (extra safety)
     if (sizeStock.stock < item.qty) {
       return res.status(400).json({
         message: `Not enough stock for ${product.brandname} size ${item.size}`,
       });
     }
 
-    // 🔻 Reduce stock
     sizeStock.stock -= item.qty;
-
     product.soldCount = (product.soldCount || 0) + item.qty;
     await product.save();
   }
 
-  // Clear user's cart
   await User.findByIdAndUpdate(req.user._id, {
     $set: { cartItems: [] },
   });
@@ -114,7 +118,7 @@ const getOrderById = asyncHandler(async (req, res) => {
     .populate("user", "name email")
     .populate({
       path: "orderItems.product",
-      select: "productType comboName productdetails images", // Include the fields you need
+      select: "productType comboName productdetails images",
     });
   if (order) {
     res.json(order);
@@ -123,6 +127,7 @@ const getOrderById = asyncHandler(async (req, res) => {
     throw new Error("Order Not found");
   }
 });
+
 // @desc update order to paid
 // @route update /api/orders/:id/pay
 // @access Private
@@ -139,7 +144,6 @@ const updateOrderToPaid = asyncHandler(async (req, res) => {
       email_address: req.body.payer.email_address,
     };
 
-    // ✅ Add this line: set orderStatus to CONFIRMED if it was not set yet
     if (!order.orderStatus || order.orderStatus === "ORDERED") {
       order.orderStatus = "CONFIRMED";
     }
@@ -167,13 +171,14 @@ const updateOrderToDelivered = asyncHandler(async (req, res) => {
     throw new Error("Order Not found");
   }
 });
+
 // @desc get logged in user orders
 // @route GET /api/orders/myorders
 // @access Private
 const GetMyOrders = asyncHandler(async (req, res) => {
   const orders = await Order.find({ user: req.user._id }).populate({
-    path: "orderItems.product", // Reference to the Product model
-    select: "images brandname rating ", // Select only the fields you need
+    path: "orderItems.product",
+    select: "images brandname rating",
   });
   res.json(orders);
 });
@@ -182,7 +187,7 @@ const GetMyOrders = asyncHandler(async (req, res) => {
 // @route GET /api/admin/orders
 // @access Private/admin
 const GetOrders = asyncHandler(async (req, res) => {
-  const { status } = req.query; // Get status filter from query params
+  const { status } = req.query;
 
   let filter = {};
   if (status && status !== "all") {
@@ -197,9 +202,9 @@ const GetOrders = asyncHandler(async (req, res) => {
   res.json(orders);
 });
 
-//@desc Get orders for delivery person
-//@route GET/Api/orders/delivery
-// access Private Delivery
+// @desc Get orders for delivery person
+// @route GET /api/orders/delivery
+// @access Private Delivery
 const getOrdersForDeliveryPerson = asyncHandler(async (req, res) => {
   const orders = await Order.find({
     deliveryPerson: req.user._id,
@@ -208,9 +213,9 @@ const getOrdersForDeliveryPerson = asyncHandler(async (req, res) => {
   res.json(orders);
 });
 
-//@desc Accept order
-// @route PUT/api/orders/delivery/accept/:id
-// access Private Delivery
+// @desc Accept order
+// @route PUT /api/orders/delivery/accept/:id
+// @access Private Delivery
 const acceptOrder = asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.id)
     .populate("user", "email")
@@ -234,12 +239,12 @@ const acceptOrder = asyncHandler(async (req, res) => {
 });
 
 // @desc Reject order
-//@route PUT/api/orders/delivery/reject/:id
-// access Private Delivery
+// @route PUT /api/orders/delivery/reject/:id
+// @access Private Delivery
 const rejectOrder = asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.id);
   if (order && order.isPacked && !order.isAcceptedByDelivery) {
-    order.deliveryPerson = null; // Remove delivery person assignment
+    order.deliveryPerson = null;
     await order.save();
     res.json({ message: "Order rejected" });
   } else {
@@ -249,8 +254,8 @@ const rejectOrder = asyncHandler(async (req, res) => {
 });
 
 // @desc Mark order as completed
-// @route PUT/api/orders/delivery/complete/:id
-// access Private Delivery
+// @route PUT /api/orders/delivery/complete/:id
+// @access Private Delivery
 const markOrderAsCompleted = asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.id)
     .populate("user", "email")
@@ -281,8 +286,8 @@ const markOrderAsCompleted = asyncHandler(async (req, res) => {
 });
 
 // @desc Mark order as returned
-// @route PUT/api/orders/delivery/return/:id
-// access Private Delivery
+// @route PUT /api/orders/delivery/return/:id
+// @access Private Delivery
 const markOrderAsReturned = asyncHandler(async (req, res) => {
   const { returnReason } = req.body;
   const order = await Order.findById(req.params.id);
@@ -298,30 +303,15 @@ const markOrderAsReturned = asyncHandler(async (req, res) => {
 });
 
 // @desc get undelivered orders in admin
-// @route GET/api/orders/undelivered
-// access Private Admin
-
+// @route GET /api/orders/undelivered
+// @access Private Admin
 const getUndeliveredOrders = asyncHandler(async (req, res) => {
   try {
-    console.log("🚀 [getUndeliveredOrders] Triggered");
-
-    const totalOrders = await Order.countDocuments();
-    console.log("📦 Total Orders:", totalOrders);
-
     const orders = await Order.find({
       orderStatus: { $ne: "DELIVERED" },
     })
       .populate("user", "name email")
       .populate("orderItems.product", "brandname images price");
-
-    console.log("📬 Undelivered Orders Found:", orders.length);
-    if (orders.length > 0) {
-      console.log("🧾 Sample Order:", {
-        id: orders[0]._id,
-        user: orders[0].user?.name,
-        product: orders[0].orderItems[0]?.product?.brandname,
-      });
-    }
 
     res.json(orders);
   } catch (error) {
@@ -331,8 +321,8 @@ const getUndeliveredOrders = asyncHandler(async (req, res) => {
 });
 
 // @desc Assign order to delivery person
-// @route PUT/api/orders/:id/assign
-// access Private Admin
+// @route PUT /api/orders/:id/assign
+// @access Private Admin
 const assignOrderToDeliveryPerson = asyncHandler(async (req, res) => {
   const { deliveryPersonId } = req.body;
   const order = await Order.findById(req.params.id)
@@ -349,37 +339,42 @@ const assignOrderToDeliveryPerson = asyncHandler(async (req, res) => {
     throw new Error("Order not found");
   }
 });
+
 // @desc    Generate Invoice
 // @route   GET /api/orders/:id/invoice
 // @access  Private/Admin
+// ✅ No counter logic here — invoice number already saved at order creation
 const generateInvoice = asyncHandler(async (req, res) => {
-  const order = await Order.findById(req.params.id).populate(
-    "user",
-    "name email",
-  );
+  const order = await Order.findById(req.params.id)
+    .populate("user", "name email")
+    .populate("orderItems.product", "hsnCode"); // ✅ pull hsnCode from Product
 
   if (!order) {
     res.status(404);
     throw new Error("Order not found");
   }
 
+  // ✅ Attach hsnCode from populated product onto each order item
+  const orderItemsWithHsn = order.orderItems.map((item) => ({
+    ...item.toObject(),
+    hsnCode: item.product?.hsnCode || "6109",
+  }));
+
   const invoice = {
     orderId: order._id,
-
+    invoiceNumber: order.invoiceNumber, // ✅ already saved when order was placed
     user: {
       name: order.user?.name || "N/A",
       email: order.user?.email || "N/A",
     },
-
-    orderItems: order.orderItems,
+    orderItems: orderItemsWithHsn, // ✅ now includes hsnCode per item
     shippingAddress: order.shippingAddress,
     paymentMethod: order.paymentMethod,
-
     pricing: {
+      cgstPrice: order.cgstPrice,
+      sgstPrice: order.sgstPrice,
       taxPrice: order.taxPrice,
       shippingPrice: order.shippingPrice,
-
-      // ✅ Coupon details
       coupon: order.coupon
         ? {
             code: order.coupon.code,
@@ -387,56 +382,47 @@ const generateInvoice = asyncHandler(async (req, res) => {
             discountAmount: order.coupon.discountAmount,
           }
         : null,
-
       totalPrice: order.totalPrice,
     },
-
     paymentStatus: {
       isPaid: order.isPaid,
       paidAt: order.paidAt,
     },
-
     deliveryStatus: {
       isDelivered: order.isDelivered,
       deliveredAt: order.deliveredAt,
     },
-
     createdAt: order.createdAt,
   };
-
-  order.invoiceDetails = invoice;
-  await order.save();
 
   res.json(invoice);
 });
 
 // @desc  getlocations
-// @route   GET /api/incomebycity
-// @access  Private/Admin
+// @route GET /api/incomebycity
+// @access Private/Admin
 const incomebycity = asyncHandler(async (req, res) => {
   const orders = await Order.find({ isPaid: true });
 
-  // Calculate total income
   const totalIncome = orders.reduce((acc, order) => acc + order.totalPrice, 0);
-
-  // Format total income
   const formattedTotalIncome = `Rs.${totalIncome}`;
 
-  // Calculate income by city
   const incomeByCity = orders.reduce((acc, order) => {
-    const city = order.shippingAddress.city || "Unknown"; // Handle missing city
+    const city = order.shippingAddress.city || "Unknown";
     acc[city] = (acc[city] || 0) + order.totalPrice;
     return acc;
   }, {});
+
   res.setHeader("Cache-Control", "no-store");
   res.json({
     totalIncome: formattedTotalIncome,
     incomeByCity: Object.entries(incomeByCity).map(([city, income]) => ({
       city,
-      income: `Rs. ${income}`, // Format as $k
+      income: `Rs. ${income}`,
     })),
   });
 });
+
 // @desc    Fetch transaction details with filters
 // @route   GET /api/orders/transactions
 // @access  Private/Admin
@@ -467,7 +453,7 @@ const getTransactions = asyncHandler(async (req, res) => {
   }
 
   const transactions = await Order.find(query).select(
-    "createdAt paymentMethod isPaid isDelivered totalPrice taxPrice shippingPrice orderItems",
+    "createdAt paymentMethod isPaid isDelivered totalPrice taxPrice shippingPrice orderItems cgstPrice sgstPrice"
   );
 
   res.json(transactions);
@@ -478,7 +464,7 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-// CREATE ORDER
+// CREATE RAZORPAY ORDER
 const createRazorpayOrder = async (req, res) => {
   try {
     let couponCode = null;
@@ -491,8 +477,6 @@ const createRazorpayOrder = async (req, res) => {
 
     if (couponCode === "") couponCode = null;
 
-    console.log("COUPON:", couponCode, typeof couponCode);
-
     const user = await User.findById(req.user._id);
 
     if (!user || user.cartItems.length === 0) {
@@ -500,49 +484,32 @@ const createRazorpayOrder = async (req, res) => {
     }
 
     let subtotal = 0;
-
-    // for (const item of user.cartItems) {
-    //   const product = await Product.findById(item.product);
-
-    //   if (!product) {
-    //     return res.status(400).json({ message: "Product not found" });
-    //   }
-
-    //   subtotal += product.price * item.qty;
-    // }
-
     for (const item of user.cartItems) {
       if (!item.price) {
         return res.status(400).json({ message: "Cart item price missing" });
       }
-      subtotal += item.price; // ignoring quantity if needed
+      subtotal += item.price;
     }
-    subtotal = parseFloat(subtotal.toFixed(2)); // ✅ Round to 2 decimals
+    subtotal = parseFloat(subtotal.toFixed(2));
 
-    const taxAmount = parseFloat(((subtotal * 5) / 100).toFixed(2));
+    const cgstAmount = parseFloat(((subtotal * 2.5) / 100).toFixed(2));
+    const sgstAmount = parseFloat(((subtotal * 2.5) / 100).toFixed(2));
+    const taxAmount = parseFloat((cgstAmount + sgstAmount).toFixed(2));
 
-    // Shipping
-    // Fetch shipping settings
     const shippingSettings = await ShippingCost.findOne();
     if (!shippingSettings) {
-      return res
-        .status(400)
-        .json({ message: "Shipping settings not configured" });
+      return res.status(400).json({ message: "Shipping settings not configured" });
     }
 
-    // Fetch default address
     const defaultAddress =
       user.addresses?.find((addr) => addr.isDefault) || user.addresses?.[0];
 
     if (!defaultAddress || !defaultAddress.state) {
-      return res
-        .status(400)
-        .json({ message: "No default address found for shipping" });
+      return res.status(400).json({ message: "No default address found for shipping" });
     }
 
-    // Now you can use shippingSettings
     const stateRule = shippingSettings.shippingRules.find(
-      (rule) => rule.state === defaultAddress.state,
+      (rule) => rule.state === defaultAddress.state
     );
 
     if (!stateRule) {
@@ -559,19 +526,14 @@ const createRazorpayOrder = async (req, res) => {
       shippingAmount = 0;
     }
 
-    // Coupon
     let discountAmount = 0;
     let couponSnapshot = null;
-    if (couponCode) {
-      console.log("🔍 Coupon Search:", couponCode.toUpperCase());
-    }
 
     if (couponCode) {
       const offer = await Offer.findOne({
         code: { $regex: `^${couponCode}$`, $options: "i" },
       });
 
-      console.log("🎟 Offer Found:", offer);
       if (!offer) {
         return res.status(400).json({ message: "Invalid coupon" });
       }
@@ -581,12 +543,7 @@ const createRazorpayOrder = async (req, res) => {
       }
 
       const rawDiscount = (subtotal * offer.offerPercentage) / 100;
-
-      discountAmount = Math.min(
-        rawDiscount,
-        subtotal + taxAmount + shippingAmount - 1,
-      );
-
+      discountAmount = Math.min(rawDiscount, subtotal + taxAmount + shippingAmount - 1);
       discountAmount = parseFloat(discountAmount.toFixed(2));
 
       couponSnapshot = {
@@ -596,9 +553,8 @@ const createRazorpayOrder = async (req, res) => {
       };
     }
 
-    // Final total
     const finalAmount = parseFloat(
-      (subtotal + taxAmount + shippingAmount - discountAmount).toFixed(2),
+      (subtotal + taxAmount + shippingAmount - discountAmount).toFixed(2)
     );
 
     if (finalAmount < 1) {
@@ -607,7 +563,6 @@ const createRazorpayOrder = async (req, res) => {
 
     const roundedFinalAmount = Math.round(finalAmount * 100) / 100;
 
-    // 💳 Razorpay order
     const razorpayOrder = await razorpay.orders.create({
       amount: Math.round(roundedFinalAmount * 100),
       currency: "INR",
@@ -619,37 +574,29 @@ const createRazorpayOrder = async (req, res) => {
       amount: razorpayOrder.amount,
       currency: razorpayOrder.currency,
       keyId: process.env.RAZORPAY_KEY_ID,
-
-      // ✅ send breakdown to frontend
       priceBreakdown: {
         subtotal,
+        cgstAmount,
+        sgstAmount,
         taxAmount,
         shippingAmount,
         discountAmount,
         total: roundedFinalAmount,
       },
-
-      // ✅ coupon snapshot
       coupon: couponSnapshot,
     });
   } catch (err) {
     console.error("❌ Razorpay FULL ERROR:", err);
-    res.status(500).json({
-      message: err.message,
-      stack: err.stack,
-    });
+    res.status(500).json({ message: err.message, stack: err.stack });
   }
 };
 
-// VERIFY PAYMENT
-// VERIFY PAYMENT
+// VERIFY RAZORPAY PAYMENT
 const verifyRazorpayPayment = async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
-      req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
     const sign = razorpay_order_id + "|" + razorpay_payment_id;
-
     const expectedSign = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
       .update(sign)
@@ -662,10 +609,7 @@ const verifyRazorpayPayment = async (req, res) => {
         paymentId: razorpay_payment_id,
       });
     } else {
-      res.status(400).json({
-        success: false,
-        message: "Invalid payment signature",
-      });
+      res.status(400).json({ success: false, message: "Invalid payment signature" });
     }
   } catch (error) {
     console.error("❌ Verify Error:", error);
@@ -674,8 +618,8 @@ const verifyRazorpayPayment = async (req, res) => {
 };
 
 // @desc    Stripe payments
-// @route   post /api/orders/stripe
-// @access  public/users
+// @route   POST /api/orders/stripe
+// @access  Public/Users
 const StripePayment = asyncHandler(async (req, res) => {
   try {
     const { amount } = req.body;
@@ -685,7 +629,7 @@ const StripePayment = asyncHandler(async (req, res) => {
     }
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount * 100, // Convert to cents
+      amount: amount * 100,
       currency: "usd",
       payment_method_types: ["card"],
     });
@@ -697,9 +641,9 @@ const StripePayment = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    update Trackingststatus
-// @route   put /api/orders/:id/updatestatus
-// @access  private/admin
+// @desc    Update tracking status
+// @route   PUT /api/orders/:id/updatestatus
+// @access  Private/Admin
 export const updateOrderStatus = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
@@ -720,11 +664,7 @@ export const updateOrderStatus = async (req, res) => {
       previousStatus !== newStatus &&
       ["PACKED", "OUT_FOR_DELIVERY"].includes(newStatus)
     ) {
-      await sendEmail({
-        email: order.user.email,
-        status: newStatus,
-        order,
-      });
+      await sendEmail({ email: order.user.email, status: newStatus, order });
     }
 
     res.json({ message: "Order status updated successfully" });
@@ -733,60 +673,19 @@ export const updateOrderStatus = async (req, res) => {
   }
 };
 
-//   const { status } = req.body;
-
-//   const order = await Order.findById(req.params.id);
-
-//   if (!order) {
-//     return res.status(404).json({ message: "Order not found" });
-//   }
-
-//   // 🔥 THIS IS THE KEY LINE
-//   order.orderStatus = status;
-
-//   await order.save();
-
-//   res.json({
-//     message: "Order status updated",
-//     orderStatus: order.orderStatus,
-//   });
-// };
-
 // @desc   Get order statuses count
 // @route  GET /api/orders/status-count
 // @access Admin
-// @access Admin
 const getOrderStatusCounts = asyncHandler(async (req, res) => {
-  const confirmed = await Order.countDocuments({
-    orderStatus: "CONFIRMED",
-  });
-
-  const packed = await Order.countDocuments({
-    orderStatus: "PACKED",
-  });
-
-  const outForDelivery = await Order.countDocuments({
-    orderStatus: "OUT_FOR_DELIVERY",
-  });
-
-  const returnApproved = await Order.countDocuments({
-    orderStatus: "RETURN_APPROVED",
-  });
-
-  const returnCompleted = await Order.countDocuments({
-    orderStatus: "RETURN_COMPLETED",
-  });
-  const delivered = await Order.countDocuments({
-    orderStatus: "DELIVERED",
-  });
+  const confirmed = await Order.countDocuments({ orderStatus: "CONFIRMED" });
+  const packed = await Order.countDocuments({ orderStatus: "PACKED" });
+  const outForDelivery = await Order.countDocuments({ orderStatus: "OUT_FOR_DELIVERY" });
+  const returnApproved = await Order.countDocuments({ orderStatus: "RETURN_APPROVED" });
+  const returnCompleted = await Order.countDocuments({ orderStatus: "RETURN_COMPLETED" });
+  const delivered = await Order.countDocuments({ orderStatus: "DELIVERED" });
 
   const allOrders =
-    confirmed +
-    packed +
-    outForDelivery +
-    returnApproved +
-    returnCompleted +
-    delivered;
+    confirmed + packed + outForDelivery + returnApproved + returnCompleted + delivered;
 
   res.json({
     allOrders,
@@ -798,32 +697,45 @@ const getOrderStatusCounts = asyncHandler(async (req, res) => {
     delivered,
   });
 });
-// @desc create billing invoice to an order
-// @route   POST /api/orders/billinginvoice
-// @access  Private/Admin
-const createBillingInvoice = asyncHandler(async (req, res) => {
-  console.log("Incoming Billing Invoice Request Body:", req.body);
 
-  const { logo, from, to, invoiceNumber, date, items, notes, signature } =
-    req.body;
-  // Calculate totals based on items
-  const subtotal = items.reduce((sum, item) => sum + item.rate * item.qty, 0);
-  const cgstTotal = items.reduce(
-    (sum, item) => sum + ((item.cgst || 0) / 100) * item.rate * item.qty,
-    0,
+// @desc   Create billing invoice
+// @route  POST /api/orders/billinginvoice
+// @access Private/Admin
+// ✅ hsnCode is preserved per item — passed through from frontend as part of items array
+const createBillingInvoice = asyncHandler(async (req, res) => {
+  const { logo, from, to, date, items, notes, signature } = req.body;
+
+  // ✅ Normalize each item — preserve hsnCode, default to "6109" if missing
+  const normalizedItems = items.map((item) => ({
+    description: item.description,
+    hsnCode: item.hsnCode || "6109",
+    rate: item.rate,
+    qty: item.qty,
+    cgst: item.cgst || 0,
+    sgst: item.sgst || 0,
+    amount: item.rate * item.qty,
+  }));
+
+  const subtotal = normalizedItems.reduce(
+    (sum, item) => sum + item.rate * item.qty,
+    0
   );
-  const sgstTotal = items.reduce(
+  const cgstTotal = normalizedItems.reduce(
+    (sum, item) => sum + ((item.cgst || 0) / 100) * item.rate * item.qty,
+    0
+  );
+  const sgstTotal = normalizedItems.reduce(
     (sum, item) => sum + ((item.sgst || 0) / 100) * item.rate * item.qty,
-    0,
+    0
   );
   const total = subtotal + cgstTotal + sgstTotal;
+
   const invoice = new BillingInvoice({
     logo,
     from,
     to,
-    invoiceNumber,
     date,
-    items,
+    items: normalizedItems, // ✅ hsnCode included per item
     subtotal,
     cgstTotal,
     sgstTotal,
@@ -840,9 +752,9 @@ const createBillingInvoice = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    GET billing invoice to an order
-// @route   GET /api/:invoiceNumber
-// @access  Private/Admin
+// @desc   Get billing invoice by number
+// @route  GET /api/orders/billinginvoice/:invoiceNumber
+// @access Private/Admin
 const getBillingInvoiceByNumber = asyncHandler(async (req, res) => {
   const invoice = await BillingInvoice.findOne({
     invoiceNumber: req.params.invoiceNumber,
@@ -855,6 +767,7 @@ const getBillingInvoiceByNumber = asyncHandler(async (req, res) => {
 
   res.json(invoice);
 });
+
 const getIncomeByPincode = asyncHandler(async (req, res) => {
   const data = await Order.aggregate([
     {
@@ -876,9 +789,7 @@ const getIncomeByPincode = asyncHandler(async (req, res) => {
         income: 1,
       },
     },
-    {
-      $sort: { income: -1 },
-    },
+    { $sort: { income: -1 } },
   ]);
 
   res.status(200).json(data);

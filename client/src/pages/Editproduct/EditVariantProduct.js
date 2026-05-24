@@ -77,6 +77,7 @@ const EditVariantProduct = () => {
   const [commonState, setCommonState] = useState({
     brandname: "",
     description: "",
+    hsnCode: "6109",
     sizeChart: "",
     sizeChartFile: null,
     washCare: [],
@@ -211,6 +212,7 @@ const EditVariantProduct = () => {
       setCommonState({
         brandname: common.brandname || "",
         description: common.description || "",
+        hsnCode: common.hsnCode || "6109",
         sizeChart: common.sizeChart || "",
         washCare: common.washCare || [],
         sizeChartFile: null,
@@ -281,6 +283,7 @@ const EditVariantProduct = () => {
     const fd = new FormData();
     fd.append("brandname", commonState.brandname);
     fd.append("description", commonState.description);
+    fd.append("hsnCode", commonState.hsnCode);
     fd.append("isFeatured", commonState.isFeatured);
     fd.append("shippingDetails", JSON.stringify(commonState.shippingDetails));
     fd.append("gender", commonState.productdetails.gender);
@@ -395,6 +398,16 @@ const EditVariantProduct = () => {
               onChange={(e) =>
                 setCommonState({ ...commonState, description: e.target.value })
               }
+            />
+          </FormControl>
+          <FormControl>
+            <FormLabel>HSN Code</FormLabel>
+            <Input
+              value={commonState.hsnCode}
+              onChange={(e) =>
+                setCommonState({ ...commonState, hsnCode: e.target.value })
+              }
+              placeholder="e.g. 6109"
             />
           </FormControl>
           <FormControl gridColumn="1 / -1">

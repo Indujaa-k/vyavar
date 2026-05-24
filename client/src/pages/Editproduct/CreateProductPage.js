@@ -63,6 +63,7 @@ const CreateProductPage = () => {
   const [SKU, setSKU] = useState("");
   const [productType, setProductType] = useState("single"); // default single
   const [comboName, setComboName] = useState("");
+  const [hsnCode, setHsnCode] = useState("6109");
 
   const [productdetails, setProductdetails] = useState({
     gender: "",
@@ -236,135 +237,129 @@ const CreateProductPage = () => {
     return isNaN(num) ? fallback : num;
   };
 
-  const submitHandler = (e) => {
-    e.preventDefault();
+const submitHandler = (e) => {
+  e.preventDefault();
 
-    // 🔴 VALIDATION
-    if (colorVariants.length === 0) {
-      showError("Please add at least one color variant");
+  // 🔴 VALIDATION
+  if (colorVariants.length === 0) {
+    showError("Please add at least one color variant");
+    return;
+  }
+
+  for (let i = 0; i < colorVariants.length; i++) {
+    const v = colorVariants[i];
+
+    if (!v.color) {
+      showError(`Color name missing for variant ${i + 1}`);
       return;
     }
 
-    for (let i = 0; i < colorVariants.length; i++) {
-      const v = colorVariants[i];
-
-      if (!v.color) {
-        showError(`Color name missing for variant ${i + 1}`);
-        return;
-      }
-
-      const imageError = validateImages(colorVariants);
-      if (imageError) {
-        showError(imageError);
-        return;
-      }
-
-      const oldPrice = safeNumber(v.oldPrice);
-      const discount = safeNumber(v.discount);
-
-      if (oldPrice <= 0) {
-        showError(`Enter valid old price for Color ${i + 1}`);
-        return;
-      }
-
-      if (discount < 0 || discount > 100) {
-        showError(`Invalid discount for Color ${i + 1}`);
-        return;
-      }
+    const imageError = validateImages(colorVariants);
+    if (imageError) {
+      showError(imageError);
+      return;
     }
 
-    const formData = new FormData();
+    const oldPrice = safeNumber(v.oldPrice);
+    const discount = safeNumber(v.discount);
 
-    // 🔹 BASIC
-    formData.append("brandname", brandname);
-    formData.append("description", description);
-    formData.append("SKU", SKU);
-    formData.append("isFeatured", isFeatured ? "true" : "false");
-    formData.append("productType", productType);
+    if (oldPrice <= 0) {
+      showError(`Enter valid old price for Color ${i + 1}`);
+      return;
+    }
+
+    if (discount < 0 || discount > 100) {
+      showError(`Invalid discount for Color ${i + 1}`);
+      return;
+    }
+  }
+
+  const formData = new FormData();
+
+  // 🔹 BASIC
+  formData.append("brandname", brandname);
+  formData.append("description", description);
+  formData.append("SKU", SKU);
+  formData.append("hsnCode", hsnCode);
+  formData.append("isFeatured", isFeatured ? "true" : "false");
+  formData.append("productType", productType);
+  formData.append(
+    "washCare",
+    JSON.stringify(washCare.filter((s) => s.trim() !== "")),
+  );
+  
+  // ✅ NO dispatch here!
+  
+  // 🔹 SHIPPING
+  formData.append("shippingDetails", JSON.stringify(shippingDetails));
+
+  if (productType === "combo") {
+    formData.append("comboName", comboName);
     formData.append(
-      "washCare",
-      JSON.stringify(washCare.filter((s) => s.trim() !== "")),
-    );
-    console.log(
-      "✅ washCare to send:",
-      washCare.filter((s) => s.trim() !== ""),
-    );
-    dispatch(CreateProduct(formData));
-    // 🔹 SHIPPING
-    formData.append("shippingDetails", JSON.stringify(shippingDetails));
-
-    if (productType === "combo") {
-      formData.append("comboName", comboName);
-
-      formData.append(
-        "products",
-        JSON.stringify(
-          colorVariants.map((v) => ({
+      "products",
+      JSON.stringify(
+        colorVariants.map((v) => ({
+          color: v.color || "Combo",
+          oldPrice: safeNumber(v.oldPrice),
+          discount: safeNumber(v.discount),
+          price: calculateVariantPrice(v.oldPrice, v.discount),
+          imagesCount: v.images.filter(Boolean).length,
+          productdetails: {
+            ...productdetails,
             color: v.color || "Combo",
-            oldPrice: safeNumber(v.oldPrice),
-            discount: safeNumber(v.discount),
-            price: calculateVariantPrice(v.oldPrice, v.discount),
-            imagesCount: v.images.filter(Boolean).length,
-
-            productdetails: {
-              ...productdetails,
-              color: v.color || "Combo",
-              sizes: v.sizes,
-              stockBySize: v.stockBySize.filter((s) =>
-                v.sizes.includes(s.size),
-              ),
-              category: "Combo",
-              subcategory: "Combo",
-            },
-          })),
-        ),
-      );
-    } else {
-      // ✅ SINGLE PRODUCT VARIANTS
-      formData.append(
-        "products",
-        JSON.stringify(
-          colorVariants.map((v) => ({
+            sizes: v.sizes,
+            stockBySize: v.stockBySize.filter((s) =>
+              v.sizes.includes(s.size),
+            ),
+            category: "Combo",
+            subcategory: "Combo",
+          },
+        })),
+      ),
+    );
+  } else {
+    // ✅ SINGLE PRODUCT VARIANTS
+    formData.append(
+      "products",
+      JSON.stringify(
+        colorVariants.map((v) => ({
+          color: v.color,
+          oldPrice: safeNumber(v.oldPrice),
+          discount: safeNumber(v.discount),
+          price: calculateVariantPrice(v.oldPrice, v.discount),
+          imagesCount: v.images.filter(Boolean).length,
+          productdetails: {
+            ...productdetails,
             color: v.color,
-            oldPrice: safeNumber(v.oldPrice),
-            discount: safeNumber(v.discount),
-            price: calculateVariantPrice(v.oldPrice, v.discount),
-            imagesCount: v.images.filter(Boolean).length,
+            sizes: v.sizes,
+            stockBySize: v.stockBySize.filter((s) =>
+              v.sizes.includes(s.size),
+            ),
+          },
+        })),
+      ),
+    );
+  }
 
-            productdetails: {
-              ...productdetails,
-              color: v.color,
-              sizes: v.sizes,
-              stockBySize: v.stockBySize.filter((s) =>
-                v.sizes.includes(s.size),
-              ),
-            },
-          })),
-        ),
-      );
-    }
-
-    // 🔥 IMAGES
-
-    colorVariants.forEach((variant) => {
-      const validImages = variant.images.filter(Boolean); // ✅ remove holes
-
-      validImages.forEach((file) => {
-        formData.append("images", file);
-      });
+  // 🔥 IMAGES
+  colorVariants.forEach((variant) => {
+    const validImages = variant.images.filter(Boolean);
+    validImages.forEach((file) => {
+      formData.append("images", file);
     });
+  });
 
-    // 🔹 SIZE CHART
-    if (sizeChartFile) {
-      formData.append("sizeChart", sizeChartFile);
-    }
+  // 🔹 SIZE CHART
+  if (sizeChartFile) {
+    formData.append("sizeChart", sizeChartFile);
+  }
 
-    console.log("Variants:", colorVariants);
-    console.log("Images count:", colorVariants.flatMap((v) => v.images).length);
+  console.log("Variants:", colorVariants);
+  console.log("Images count:", colorVariants.flatMap((v) => v.images).length);
 
-    // 🚀 DISPATCH
-    dispatch(CreateProduct(formData));
-  };
+  // 🚀 DISPATCH - ONLY HERE, ONCE!
+  dispatch(CreateProduct(formData));
+};
 
   return (
     <Box
@@ -410,6 +405,15 @@ const CreateProductPage = () => {
             type="text"
             value={SKU}
             onChange={(e) => setSKU(e.target.value)}
+          />
+        </FormControl>
+        <FormControl isRequired>
+          <FormLabel>HSN Code</FormLabel>
+          <Input
+            type="text"
+            value={hsnCode}
+            onChange={(e) => setHsnCode(e.target.value)}
+            placeholder="Enter HSN Code"
           />
         </FormControl>
         <Checkbox
