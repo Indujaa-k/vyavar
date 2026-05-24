@@ -21,10 +21,8 @@ import {
 import { jsPDF } from "jspdf";
 import { useParams } from "react-router-dom";
 
-// ── Local logo asset ──────────────────────────────────────────────────────────
 import stampLogo from "../../assets/about/stamp.png";
 
-// ── Company "From" details ────────────────────────────────────────────────────
 const FROM_NAME = "Viyavar Fashions";
 const FROM_ADDRESS = [
   "173A, Anna Nagar, Industrial Estate",
@@ -32,25 +30,24 @@ const FROM_ADDRESS = [
   "India",
 ];
 
-// ── Logo dimensions (mm) — change only here if you resize ────────────────────
 const LOGO_W = 15;
 const LOGO_H = 18;
 
-// ── Helper: convert PNG (with transparency) to base64 PNG ────────────────────
-const getBase64FromUrl = (url) =>
+const getCompressedLogoBase64 = (url) =>
   new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
+      const TARGET_W = 80;
+      const TARGET_H = Math.round((img.naturalHeight / img.naturalWidth) * TARGET_W);
       const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
+      canvas.width = TARGET_W;
+      canvas.height = TARGET_H;
       const ctx = canvas.getContext("2d");
-      // White fill prevents transparent pixels turning black in PDF
       ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL("image/png"));
+      ctx.fillRect(0, 0, TARGET_W, TARGET_H);
+      ctx.drawImage(img, 0, 0, TARGET_W, TARGET_H);
+      resolve(canvas.toDataURL("image/jpeg", 0.7));
     };
     img.onerror = reject;
     img.src = url;
@@ -66,29 +63,37 @@ const InvoiceScreen = ({ match }) => {
     dispatch(getInvoice(id));
   }, [dispatch, id]);
 
-  // Coupon guard — only show when discountAmount is a positive number
   const hasCoupon =
     invoice?.pricing?.coupon &&
     Number(invoice.pricing.coupon.discountAmount) > 0;
 
-  // ── Download as 100×150mm label / sticker PDF ─────────────────────────────
+  const cgst =
+    invoice?.pricing?.cgstPrice != null
+      ? invoice.pricing.cgstPrice
+      : Math.round(((invoice?.pricing?.taxPrice || 0) / 2) * 100) / 100;
+  const sgst =
+    invoice?.pricing?.sgstPrice != null
+      ? invoice.pricing.sgstPrice
+      : Math.round(((invoice?.pricing?.taxPrice || 0) / 2) * 100) / 100;
+
+  // ── Download PDF ────────────────────────────────────────────────────────────
   const handleDownloadPDF = async () => {
     if (!invoice) return;
 
     let logoBase64 = null;
     try {
-      logoBase64 = await getBase64FromUrl(stampLogo);
+      logoBase64 = await getCompressedLogoBase64(stampLogo);
     } catch (err) {
       console.warn("Logo could not be loaded, skipping.", err);
     }
 
-    const doc = new jsPDF({ unit: "mm", format: [100, 150] });
-    const PW = 100;
+    const doc = new jsPDF({ unit: "mm", format: [120, 150], compress: true });
+    const PW = 120;
     let y = 6;
 
     // ── LOGO ─────────────────────────────────────────────────────────────────
     if (logoBase64) {
-      doc.addImage(logoBase64, "PNG", 7, y, LOGO_W, LOGO_H);
+      doc.addImage(logoBase64, "JPEG", 7, y, LOGO_W, LOGO_H);
     } else {
       doc.setDrawColor(180, 180, 180);
       doc.setFillColor(240, 240, 240);
@@ -100,7 +105,6 @@ const InvoiceScreen = ({ match }) => {
       doc.setTextColor(0, 0, 0);
     }
 
-    // Company name + tagline — vertically centred beside logo
     const logoMidY = y + LOGO_H / 2;
     doc.setFontSize(10);
     doc.setFont(undefined, "bold");
@@ -113,30 +117,43 @@ const InvoiceScreen = ({ match }) => {
     doc.text("Premium Fashion Store", 7 + LOGO_W + 3, logoMidY + 4);
     doc.setTextColor(0, 0, 0);
 
-    // Advance y by exactly logo height + small gap — no extra wasted space
     y += LOGO_H + 4;
 
     // ── RULE ─────────────────────────────────────────────────────────────────
     doc.setDrawColor(200, 200, 200);
     doc.setLineWidth(0.3);
-    doc.line(8, y, 92, y);
+    doc.line(8, y, PW - 8, y);
     y += 4;
 
-    // ── INVOICE TITLE + ORDER ID ──────────────────────────────────────────────
+    // ── INVOICE TITLE + INVOICE NUMBER + ORDER ID ─────────────────────────────
     doc.setFontSize(11);
     doc.setFont(undefined, "bold");
     doc.setTextColor(0, 0, 0);
     doc.text("INVOICE", 8, y);
-    doc.setFontSize(7);
-    doc.setFont(undefined, "normal");
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Order ID: ${invoice.orderId}`, 92, y, { align: "right" });
+
+    if (invoice.invoiceNumber) {
+      doc.setFontSize(7);
+      doc.setFont(undefined, "bold");
+      doc.setTextColor(0, 0, 0);
+      doc.text(`#${invoice.invoiceNumber}`, PW - 8, y, { align: "right" });
+      y += 4;
+      doc.setFontSize(6.5);
+      doc.setFont(undefined, "normal");
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Order ID: ${invoice.orderId}`, PW - 8, y, { align: "right" });
+    } else {
+      doc.setFontSize(7);
+      doc.setFont(undefined, "normal");
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Order ID: ${invoice.orderId}`, PW - 8, y, { align: "right" });
+    }
+
     doc.setTextColor(0, 0, 0);
     y += 5;
 
-    // ── FROM / TO — two-column layout ────────────────────────────────────────
+    // ── FROM / TO ─────────────────────────────────────────────────────────────
     const colLeft = 8;
-    const colRight = 52;
+    const colRight = 62;
 
     doc.setFontSize(6.5);
     doc.setFont(undefined, "bold");
@@ -182,7 +199,7 @@ const InvoiceScreen = ({ match }) => {
 
     // ── RULE ─────────────────────────────────────────────────────────────────
     doc.setDrawColor(200, 200, 200);
-    doc.line(8, y, 92, y);
+    doc.line(8, y, PW - 8, y);
     y += 4;
 
     // ── EMAIL ─────────────────────────────────────────────────────────────────
@@ -194,19 +211,21 @@ const InvoiceScreen = ({ match }) => {
     y += 5;
 
     // ── ITEMS TABLE HEADER ────────────────────────────────────────────────────
+    // Columns: Qty | Product | HSN | Size | Amount
     doc.setFillColor(245, 245, 245);
-    doc.rect(8, y - 3, 84, 7, "F");
+    doc.rect(8, y - 3, PW - 16, 7, "F");
     doc.setFontSize(7);
     doc.setFont(undefined, "bold");
     doc.setTextColor(0, 0, 0);
-    doc.text("Qty", 10, y + 1);
-    doc.text("Product", 20, y + 1);
-    doc.text("Size", 66, y + 1);
-    doc.text("Amount", 80, y + 1);
+    doc.text("Qty",     10,       y + 1);
+    doc.text("Product", 20,       y + 1);
+    doc.text("HSN",     72,       y + 1);
+    doc.text("Size",    88,       y + 1);
+    doc.text("Amount",  102,      y + 1);
     y += 6;
 
     doc.setDrawColor(220, 220, 220);
-    doc.line(8, y, 92, y);
+    doc.line(8, y, PW - 8, y);
     y += 3;
 
     // ── ITEM ROWS ─────────────────────────────────────────────────────────────
@@ -216,30 +235,36 @@ const InvoiceScreen = ({ match }) => {
       if (y > 132) { doc.addPage(); y = 8; }
       if (i % 2 === 0) {
         doc.setFillColor(252, 252, 252);
-        doc.rect(8, y - 2.5, 84, 5.5, "F");
+        doc.rect(8, y - 2.5, PW - 16, 5.5, "F");
       }
       const name = item.name.length > 26 ? item.name.slice(0, 24) + ".." : item.name;
-      doc.text(String(item.qty), 10, y + 0.5);
-      doc.text(name, 20, y + 0.5);
-      doc.text(item.size || "-", 66, y + 0.5);
-      doc.text(`Rs.${item.price}`, 80, y + 0.5);
+      const hsn  = item.hsnCode || "6109"; // ✅ show HSN per item
+      doc.text(String(item.qty),    10,  y + 0.5);
+      doc.text(name,                20,  y + 0.5);
+      doc.text(hsn,                 72,  y + 0.5);
+      doc.text(item.size || "-",    88,  y + 0.5);
+      doc.text(`Rs.${item.price}`,  102, y + 0.5);
       y += 5.5;
     });
 
     y += 1;
     doc.setDrawColor(200, 200, 200);
-    doc.line(8, y, 92, y);
+    doc.line(8, y, PW - 8, y);
     y += 4;
 
     // ── SUMMARY ───────────────────────────────────────────────────────────────
-    const sumLabel = 52;
-    const sumValue = 92;
+    const sumLabel = 62;
+    const sumValue = PW - 8;
     doc.setFontSize(6.5);
     doc.setFont(undefined, "normal");
     doc.setTextColor(80, 80, 80);
 
-    doc.text("Tax:", sumLabel, y);
-    doc.text(`Rs. ${invoice.pricing?.taxPrice || 0}`, sumValue, y, { align: "right" });
+    doc.text("CGST @2.5%:", sumLabel, y);
+    doc.text(`Rs. ${cgst}`, sumValue, y, { align: "right" });
+    y += 4;
+
+    doc.text("SGST @2.5%:", sumLabel, y);
+    doc.text(`Rs. ${sgst}`, sumValue, y, { align: "right" });
     y += 4;
 
     doc.text("Shipping:", sumLabel, y);
@@ -255,7 +280,7 @@ const InvoiceScreen = ({ match }) => {
     }
 
     doc.setFillColor(30, 30, 30);
-    doc.rect(8, y - 3, 84, 8, "F");
+    doc.rect(8, y - 3, PW - 16, 8, "F");
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(8);
     doc.setFont(undefined, "bold");
@@ -272,18 +297,25 @@ const InvoiceScreen = ({ match }) => {
       invoice.paymentStatus?.isPaid
         ? `Paid on ${new Date(invoice.paymentStatus.paidAt).toLocaleDateString()}`
         : "Payment Pending",
-      8, y
+      8,
+      y
     );
 
     // ── FOOTER ────────────────────────────────────────────────────────────────
     doc.setTextColor(160, 160, 160);
     doc.setFontSize(5.5);
-    doc.text("Thank you for shopping with Viyavar Fashions!", PW / 2, 146, { align: "center" });
+    doc.text("Thank you for shopping with Viyavar Fashions!", PW / 2, 146, {
+      align: "center",
+    });
 
-    doc.save(`invoice_${invoice.orderId}.pdf`);
+    const filename = invoice.invoiceNumber
+      ? `invoice_${invoice.invoiceNumber}.pdf`
+      : `invoice_${invoice.orderId}.pdf`;
+
+    doc.save(filename);
   };
 
-  // ── UI ────────────────────────────────────────────────────────────────────
+  // ── UI ─────────────────────────────────────────────────────────────────────
   return (
     <Box
       px={{ base: 3, sm: 5, md: 8 }}
@@ -323,7 +355,6 @@ const InvoiceScreen = ({ match }) => {
             gap={{ base: 3, md: 4 }}
             flexWrap="wrap"
           >
-            {/* Logo — tight fit, no extra margin */}
             <Box
               as="img"
               src={stampLogo}
@@ -362,6 +393,28 @@ const InvoiceScreen = ({ match }) => {
           </Flex>
 
           <Divider mb={4} />
+
+          {/* ── Invoice Number Banner ── */}
+          {invoice.invoiceNumber && (
+            <Flex
+              mb={4}
+              px={4}
+              py={2}
+              bg="teal.50"
+              borderRadius="md"
+              align="center"
+              justify="space-between"
+              flexWrap="wrap"
+              gap={2}
+            >
+              <Text fontSize="xs" color="teal.600" fontWeight="bold" letterSpacing="wider" textTransform="uppercase">
+                Invoice Number
+              </Text>
+              <Badge colorScheme="teal" fontSize={{ base: "sm", md: "md" }} px={3} py={1} borderRadius="full">
+                {invoice.invoiceNumber}
+              </Badge>
+            </Flex>
+          )}
 
           {/* ── Order Info + TO Address ── */}
           <Grid
@@ -444,11 +497,12 @@ const InvoiceScreen = ({ match }) => {
               Items
             </Text>
             <Box overflowX="auto" borderRadius="md" borderWidth={1} borderColor="gray.100">
-              <Table variant="simple" size={{ base: "sm", md: "md" }} minW="400px">
+              <Table variant="simple" size={{ base: "sm", md: "md" }} minW="500px">
                 <Thead bg="gray.50">
                   <Tr>
                     <Th fontSize={{ base: "xs", md: "sm" }}>Qty</Th>
                     <Th fontSize={{ base: "xs", md: "sm" }}>Name</Th>
+                    <Th fontSize={{ base: "xs", md: "sm" }}>HSN Code</Th>
                     <Th fontSize={{ base: "xs", md: "sm" }}>Size</Th>
                     <Th fontSize={{ base: "xs", md: "sm" }} isNumeric>Price</Th>
                   </Tr>
@@ -466,6 +520,12 @@ const InvoiceScreen = ({ match }) => {
                         >
                           {item.name}
                         </Td>
+                        {/* ✅ HSN Code column */}
+                        <Td fontSize={{ base: "xs", md: "sm" }}>
+                          <Badge colorScheme="gray" fontSize="xs" px={2} py={0.5} borderRadius="md">
+                            {item.hsnCode || "6109"}
+                          </Badge>
+                        </Td>
                         <Td fontSize={{ base: "xs", md: "sm" }}>{item.size || "-"}</Td>
                         <Td fontSize={{ base: "xs", md: "sm" }} isNumeric fontWeight="medium">
                           ₹{item.price}
@@ -474,7 +534,7 @@ const InvoiceScreen = ({ match }) => {
                     ))
                   ) : (
                     <Tr>
-                      <Td colSpan={4} textAlign="center" color="gray.400" py={6}>
+                      <Td colSpan={5} textAlign="center" color="gray.400" py={6}>
                         No items in the order.
                       </Td>
                     </Tr>
@@ -497,8 +557,17 @@ const InvoiceScreen = ({ match }) => {
             </Text>
 
             <Flex justify="space-between" mb={2}>
-              <Text fontSize={{ base: "sm", md: "md" }} color="gray.600">Tax</Text>
-              <Text fontSize={{ base: "sm", md: "md" }}>₹{invoice.pricing?.taxPrice || 0}</Text>
+              <Text fontSize={{ base: "sm", md: "md" }} color="gray.600">
+                CGST <Text as="span" fontSize="xs" color="gray.400">@2.5%</Text>
+              </Text>
+              <Text fontSize={{ base: "sm", md: "md" }}>₹{cgst}</Text>
+            </Flex>
+
+            <Flex justify="space-between" mb={2}>
+              <Text fontSize={{ base: "sm", md: "md" }} color="gray.600">
+                SGST <Text as="span" fontSize="xs" color="gray.400">@2.5%</Text>
+              </Text>
+              <Text fontSize={{ base: "sm", md: "md" }}>₹{sgst}</Text>
             </Flex>
 
             <Flex justify="space-between" mb={2}>

@@ -586,14 +586,30 @@ const createProduct = asyncHandler(async (req, res) => {
       products,
       productType = "single",
       comboName = "",
+      hsnCode,
     } = req.body;
 
-    if (!products) {
+    // ✅ IMPROVED VALIDATION - Check if products exists AND is not empty
+    if (!products || products === "" || products === "[]") {
+      console.error("❌ No products data received");
       return res.status(400).json({ message: "No product variants provided" });
     }
 
-    const parsedProducts =
-      typeof products === "string" ? JSON.parse(products) : products;
+    // ✅ Parse products safely
+    let parsedProducts;
+    try {
+      parsedProducts = typeof products === "string" ? JSON.parse(products) : products;
+    } catch (parseError) {
+      console.error("❌ Error parsing products:", parseError);
+      return res.status(400).json({ message: "Invalid product data format" });
+    }
+
+    // ✅ Check if parsed products is actually an array with items
+    if (!Array.isArray(parsedProducts) || parsedProducts.length === 0) {
+      console.error("❌ Parsed products is empty or not an array");
+      return res.status(400).json({ message: "No product variants provided" });
+    }
+
     const washCare =
       typeof req.body.washCare === "string"
         ? JSON.parse(req.body.washCare)
@@ -602,6 +618,7 @@ const createProduct = asyncHandler(async (req, res) => {
       typeof shippingDetails === "string"
         ? JSON.parse(shippingDetails)
         : shippingDetails;
+    
     if (parsedShippingDetails?.originAddress?.street2 !== undefined) {
       delete parsedShippingDetails.originAddress.street2;
     }
@@ -612,17 +629,6 @@ const createProduct = asyncHandler(async (req, res) => {
     const sizeChart = req.files?.sizeChart?.[0]?.path || "";
     console.log("🚀 [createProduct] Size Chart received:", sizeChart);
     const allImages = req.files?.images || [];
-
-    //     // ✅ TOTAL IMAGE VALIDATION
-    //     const minImages = parsedProducts.length * 3;
-    //     const maxImages = parsedProducts.length * 5;
-
-    //     if (allImages.length < minImages || allImages.length > maxImages) {
-    //       return res.status(400).json({
-    //         message: `Each variant must have 3–5 images.
-    // Expected ${minImages}–${maxImages}, got ${allImages.length}`,
-    //       });
-    //     }
 
     let imageIndex = 0;
     const createdProducts = [];
@@ -644,6 +650,7 @@ const createProduct = asyncHandler(async (req, res) => {
         .map((file) => file.path);
 
       imageIndex += imageCount;
+      
       if (productType === "combo") {
         variant.productdetails.subcategory = "Combo";
       }
@@ -654,7 +661,7 @@ const createProduct = asyncHandler(async (req, res) => {
         description,
         productType,
         comboName: productType === "combo" ? comboName : "",
-
+        hsnCode: hsnCode || "6109",
         price: Number(variant.price),
         oldPrice: Number(variant.oldPrice),
         discount: Number(variant.discount),
@@ -662,13 +669,10 @@ const createProduct = asyncHandler(async (req, res) => {
         images,
         sizeChart,
         productGroupId,
-
         SKU: `${SKU}-${variant.productdetails.color.toUpperCase()}-${Date.now()}`,
-
         productdetails: variant.productdetails,
         shippingDetails: parsedShippingDetails,
         isFeatured: isFeatured === "true",
-
         rating: 0,
         numReviews: 0,
       });
@@ -676,6 +680,7 @@ const createProduct = asyncHandler(async (req, res) => {
       createdProducts.push(await product.save());
     }
 
+    // ✅ SUCCESS RESPONSE
     res.status(201).json({
       message: "Product variants created successfully",
       productGroupId,
@@ -711,6 +716,7 @@ const updateProduct = asyncHandler(async (req, res) => {
   product.price = req.body.price || product.price;
   product.SKU = req.body.SKU || product.SKU;
   product.isFeatured = req.body.isFeatured ?? product.isFeatured;
+  product.hsnCode = req.body.hsnCode || product.hsnCode;
 
   // JSON fields
   if (req.body.productdetails) {
@@ -938,6 +944,7 @@ const uploadProducts = asyncHandler(async (req, res) => {
     await Product.create({
       user: req.user._id,
       SKU: `${row.SKU}-${(row.color || "DEFAULT").toUpperCase()}-${Date.now()}`,
+      hsnCode: row.hsnCode || "6109",
       productGroupId: groupMap[row.productGroupId],
       brandname: row.brandname || "Default Brand",
       description: row.description || "",
@@ -1279,8 +1286,8 @@ const getProductFullById = asyncHandler(async (req, res) => {
 });
 
 const updateGroupCommonFields = asyncHandler(async (req, res) => {
-  console.log("📁 req.files:", req.files); // ← add this temporarily
-  console.log("📦 req.body:", req.body); // ← add this temporarily
+  console.log("📁 req.files:", req.files);
+  console.log("📦 req.body:", req.body);
 
   // ✅ Parse shippingDetails since it comes as a JSON string from FormData
   let shipping = req.body.shippingDetails;
@@ -1300,7 +1307,8 @@ const updateGroupCommonFields = asyncHandler(async (req, res) => {
   const updateFields = {
     brandname: req.body.brandname,
     description: req.body.description,
-    shippingDetails: shipping, // ✅ now properly parsed
+    hsnCode: req.body.hsnCode, // ✅ ADD THIS LINE
+    shippingDetails: shipping,
     isFeatured: req.body.isFeatured,
     "productdetails.gender": req.body.gender,
     "productdetails.category": req.body.category,
@@ -1328,7 +1336,6 @@ const updateGroupCommonFields = asyncHandler(async (req, res) => {
     updatedCount: result.modifiedCount,
   });
 });
-
 const addVariantToGroup = asyncHandler(async (req, res) => {
   const { groupId } = req.params;
 
@@ -1489,6 +1496,7 @@ const getProductGroup = asyncHandler(async (req, res) => {
     common: {
       brandname: base.brandname,
       description: base.description,
+      hsnCode: base.hsnCode, 
       shippingDetails: base.shippingDetails,
       isFeatured: base.isFeatured,
       sizeChart: base.sizeChart,

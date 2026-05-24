@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+
 const shippingRateSchema = mongoose.Schema(
   {
     serviceType: { type: String, required: true },
@@ -6,8 +7,9 @@ const shippingRateSchema = mongoose.Schema(
     estimatedDeliveryDate: { type: String, default: "N/A" },
     currency: { type: String, default: "USD" },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
+
 const transactionSchema = mongoose.Schema(
   {
     deliveryPerson: {
@@ -37,8 +39,9 @@ const transactionSchema = mongoose.Schema(
       type: String,
     },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
+
 const orderSchema = mongoose.Schema(
   {
     user: {
@@ -48,7 +51,7 @@ const orderSchema = mongoose.Schema(
     },
     deliveryPerson: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // Relation to delivery person
+      ref: "User",
     },
     orderItems: [
       {
@@ -56,10 +59,7 @@ const orderSchema = mongoose.Schema(
         qty: { type: Number, required: true },
         image: { type: String },
         price: { type: Number, required: true },
-        size: {
-          type: String,
-          required: true,
-        },
+        size: { type: String, required: true },
         product: {
           type: mongoose.Schema.Types.ObjectId,
           required: true,
@@ -67,7 +67,6 @@ const orderSchema = mongoose.Schema(
         },
       },
     ],
-
     shippingAddress: {
       doorNo: { type: String, default: "" },
       street: { type: String, default: "" },
@@ -76,7 +75,6 @@ const orderSchema = mongoose.Schema(
       state: { type: String, default: "" },
       pin: { type: Number, default: "" },
       country: { type: String, default: "" },
-      // phoneNumber: { type: Number, required: true }, // New field
       phoneNumber: { type: Number, default: null },
     },
     paymentMethod: {
@@ -96,7 +94,6 @@ const orderSchema = mongoose.Schema(
       ],
       default: "CREATED",
     },
-
     size: { type: String, required: false },
     paymentResult: {
       id: { type: String },
@@ -105,63 +102,32 @@ const orderSchema = mongoose.Schema(
       email_adress: { type: String },
     },
     shippingRates: { type: [shippingRateSchema], default: [] },
-    taxPrice: {
-      type: Number,
-      required: true,
-    },
-    shippingPrice: {
-      type: Number,
-      required: true,
-    },
-    totalPrice: {
-      type: Number,
-      required: true,
-    },
-    isPaid: {
-      type: Boolean,
-      required: true,
-      default: false,
-    },
-    paidAt: {
-      type: Date,
-    },
+
+    cgstPrice: { type: Number, default: 0 },   // ✅ ADDED
+    sgstPrice: { type: Number, default: 0 },   // ✅ ADDED
+
+    taxPrice: { type: Number, required: true },
+    shippingPrice: { type: Number, required: true },
+    totalPrice: { type: Number, required: true },
+
+    isPaid: { type: Boolean, required: true, default: false },
+    paidAt: { type: Date },
+
     coupon: {
       code: { type: String },
       percentage: { type: Number },
       discountAmount: { type: Number },
     },
 
-    // // isDelivered: {
-    // //   type: Boolean,
-    // //   required: true,
-    // //   default: false,
-    // },
-    deliveredAt: {
-      type: Date,
-    },
+    invoiceNumber: { type: String, default: null }, // ✅ ADDED
 
-    // isAcceptedByDelivery: {
-    //   type: Boolean,
-    //   default: false,
-    // },
-    // isReturned: {
-    //   type: Boolean,
-    //   default: false,
-    // },
-    // returnReason: {
-    //   type: String,
-    // },
-    invoiceDetails: {
-      type: Object,
-      default: null,
-    },
+    deliveredAt: { type: Date },
+
+    invoiceDetails: { type: Object, default: null },
     transaction: { type: [transactionSchema], default: [] },
   },
-  {
-    timestamps: true,
-  },
+  { timestamps: true }
 );
 
 const Order = mongoose.model("Order", orderSchema);
-
 export default Order;

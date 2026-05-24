@@ -28,7 +28,7 @@ const RegisterEmailOtp = async ({ email, status, orderId }) => {
         <p>This OTP will expire in <strong>10 minutes</strong>.</p>
         <p>If you didn’t request this, please ignore this email.</p>
         <br/>
-        <p>Best regards,<br/>Eco AI Trackers Team</p>
+        <p>Best regards,<br/>Viyavar Fashions</p>
       </div>
     `,
   };

@@ -80,6 +80,10 @@ const productSchema = mongoose.Schema(
       required: true,
     },
     SKU: { type: String, unique: true, required: true },
+    hsnCode: {
+      type: String,
+      default: "6109",
+    },
     productGroupId: { type: String, required: true },
     productType: {
       type: String,

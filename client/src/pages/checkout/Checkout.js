@@ -37,7 +37,8 @@ const Checkout = () => {
   const [couponApplied, setCouponApplied] = useState(false);
 
   const dispatch = useDispatch();
-  const taxPercentage = 5;
+  const cgstPercentage = 2.5;
+  const sgstPercentage = 2.5;
 
   const subtotal = cart.cartItems.reduce((acc, item) => acc + item.price, 0);
   const roundedSubtotal = parseFloat(subtotal.toFixed(2));
@@ -55,7 +56,9 @@ const Checkout = () => {
 
   const shippingCost = cart.shippingCost ?? 0;
 
-  const taxAmount = parseFloat(((roundedSubtotal * 5) / 100).toFixed(2));
+  const cgstAmount = parseFloat(((roundedSubtotal * cgstPercentage) / 100).toFixed(2));
+  const sgstAmount = parseFloat(((roundedSubtotal * sgstPercentage) / 100).toFixed(2));
+  const taxAmount = parseFloat((cgstAmount + sgstAmount).toFixed(2));
 
   // Check if free shipping applies
   const isFreeShipping =
@@ -231,6 +234,8 @@ const Checkout = () => {
 
         shippingAddress: recipientAddress,
         paymentMethod: "Razorpay",
+        cgstPrice: cgstAmount,
+        sgstPrice: sgstAmount,
         taxPrice: taxAmount,
         shippingPrice: roundedShippingCost,
         itemsPrice: subtotal,
@@ -326,9 +331,15 @@ const Checkout = () => {
             )}
 
             <HStack justify="space-between" w="full" p="3">
-              <Text>Taxes (5%):</Text>
-              <Text color={"grey"}>Rs. {taxAmount.toFixed(2)}</Text>
+              <Text>CGST @2.5%:</Text>
+              <Text color={"grey"}>Rs. {cgstAmount.toFixed(2)}</Text>
             </HStack>
+
+            <HStack justify="space-between" w="full" p="3">
+              <Text>SGST @2.5%:</Text>
+              <Text color={"grey"}>Rs. {sgstAmount.toFixed(2)}</Text>
+            </HStack>
+
             <Divider my={3} />
 
             <VStack w="full" align="stretch" spacing={2}>
