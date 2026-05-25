@@ -347,14 +347,13 @@ const assignOrderToDeliveryPerson = asyncHandler(async (req, res) => {
 const generateInvoice = asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.id)
     .populate("user", "name email")
-    .populate("orderItems.product", "hsnCode"); // ✅ pull hsnCode from Product
+    .populate("orderItems.product", "hsnCode");
 
   if (!order) {
     res.status(404);
     throw new Error("Order not found");
   }
 
-  // ✅ Attach hsnCode from populated product onto each order item
   const orderItemsWithHsn = order.orderItems.map((item) => ({
     ...item.toObject(),
     hsnCode: item.product?.hsnCode || "6109",
@@ -362,27 +361,31 @@ const generateInvoice = asyncHandler(async (req, res) => {
 
   const invoice = {
     orderId: order._id,
-    invoiceNumber: order.invoiceNumber, // ✅ already saved when order was placed
+    invoiceNumber: order.invoiceNumber,
     user: {
       name: order.user?.name || "N/A",
       email: order.user?.email || "N/A",
     },
-    orderItems: orderItemsWithHsn, // ✅ now includes hsnCode per item
+    orderItems: orderItemsWithHsn,
     shippingAddress: order.shippingAddress,
     paymentMethod: order.paymentMethod,
+
+    // ✅ coupon at TOP LEVEL — this is what InvoiceScreen reads as invoice.coupon
+    coupon: order.coupon
+      ? {
+          code: order.coupon.code,
+          percentage: order.coupon.percentage,
+          discountAmount: order.coupon.discountAmount,
+        }
+      : null,
+
     pricing: {
       cgstPrice: order.cgstPrice,
       sgstPrice: order.sgstPrice,
       taxPrice: order.taxPrice,
       shippingPrice: order.shippingPrice,
-      coupon: order.coupon
-        ? {
-            code: order.coupon.code,
-            percentage: order.coupon.percentage,
-            discountAmount: order.coupon.discountAmount,
-          }
-        : null,
       totalPrice: order.totalPrice,
+      // ✅ coupon removed from here
     },
     paymentStatus: {
       isPaid: order.isPaid,

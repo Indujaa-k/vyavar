@@ -32,16 +32,25 @@ const billingInvoiceSchema = mongoose.Schema(
         hsnCode: { type: String, default: "6109" },
         rate: { type: Number, required: true },
         qty: { type: Number, required: true },
-        cgst: { type: Number },
-        sgst: { type: Number },
+        cgst: { type: Number, default: 0 },
+        sgst: { type: Number, default: 0 },
         amount: { type: Number, required: true },
       },
     ],
 
-    subtotal: { type: Number },
-    cgstTotal: { type: Number },
-    sgstTotal: { type: Number },
-    total: { type: Number },
+    subtotal: { type: Number, default: 0 },
+    cgstTotal: { type: Number, default: 0 },
+    sgstTotal: { type: Number, default: 0 },
+
+    // ✅ Coupon / discount support
+    coupon: {
+      code: { type: String },
+      percentage: { type: Number },
+      discountAmount: { type: Number, default: 0 },
+    },
+
+    shippingPrice: { type: Number, default: 0 },
+    total: { type: Number, default: 0 },
 
     notes: { type: String },
     signature: { type: String },
