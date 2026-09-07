@@ -368,6 +368,9 @@
   font-weight: 600;
   position: relative;
   color: gray;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 .chakra-modal__overlay {
   backdrop-filter: blur(4px);
