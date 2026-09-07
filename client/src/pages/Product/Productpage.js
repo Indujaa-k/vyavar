@@ -969,17 +969,36 @@ const Productpage = () => {
 
               {/* ── Product content ── */}
               <div className="product-content">
-                <Flex justifyContent="space-between" alignItems="center">
-                  <h2 className="product-title">{product.brandname}</h2>
-                  <Flex gap={1} mt="2">
+                <Flex
+                  justifyContent="space-between"
+                  alignItems="flex-start"
+                  flexWrap="wrap"
+                  gap={2}
+                >
+                  <h2
+                    className="product-title"
+                    style={{ flex: "1 1 200px", minWidth: 0 }}
+                  >
+                    {product.brandname}
+                  </h2>
+                  <Flex gap={1} mt="2" flexShrink={0}>
                     <FavoriteButton productId={product._id} />
                     <ShareButton url={window.location.href} />
                   </Flex>
                 </Flex>
-
-                <p style={{ fontSize: "20px", fontWeight: "bold" }}>
-                  {product.description}
-                </p>
+                {product.description && (
+                  <Box fontSize="16px" fontWeight="bold" mt={2} mb={2}>
+                    {product.description
+                     .split(/\r?\n|(?<=[A-Za-z]{2,})\.(?!\d)|,(?=\s*this\s)/i)
+                      .map((point) => point.trim())
+                      .filter(Boolean)
+                      .map((point, idx) => (
+                        <Box key={idx} mb="6px">
+                          {point.charAt(0).toUpperCase() + point.slice(1)}
+                        </Box>
+                      ))}
+                  </Box>
+                )}
 
                 <Text fontSize="24px" fontWeight="bold" mt={3}>
                   ₹{finalPrice}

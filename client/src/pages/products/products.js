@@ -132,7 +132,7 @@ const Products = () => {
     userInfo,
     successDelete,
     bulkSuccess,
-    location.key, // 👈 THIS IS THE MAGIC
+    location.key,  
   ]);
 
   const deletehandler = (id) => {
