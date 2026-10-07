@@ -51,6 +51,9 @@ import {
   TOP_OFFER_ACTIVATE_REQUEST,
   TOP_OFFER_ACTIVATE_SUCCESS,
   TOP_OFFER_ACTIVATE_FAIL,
+  BANNER_UPDATE_REQUEST,
+  BANNER_UPDATE_SUCCESS,
+  BANNER_UPDATE_FAIL,
 } from "../constants/bannerConstants";
 
 export const bannerListReducer = (state = { banners: [] }, action) => {
@@ -73,6 +76,19 @@ export const bannerAddReducer = (state = {}, action) => {
     case BANNER_ADD_SUCCESS:
       return { loading: false, success: true, banner: action.payload };
     case BANNER_ADD_FAIL:
+      return { loading: false, error: action.payload };
+    default:
+      return state;
+  }
+};
+
+export const bannerUpdateReducer = (state = {}, action) => {
+  switch (action.type) {
+    case BANNER_UPDATE_REQUEST:
+      return { loading: true };
+    case BANNER_UPDATE_SUCCESS:
+      return { loading: false, success: true, banner: action.payload };
+    case BANNER_UPDATE_FAIL:
       return { loading: false, error: action.payload };
     default:
       return state;

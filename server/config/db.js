@@ -1,9 +1,16 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import chalk from "chalk";
+import dns from "dns";  
 
 dotenv.config();
 // import colors from "colors";
+
+// Manually set DNS servers
+dns.setServers([
+  "8.8.8.8",
+  "1.1.1.1",
+]);
 
 // a mongoose stuf (mongoose.connect ....) return always a promise
 const connectDB = async () => {

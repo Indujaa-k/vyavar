@@ -133,60 +133,55 @@ const InvoiceScreen = () => {
       maximumFractionDigits: 2,
     });
 
+  // ===== SHARED CALCULATION =====
+  // Order: Subtotal - Discount = Taxable Amount -> GST on taxable -> + Shipping = Total
+  const calcSummary = (inv) => {
+    const total = inv?.pricing?.totalPrice || 0;
+    const tax = inv?.pricing?.taxPrice || 0;
+    const shipping = inv?.pricing?.shippingPrice || 0;
+    const cgst = inv?.pricing?.cgstPrice || tax / 2 || 0;
+    const sgst = inv?.pricing?.sgstPrice || tax / 2 || 0;
+
+    const discount = inv?.coupon?.discountAmount || 0;
+    const couponCode = inv?.coupon?.code || "";
+    const discountPct = inv?.coupon?.percentage || 0;
+
+    // Amount on which GST was charged (already after discount)
+    const taxable = total - tax - shipping;
+    // Original items subtotal before discount
+    const subtotal = taxable + discount;
+
+    return {
+      total,
+      shipping,
+      cgst,
+      sgst,
+      discount,
+      couponCode,
+      discountPct,
+      taxable,
+      subtotal,
+    };
+  };
+
   // ===== PREVIEW VALUES =====
 
-  const total = invoice?.pricing?.totalPrice || 0;
-  const taxableAmount =
-    total -
-    (invoice?.pricing?.taxPrice || 0) -
-    (invoice?.pricing?.shippingPrice || 0);
-  const cgst =
-    invoice?.pricing?.cgstPrice || invoice?.pricing?.taxPrice / 2 || 0;
-  const sgst =
-    invoice?.pricing?.sgstPrice || invoice?.pricing?.taxPrice / 2 || 0;
-  const shipping = invoice?.pricing?.shippingPrice || 0;
-
-  // ✅ Read coupon from top-level invoice.coupon
-  const coupon = invoice?.coupon;
-  const couponCode = coupon?.code || "";
-  const discountAmount = coupon?.discountAmount || 0;
-  const discountPercentage = coupon?.percentage || 0;
+  const s = calcSummary(invoice);
 
   const summaryRows = invoice
     ? [
         {
-          label: "Taxable Amount",
-          value: formatINR(taxableAmount),
+          label: "Subtotal",
+          value: formatINR(s.subtotal),
           bold: true,
           dark: false,
           green: false,
         },
-        {
-          label: "CGST @2.5%",
-          value: formatINR(cgst),
-          bold: false,
-          dark: false,
-          green: false,
-        },
-        {
-          label: "SGST @2.5%",
-          value: formatINR(sgst),
-          bold: false,
-          dark: false,
-          green: false,
-        },
-        {
-          label: "Shipping Charges",
-          value: formatINR(shipping),
-          bold: false,
-          dark: false,
-          green: false,
-        },
-        ...(discountAmount > 0
+        ...(s.discount > 0
           ? [
               {
-                label: `Coupon (${couponCode} - ${discountPercentage}% OFF)`,
-                value: formatINR(discountAmount),
+                label: `Coupon (${s.couponCode} - ${s.discountPct}% OFF)`,
+                value: formatINR(s.discount),
                 bold: false,
                 dark: false,
                 green: true,
@@ -194,8 +189,36 @@ const InvoiceScreen = () => {
             ]
           : []),
         {
+          label: "Taxable Amount",
+          value: formatINR(s.taxable),
+          bold: true,
+          dark: false,
+          green: false,
+        },
+        {
+          label: "CGST @2.5%",
+          value: formatINR(s.cgst),
+          bold: false,
+          dark: false,
+          green: false,
+        },
+        {
+          label: "SGST @2.5%",
+          value: formatINR(s.sgst),
+          bold: false,
+          dark: false,
+          green: false,
+        },
+        {
+          label: "Shipping Charges",
+          value: formatINR(s.shipping),
+          bold: false,
+          dark: false,
+          green: false,
+        },
+        {
           label: "Total Amount",
-          value: formatINR(total),
+          value: formatINR(s.total),
           bold: true,
           dark: true,
           green: false,
@@ -314,7 +337,6 @@ const InvoiceScreen = () => {
     y += 58;
 
     // ─── ITEMS TABLE ───
-    // autoTable handles its own page breaks internally — just pass startY
     y = checkPageBreak(y, 20);
     autoTable(doc, {
       startY: y,
@@ -335,7 +357,6 @@ const InvoiceScreen = () => {
         5: { halign: "right" },
       },
       theme: "grid",
-      // This tells autoTable to add a new page when it overflows
       didDrawPage: (data) => {
         // Draw slim continuation header on every new page autoTable creates
         if (data.pageNumber > 1) {
@@ -357,56 +378,21 @@ const InvoiceScreen = () => {
     y = doc.lastAutoTable.finalY + 8;
 
     // ─── SUMMARY ROWS ───
-    const pdfTotal = invoice.pricing?.totalPrice || 0;
-    const pdfTaxable =
-      pdfTotal -
-      (invoice.pricing?.taxPrice || 0) -
-      (invoice.pricing?.shippingPrice || 0);
-    const pdfCgst =
-      invoice.pricing?.cgstPrice || invoice.pricing?.taxPrice / 2 || 0;
-    const pdfSgst =
-      invoice.pricing?.sgstPrice || invoice.pricing?.taxPrice / 2 || 0;
-    const pdfShipping = invoice.pricing?.shippingPrice || 0;
-
-    const pdfCoupon = invoice.coupon;
-    const pdfCouponCode = pdfCoupon?.code || "";
-    const pdfDiscountAmount = pdfCoupon?.discountAmount || 0;
-    const pdfDiscountPct = pdfCoupon?.percentage || 0;
+    const p = calcSummary(invoice);
 
     const pdfSummaryRows = [
       {
-        label: "Taxable Amount",
-        value: formatPDF(pdfTaxable),
+        label: "Subtotal",
+        value: formatPDF(p.subtotal),
         dark: false,
         bold: true,
         green: false,
       },
-      {
-        label: "CGST @2.5%",
-        value: formatPDF(pdfCgst),
-        dark: false,
-        bold: false,
-        green: false,
-      },
-      {
-        label: "SGST @2.5%",
-        value: formatPDF(pdfSgst),
-        dark: false,
-        bold: false,
-        green: false,
-      },
-      {
-        label: "Shipping Charges",
-        value: formatPDF(pdfShipping),
-        dark: false,
-        bold: false,
-        green: false,
-      },
-      ...(pdfDiscountAmount > 0
+      ...(p.discount > 0
         ? [
             {
-              label: `Coupon (${pdfCouponCode} - ${pdfDiscountPct}% OFF)`,
-              value: "- " + formatPDF(pdfDiscountAmount),
+              label: `Coupon (${p.couponCode} - ${p.discountPct}% OFF)`,
+              value: "- " + formatPDF(p.discount),
               dark: false,
               bold: false,
               green: true,
@@ -414,8 +400,36 @@ const InvoiceScreen = () => {
           ]
         : []),
       {
+        label: "Taxable Amount",
+        value: formatPDF(p.taxable),
+        dark: false,
+        bold: true,
+        green: false,
+      },
+      {
+        label: "CGST @2.5%",
+        value: formatPDF(p.cgst),
+        dark: false,
+        bold: false,
+        green: false,
+      },
+      {
+        label: "SGST @2.5%",
+        value: formatPDF(p.sgst),
+        dark: false,
+        bold: false,
+        green: false,
+      },
+      {
+        label: "Shipping Charges",
+        value: formatPDF(p.shipping),
+        dark: false,
+        bold: false,
+        green: false,
+      },
+      {
         label: "Total Amount",
-        value: formatPDF(pdfTotal),
+        value: formatPDF(p.total),
         dark: true,
         bold: true,
         green: false,
@@ -472,21 +486,21 @@ const InvoiceScreen = () => {
 
     doc.setFont("helvetica", "normal");
     const splitWords = doc.splitTextToSize(
-      numberToWords(Math.floor(pdfTotal)),
+      numberToWords(Math.floor(p.total)),
       170,
     );
     doc.text(splitWords, 14, y + 6);
 
     // ─── FOOTER on every page ───
     const totalPages = doc.internal.getNumberOfPages();
-    for (let p = 1; p <= totalPages; p++) {
-      doc.setPage(p);
+    for (let pg = 1; pg <= totalPages; pg++) {
+      doc.setPage(pg);
       doc.setDrawColor(220);
       doc.line(14, 285, 196, 285);
       doc.setFontSize(9);
       doc.setTextColor(120);
       doc.text("Thanks for Shopping", pageWidth / 2, 291, { align: "center" });
-      doc.text(`Page ${p} of ${totalPages}`, pageWidth - 14, 291, {
+      doc.text(`Page ${pg} of ${totalPages}`, pageWidth - 14, 291, {
         align: "right",
       });
     }
@@ -748,16 +762,6 @@ const InvoiceScreen = () => {
                 ))}
               </Box>
             </Flex>
-
-            {/* Amount in Words
-            <Box pt={4} borderTop="1px solid" borderColor="gray.100">
-              <Text fontSize="10px" color="gray.400" letterSpacing="wide" mb={1} textTransform="uppercase">
-                Amount in Words
-              </Text>
-              <Text fontSize="sm" fontWeight="medium">
-                {numberToWords(Math.floor(total))}
-              </Text>
-            </Box> */}
           </Box>
 
           {/* Footer */}

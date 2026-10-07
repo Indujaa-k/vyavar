@@ -68,6 +68,17 @@ const Order = () => {
     );
   }
 
+  // ✅ Taxable amount = items - coupon discount (GST is charged on this)
+  const taxableAmount = !loading
+    ? addDecimals(Number(order.itemsPrice) - discountAmount)
+    : "0.00";
+  const cgstAmount = !loading
+    ? addDecimals(order.cgstPrice ?? order.taxPrice / 2)
+    : "0.00";
+  const sgstAmount = !loading
+    ? addDecimals(order.sgstPrice ?? order.taxPrice / 2)
+    : "0.00";
+
   const orderStatusUpdate = useSelector((state) => state.orderStatusUpdate);
 
   const { success: successStatusUpdate } = orderStatusUpdate;
@@ -302,14 +313,8 @@ const Order = () => {
                 <Text>Items:</Text>
                 <Text color={"grey"}>Rs. {order.itemsPrice}</Text>
               </HStack>
-              <HStack justify="space-between" w="full">
-                <Text>Shipping:</Text>
-                <Text color={"grey"}>Rs. {order.shippingPrice}</Text>
-              </HStack>
-              <HStack justify="space-between" w="full">
-                <Text>Tax:</Text>
-                <Text color={"grey"}>Rs. {order.taxPrice}</Text>
-              </HStack>
+
+              {/* ✅ Discount comes BEFORE tax */}
               {coupon && discountAmount > 0 && (
                 <HStack justify="space-between" w="full">
                   <Text>
@@ -323,10 +328,29 @@ const Order = () => {
                   </Text>
 
                   <Text color="green" fontWeight="bold">
-                    - Rs. {discountAmount}
+                    - Rs. {addDecimals(discountAmount)}
                   </Text>
                 </HStack>
               )}
+
+              <HStack justify="space-between" w="full">
+                <Text fontWeight="semibold">Taxable Amount:</Text>
+                <Text fontWeight="semibold">Rs. {taxableAmount}</Text>
+              </HStack>
+              <HStack justify="space-between" w="full">
+                <Text>CGST @2.5%:</Text>
+                <Text color={"grey"}>Rs. {cgstAmount}</Text>
+              </HStack>
+              <HStack justify="space-between" w="full">
+                <Text>SGST @2.5%:</Text>
+                <Text color={"grey"}>Rs. {sgstAmount}</Text>
+              </HStack>
+              <HStack justify="space-between" w="full">
+                <Text>Shipping:</Text>
+                <Text color={"grey"}>Rs. {order.shippingPrice}</Text>
+              </HStack>
+
+              <Divider />
 
               <HStack justify="space-between" w="full">
                 <Text fontSize="xl" fontWeight="bold">
@@ -341,15 +365,6 @@ const Order = () => {
                 Back
               </Button>
             </VStack>
-            {/* {userInfo?.isAdmin && order.isPaid && !order.isDelivered && (
-              <Button
-                colorScheme="blue"
-                onClick={deliverHandler}
-                leftIcon={<IoMdDoneAll size="16" />}
-              >
-                Mark as Delivered
-              </Button>
-            )} */}
           </Stack>
         </Box>
       )}

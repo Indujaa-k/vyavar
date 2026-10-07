@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
+import axios from "axios";
 import {
   Box,
   Flex,
@@ -22,7 +23,7 @@ import {
   updateProductGroupCommon,
   updateProductVariant,
 } from "../../actions/productActions";
-import { AddIcon } from "@chakra-ui/icons";
+import { AddIcon, CloseIcon } from "@chakra-ui/icons";
 import WashCareInput from "../../components/WashCareInput";
 const API = (process.env.REACT_APP_API_URL || "").replace(/\/$/, "");
 const MAX_IMAGES = 5;
@@ -42,18 +43,80 @@ const getImageSrc = (img) => {
 const CATEGORY_DATA = [
   {
     name: "Topwear",
-    subcategories: ["T-Shirts", "Regular", "Oversized", "Full Sleeve"],
+    subcategories: [
+      "Regular",
+      "Oversized",
+      "Full Sleeve",
+      "Shirts",
+      "Graphic T-Shirts",
+      "Regular Tees",
+      "Plain Tees",
+      "Embroidery Tees",
+    ],
   },
   { name: "Hoodies", subcategories: ["Hooded Sweatshirts", "Zip Hoodies"] },
+  { name: "Bottomwear", subcategories: ["Pants", "Shorts", "Tracks"] },
+  { name: "Innerwear", subcategories: ["Vests", "Bottom Wear"] },
+  { name: "Gym Wears", subcategories: ["T-Shirts", "Tracks", "Shorts "] },
 ];
 
 const OPTIONS = {
   gender: ["Men", "Women", "Unisex"],
   type: ["Casual", "Formal", "Sports"],
   ageRange: ["Kids", "Teen", "Adult"],
-  fabric: ["Cotton", "Polyester", "Leather"],
+  fabric: [
+    "Cotton",
+    "Polyester",
+    "Leather",
+    "Cotton Polyester",
+    "Polyester Cotton",
+    "Lycra Cotton",
+    "Cotton Lycra",
+    "Ottoman Lycra",
+    "Spandex",
+  ],
   sizes: ["S", "M", "L", "XL", "XXL"],
 };
+
+const sameText = (a = "", b = "") =>
+  a.trim().toLowerCase() === b.trim().toLowerCase();
+
+// Add a category (and optional subcategory) to the list if missing
+const addToList = (list, catName, sub) => {
+  const next = list.map((c) => ({
+    name: c.name,
+    subcategories: [...c.subcategories],
+  }));
+  if (!catName) return next;
+
+  let cat = next.find((c) => sameText(c.name, catName));
+  if (!cat) {
+    cat = { name: catName.trim(), subcategories: [] };
+    next.push(cat);
+  }
+  if (sub && !cat.subcategories.some((s) => sameText(s, sub))) {
+    cat.subcategories.push(sub);
+  }
+  return next;
+};
+
+// Merge { category: [subcategories] } coming from products in the DB
+const mergeCategories = (current, dbMap = {}) => {
+  let list = current;
+  Object.entries(dbMap).forEach(([catName, subs]) => {
+    if (!catName || sameText(catName, "Combo")) return;
+    list = addToList(list, catName, null);
+    (subs || []).forEach((s) => {
+      if (!s || sameText(s, "Combo")) return;
+      list = addToList(list, catName, s);
+    });
+  });
+  return list;
+};
+
+// Make sure a value is selectable even if it isn't in the list
+const withCurrent = (list, value) =>
+  value && !list.some((o) => sameText(o, value)) ? [...list, value] : list;
 
 const EditVariantProduct = () => {
   const { groupId } = useParams();
@@ -73,6 +136,13 @@ const EditVariantProduct = () => {
   const { success: variantUpdateSuccess, error: variantUpdateError } =
     variantUpdate;
   const [savingVariantId, setSavingVariantId] = useState(null);
+
+  // ➕ Categories: defaults + categories used by products in DB
+  const [categories, setCategories] = useState(CATEGORY_DATA);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [showAddSubcategory, setShowAddSubcategory] = useState(false);
+  const [newSubcategoryName, setNewSubcategoryName] = useState("");
 
   const [commonState, setCommonState] = useState({
     brandname: "",
@@ -114,6 +184,72 @@ const EditVariantProduct = () => {
   const calculateDiscount = (oldPrice, price) => {
     if (!oldPrice || !price || price > oldPrice) return 0;
     return Math.round(((oldPrice - price) / oldPrice) * 100);
+  };
+
+  // Load categories already used by products
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const { data } = await axios.get(`${API}/api/products/categories`);
+        setCategories((prev) => mergeCategories(prev, data));
+      } catch (err) {
+        console.error("Failed to load categories:", err);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  const setCommonDetail = (patch) =>
+    setCommonState((prev) => ({
+      ...prev,
+      productdetails: { ...prev.productdetails, ...patch },
+    }));
+
+  const handleAddCategory = () => {
+    const name = newCategoryName.trim();
+    if (!name) {
+      toast({ title: "Enter a category name", status: "error" });
+      return;
+    }
+
+    const existing = categories.find((c) => sameText(c.name, name));
+    if (existing) {
+      setCommonDetail({ category: existing.name, subcategory: "" });
+    } else {
+      setCategories((prev) => [...prev, { name, subcategories: [] }]);
+      setCommonDetail({ category: name, subcategory: "" });
+    }
+
+    setNewCategoryName("");
+    setShowAddCategory(false);
+  };
+
+  const handleAddSubcategory = () => {
+    const name = newSubcategoryName.trim();
+    const currentCategory = commonState.productdetails.category;
+    if (!currentCategory) {
+      toast({ title: "Select a category first", status: "error" });
+      return;
+    }
+    if (!name) {
+      toast({ title: "Enter a subcategory name", status: "error" });
+      return;
+    }
+
+    const currentCat = categories.find((c) => sameText(c.name, currentCategory));
+    const existingSub = currentCat?.subcategories.find((s) =>
+      sameText(s, name),
+    );
+
+    if (existingSub) {
+      setCommonDetail({ subcategory: existingSub });
+    } else {
+      setCategories((prev) => addToList(prev, currentCategory, name));
+      setCommonDetail({ subcategory: name });
+    }
+
+    setNewSubcategoryName("");
+    setShowAddSubcategory(false);
   };
 
   // ✅ Replace an existing image slot
@@ -237,6 +373,15 @@ const EditVariantProduct = () => {
           fabric: common.productdetails?.fabric || "",
         },
       });
+
+      // make sure this group's own category/subcategory is in the dropdown
+      setCategories((prev) =>
+        addToList(
+          prev,
+          common.productdetails?.category,
+          common.productdetails?.subcategory,
+        ),
+      );
     }
     if (variants) {
       setVariantState(
@@ -280,6 +425,17 @@ const EditVariantProduct = () => {
   ]);
 
   const updateGroupHandler = () => {
+    if (
+      !commonState.productdetails.category ||
+      !commonState.productdetails.subcategory
+    ) {
+      toast({
+        title: "Please select or add a category and subcategory",
+        status: "error",
+      });
+      return;
+    }
+
     const fd = new FormData();
     fd.append("brandname", commonState.brandname);
     fd.append("description", commonState.description);
@@ -366,6 +522,10 @@ const EditVariantProduct = () => {
       </Text>
     );
 
+  const currentCatObj = categories.find((c) =>
+    sameText(c.name, commonState.productdetails.category),
+  );
+
   return (
     <Box p={6}>
       {/* GROUP COMMON */}
@@ -441,7 +601,7 @@ const EditVariantProduct = () => {
                 }
               >
                 <option value="">Select {label}</option>
-                {opts.map((o) => (
+                {withCurrent(opts, commonState.productdetails[key]).map((o) => (
                   <option key={o} value={o}>
                     {o}
                   </option>
@@ -450,55 +610,123 @@ const EditVariantProduct = () => {
             </FormControl>
           ))}
 
+          {/* ───────── CATEGORY (+ below list) ───────── */}
           <FormControl>
             <FormLabel>Category</FormLabel>
             <Input
               as="select"
               value={commonState.productdetails.category}
               onChange={(e) =>
-                setCommonState({
-                  ...commonState,
-                  productdetails: {
-                    ...commonState.productdetails,
-                    category: e.target.value,
-                    subcategory: "",
-                  },
+                setCommonDetail({
+                  category: e.target.value,
+                  subcategory: "",
                 })
               }
             >
               <option value="">Select Category</option>
-              {CATEGORY_DATA.map((c) => (
+              {categories.map((c) => (
                 <option key={c.name} value={c.name}>
                   {c.name}
                 </option>
               ))}
             </Input>
+
+            <Button
+              mt={2}
+              size="xs"
+              variant="link"
+              colorScheme="teal"
+              leftIcon={showAddCategory ? <CloseIcon boxSize={2} /> : <AddIcon boxSize={2} />}
+              onClick={() => {
+                setShowAddCategory((prev) => !prev);
+                setNewCategoryName("");
+              }}
+            >
+              {showAddCategory ? "Cancel" : "Add new category"}
+            </Button>
+
+            {showAddCategory && (
+              <Flex mt={2} gap={2}>
+                <Input
+                  size="sm"
+                  autoFocus
+                  value={newCategoryName}
+                  placeholder="Enter new category name"
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddCategory();
+                    }
+                  }}
+                />
+                <Button
+                  size="sm"
+                  colorScheme="teal"
+                  onClick={handleAddCategory}
+                >
+                  Add
+                </Button>
+              </Flex>
+            )}
           </FormControl>
 
+          {/* ───────── SUBCATEGORY (+ below list) ───────── */}
           <FormControl>
             <FormLabel>Subcategory</FormLabel>
             <Input
               as="select"
               value={commonState.productdetails.subcategory}
-              onChange={(e) =>
-                setCommonState({
-                  ...commonState,
-                  productdetails: {
-                    ...commonState.productdetails,
-                    subcategory: e.target.value,
-                  },
-                })
-              }
+              onChange={(e) => setCommonDetail({ subcategory: e.target.value })}
+              disabled={!commonState.productdetails.category}
             >
               <option value="">Select Subcategory</option>
-              {CATEGORY_DATA.find(
-                (c) => c.name === commonState.productdetails.category,
-              )?.subcategories.map((s) => (
+              {currentCatObj?.subcategories.map((s) => (
                 <option key={s} value={s}>
                   {s}
                 </option>
               ))}
             </Input>
+
+            <Button
+              mt={2}
+              size="xs"
+              variant="link"
+              colorScheme="teal"
+              leftIcon={showAddSubcategory ? <CloseIcon boxSize={2} /> : <AddIcon boxSize={2} />}
+              isDisabled={!commonState.productdetails.category}
+              onClick={() => {
+                setShowAddSubcategory((prev) => !prev);
+                setNewSubcategoryName("");
+              }}
+            >
+              {showAddSubcategory ? "Cancel" : "Add new subcategory"}
+            </Button>
+
+            {showAddSubcategory && (
+              <Flex mt={2} gap={2}>
+                <Input
+                  size="sm"
+                  autoFocus
+                  value={newSubcategoryName}
+                  placeholder={`Enter new subcategory for ${commonState.productdetails.category}`}
+                  onChange={(e) => setNewSubcategoryName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddSubcategory();
+                    }
+                  }}
+                />
+                <Button
+                  size="sm"
+                  colorScheme="teal"
+                  onClick={handleAddSubcategory}
+                >
+                  Add
+                </Button>
+              </Flex>
+            )}
           </FormControl>
 
           <FormControl gridColumn="1 / -1">

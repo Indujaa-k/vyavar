@@ -6,6 +6,9 @@ import {
   BANNER_ADD_REQUEST,
   BANNER_ADD_SUCCESS,
   BANNER_ADD_FAIL,
+  BANNER_UPDATE_REQUEST,
+  BANNER_UPDATE_SUCCESS,
+  BANNER_UPDATE_FAIL,
   BANNER_DELETE_REQUEST,
   BANNER_DELETE_SUCCESS,
   BANNER_DELETE_FAIL,
@@ -55,14 +58,13 @@ import {
 } from "../constants/bannerConstants";
 
 const API_URL = process.env.REACT_APP_API_URL;
-//   const { data } = await axios.get(`${API_URL}/api/banners/banners`);
 
 // Fetch banners
 export const listBanners = () => async (dispatch) => {
   try {
     dispatch({ type: BANNER_LIST_REQUEST });
     const { data } = await axios.get(`${API_URL}/api/banners/banners`);
-    dispatch({ type: BANNER_LIST_SUCCESS, payload: data });
+    dispatch({ type: BANNER_LIST_SUCCESS, payload: data.banners });
   } catch (error) {
     dispatch({
       type: BANNER_LIST_FAIL,
@@ -95,11 +97,43 @@ export const addBanner = (bannerData) => async (dispatch, getState) => {
       bannerData,
       config,
     );
-    console.log("bannerData", bannerData);
     dispatch({ type: BANNER_ADD_SUCCESS, payload: data });
   } catch (error) {
     dispatch({
       type: BANNER_ADD_FAIL,
+      payload:
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message,
+    });
+  }
+};
+
+// Update banner
+export const updateBanner = (id, bannerData) => async (dispatch, getState) => {
+  try {
+    dispatch({ type: BANNER_UPDATE_REQUEST });
+
+    const {
+      userLogin: { userInfo },
+    } = getState();
+
+    const config = {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${userInfo.token}`,
+      },
+    };
+
+    const { data } = await axios.put(
+      `${API_URL}/api/banners/banner/${id}`,
+      bannerData,
+      config,
+    );
+    dispatch({ type: BANNER_UPDATE_SUCCESS, payload: data });
+  } catch (error) {
+    dispatch({
+      type: BANNER_UPDATE_FAIL,
       payload:
         error.response && error.response.data.message
           ? error.response.data.message
@@ -156,11 +190,9 @@ export const uploadVideoBanner = (formData) => async (dispatch, getState) => {
       formData,
       config,
     );
-    console.log("Sending Form Data:", formData);
 
     dispatch({ type: VIDEO_BANNER_UPLOAD_SUCCESS, payload: data });
   } catch (error) {
-    console.error("Upload Error:", error);
     dispatch({
       type: VIDEO_BANNER_UPLOAD_FAIL,
       payload: error.response?.data?.message || error.message,
@@ -231,13 +263,9 @@ export const deleteVideoBanner = (videoId) => async (dispatch, getState) => {
 export const listUserVideoBanners = () => async (dispatch) => {
   try {
     dispatch({ type: USER_VIDEO_BANNER_LIST_REQUEST });
-    // const {
-    //   userLogin: { userInfo },
-    // } = getState();
     const config = {
       headers: {
         "Content-Type": "application/json",
-        // Authorization: `Bearer ${userInfo.token}`,
       },
     };
     const { data } = await axios.get(
@@ -380,7 +408,7 @@ export const getActiveOfferBanner = () => async (dispatch) => {
 
     dispatch({
       type: OFFER_BANNER_ACTIVE_SUCCESS,
-      payload: Array.isArray(data) ? data[0] : data, // pick first banner if array
+      payload: Array.isArray(data) ? data[0] : data,
     });
   } catch (error) {
     dispatch({

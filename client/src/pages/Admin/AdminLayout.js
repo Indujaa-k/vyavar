@@ -459,6 +459,32 @@ const AdminLayout = ({ children }) => {
                     >
                       Top PromoText
                     </Button>
+
+                    <Button
+                      as={RouterLink}
+                      to="/admin/trending-cards"
+                      variant="ghost"
+                      color="white"
+                      justifyContent="flex-start"
+                      _hover={{ bg: "rgba(0,0,0,0.15)" }}
+                      leftIcon="•"
+                      fontSize="md"
+                    >
+                      Trending Cards
+                    </Button>
+
+                    <Button
+                      as={RouterLink}
+                      to="/admin/showcase"
+                      variant="ghost"
+                      color="white"
+                      justifyContent="flex-start"
+                      _hover={{ bg: "rgba(0,0,0,0.15)" }}
+                      leftIcon="•"
+                      fontSize="md"
+                    >
+                      Category Banner
+                    </Button>
                   </VStack>
                 </Collapse>
 
