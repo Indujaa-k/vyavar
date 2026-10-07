@@ -91,6 +91,7 @@ import {
   activeOfferBannerReducer,
   topOfferListReducer,
   topOfferActionReducer,
+  bannerUpdateReducer,
 } from "./reducers/bannerReducers";
 import {
   deliveryDepositReducer,
@@ -156,6 +157,7 @@ const reducer = combineReducers({
   orders: ordersReducer,
   invoiceDetails: invoiceReducer,
   bannerAdd: bannerAddReducer,
+  bannerUpdate: bannerUpdateReducer,
   bannerList: bannerListReducer,
   bannerDelete: bannerDeleteReducer,
   totalOrders: totalOrdersReducer,

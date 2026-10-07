@@ -40,8 +40,8 @@ const ProductsC = ({ match }) => {
       {/* <Cardscg /> */}
       {gender && <Trendingbrand category={gender} />}
       {gender && <Tshirts category={gender} subcategory={"Shirts"} />}
-      {gender && <Pants category={gender} subcategory={"Jeans"} />}
-      {gender && <SweatPants category={gender} subcategory={"SweatPants"} />}
+      {/* {gender && <Pants category={gender} subcategory={"Jeans"} />}
+      {gender && <SweatPants category={gender} subcategory={"SweatPants"} />} */}
       <Trust />
       <DiscountTag />
     </>

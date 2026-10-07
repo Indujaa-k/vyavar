@@ -66,6 +66,8 @@ import Privatepolicy from "./pages/Userslist/terms/Privatepolicy";
 import ShippingCost from "./pages/Delivery/ShippingCost";
 import BulkPurchase from "./pages/purchases/BulkPurchase";
 import InternationalPurchase from "./pages/purchases/InternationalPurchase";
+import AdminTrendingCards from "./pages/Admin/AdminTrendingCards";
+import AdminShowcase from "./pages/Admin/AdminShowcase";
 // import ProtectedRoute from "./pages/ProtectedRoutes";
 const appContent = () => {
   const { userInfo } = useSelector((state) => state.userLogin);
@@ -122,6 +124,7 @@ const appContent = () => {
             <Route path="/orders/:status" element={<OrdersScreen />} />
             <Route path="/order/:id" element={<Order />} />
             <Route path="/admin/user/:id/edit" element={<Edituser />} />
+
             <Route
               path="/admin/subscription/create-subscription"
               element={<CreateSubscriptionModal />}
@@ -185,6 +188,8 @@ const appContent = () => {
               element={<AdminTransactionsScreen />}
             />
             <Route path="/admin/shippingcost" element={<ShippingCost />} />
+            <Route path="/admin/trending-cards" element={<AdminTrendingCards />} />
+            <Route path="/admin/showcase" element={<AdminShowcase />} />
           </Routes>{" "}
         </AdminLayout>
       ) : (

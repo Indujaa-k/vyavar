@@ -32,8 +32,10 @@ const reviewSchema = mongoose.Schema(
 const bannerSchema = mongoose.Schema(
   {
     image: { type: String, required: true },
-    title: { type: String, required: true },
-    subtitle: { type: String, required: true },
+    imageTablet: { type: String, default: "" },
+    imageMobile: { type: String, default: "" },
+    title: { type: String, default: "" },
+    subtitle: { type: String, default: "" },
     product: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Product",
@@ -46,11 +48,18 @@ const bannerSchema = mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    fontFamily: { type: String, default: "" },
+    fontSize: { type: String, default: "" },
+    fontColor: { type: String, default: "" },
+    buttonText: { type: String, default: "" },
+    buttonPosition: { type: String, default: "bottom-left" },
+    linkUrl: { type: String, default: "" },
   },
   {
     timestamps: true,
   },
 );
+
 const videoBannerSchema = mongoose.Schema(
   {
     videoUrl: {

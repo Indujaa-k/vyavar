@@ -56,8 +56,31 @@ const Checkout = () => {
 
   const shippingCost = cart.shippingCost ?? 0;
 
-  const cgstAmount = parseFloat(((roundedSubtotal * cgstPercentage) / 100).toFixed(2));
-  const sgstAmount = parseFloat(((roundedSubtotal * sgstPercentage) / 100).toFixed(2));
+  // ✅ 1. Discount first (on subtotal only)
+  const discountAmountFinal = offer
+    ? parseFloat(
+        Math.max(
+          0,
+          Math.min(
+            (roundedSubtotal * offer.offerPercentage) / 100,
+            roundedSubtotal - 1,
+          ),
+        ).toFixed(2),
+      )
+    : 0;
+
+  // ✅ 2. Taxable amount = subtotal - discount
+  const taxableAmount = parseFloat(
+    (roundedSubtotal - discountAmountFinal).toFixed(2),
+  );
+
+  // ✅ 3. GST only on the taxable amount
+  const cgstAmount = parseFloat(
+    ((taxableAmount * cgstPercentage) / 100).toFixed(2),
+  );
+  const sgstAmount = parseFloat(
+    ((taxableAmount * sgstPercentage) / 100).toFixed(2),
+  );
   const taxAmount = parseFloat((cgstAmount + sgstAmount).toFixed(2));
 
   // Check if free shipping applies
@@ -65,21 +88,10 @@ const Checkout = () => {
     freeShippingAbove && roundedSubtotal >= freeShippingAbove;
   const shippingCostFinal = isFreeShipping ? 0 : shippingCost;
   const roundedShippingCost = parseFloat(shippingCostFinal.toFixed(2));
-  const discountAmountFinal = offer
-    ? parseFloat(
-        Math.min(
-          (roundedSubtotal * offer.offerPercentage) / 100,
-          roundedSubtotal + taxAmount + roundedShippingCost - 1,
-        ).toFixed(2),
-      )
-    : 0;
+
+  // ✅ 4. Total = taxable + GST + shipping
   const totalPrice = parseFloat(
-    (
-      roundedSubtotal +
-      taxAmount +
-      roundedShippingCost -
-      discountAmountFinal
-    ).toFixed(2),
+    (taxableAmount + taxAmount + roundedShippingCost).toFixed(2),
   );
 
   const userLogin = useSelector((state) => state.userLogin);
@@ -111,9 +123,12 @@ const Checkout = () => {
   useEffect(() => {
     if (offer) {
       const discount = parseFloat(
-        Math.min(
-          (roundedSubtotal * offer.offerPercentage) / 100,
-          roundedSubtotal + taxAmount + roundedShippingCost - 1,
+        Math.max(
+          0,
+          Math.min(
+            (roundedSubtotal * offer.offerPercentage) / 100,
+            roundedSubtotal - 1,
+          ),
         ).toFixed(2),
       );
 
@@ -123,7 +138,7 @@ const Checkout = () => {
       setDiscountAmount(0);
       setCouponApplied(false);
     }
-  }, [offer, roundedSubtotal, taxAmount, roundedShippingCost]);
+  }, [offer, roundedSubtotal]);
 
   useEffect(() => {
     if (couponError) {
@@ -166,8 +181,6 @@ const Checkout = () => {
       dispatch(getShippingCost());
     }
   }, [dispatch, userInfo, user]);
-
-  // Update shipping cost when fetched from backend
 
   // Show shipping error
   useEffect(() => {
@@ -241,7 +254,6 @@ const Checkout = () => {
         itemsPrice: subtotal,
         totalPrice: totalPrice,
 
-        // ✅ FIX: SEND FULL COUPON OBJECT
         coupon: couponApplied
           ? {
               code: couponCode,
@@ -251,10 +263,6 @@ const Checkout = () => {
           : null,
       };
 
-      console.log("🚚 STORE CHECK", {
-        shippingGet,
-        shippingCost: shippingGet?.shippingCost,
-      });
       dispatch(CreateOrder(orderData));
     } catch (err) {
       console.error("❌ Order creation error:", err.message);
@@ -289,7 +297,6 @@ const Checkout = () => {
           borderRadius="lg"
           shadow="md"
         >
-          {/* Delivery Address Display */}
           {/* Bill Details */}
           <Box
             borderWidth="2px"
@@ -311,38 +318,8 @@ const Checkout = () => {
               <Text color={"grey"}>Rs. {subtotal.toFixed(2)}</Text>
             </HStack>
 
-            <HStack justify="space-between" w="full" p="3">
-              <Text>Shipping:</Text>
-              {shippingLoading ? (
-                <Spinner size="sm" />
-              ) : isFreeShipping ? (
-                <Text color="green.600" fontWeight="bold">
-                  FREE
-                </Text>
-              ) : (
-                <Text color={"grey"}>Rs. {shippingCost.toFixed(2)}</Text>
-              )}
-            </HStack>
-
-            {isFreeShipping && (
-              <Text fontSize="sm" color="green.600" px="3" pb="2">
-                🎉 Free shipping applied! (Orders above Rs. {freeShippingAbove})
-              </Text>
-            )}
-
-            <HStack justify="space-between" w="full" p="3">
-              <Text>CGST @2.5%:</Text>
-              <Text color={"grey"}>Rs. {cgstAmount.toFixed(2)}</Text>
-            </HStack>
-
-            <HStack justify="space-between" w="full" p="3">
-              <Text>SGST @2.5%:</Text>
-              <Text color={"grey"}>Rs. {sgstAmount.toFixed(2)}</Text>
-            </HStack>
-
-            <Divider my={3} />
-
-            <VStack w="full" align="stretch" spacing={2}>
+            {/* Coupon input */}
+            <VStack w="full" align="stretch" spacing={2} px="3" pb="2">
               <HStack w="full">
                 <Input
                   placeholder="Enter coupon code"
@@ -371,14 +348,12 @@ const Checkout = () => {
                 </Button>
               </HStack>
 
-              {/* Error message below input */}
               {couponError && couponCode.trim() && !couponApplied && (
                 <Text color="red.500" fontSize="sm" pl={1}>
                   {couponError}
                 </Text>
               )}
 
-              {/* Success message */}
               {couponApplied && offer && (
                 <Text color="green.600" fontSize="sm" pl={1}>
                   ✓ {offer.offerPercentage}% discount applied
@@ -386,12 +361,52 @@ const Checkout = () => {
               )}
             </VStack>
 
-            {discountAmount > 0 && (
+            {discountAmountFinal > 0 && (
               <HStack justify="space-between" w="full" p="3">
                 <Text color="green.600">Coupon Discount</Text>
-                <Text color="green.600">- Rs. {discountAmount.toFixed(2)}</Text>
+                <Text color="green.600">
+                  - Rs. {discountAmountFinal.toFixed(2)}
+                </Text>
               </HStack>
             )}
+
+            <Divider />
+
+            <HStack justify="space-between" w="full" p="3">
+              <Text fontWeight="semibold">Taxable Amount:</Text>
+              <Text fontWeight="semibold">Rs. {taxableAmount.toFixed(2)}</Text>
+            </HStack>
+
+            <HStack justify="space-between" w="full" p="3">
+              <Text>CGST @2.5%:</Text>
+              <Text color={"grey"}>Rs. {cgstAmount.toFixed(2)}</Text>
+            </HStack>
+
+            <HStack justify="space-between" w="full" p="3">
+              <Text>SGST @2.5%:</Text>
+              <Text color={"grey"}>Rs. {sgstAmount.toFixed(2)}</Text>
+            </HStack>
+
+            <HStack justify="space-between" w="full" p="3">
+              <Text>Shipping:</Text>
+              {shippingLoading ? (
+                <Spinner size="sm" />
+              ) : isFreeShipping ? (
+                <Text color="green.600" fontWeight="bold">
+                  FREE
+                </Text>
+              ) : (
+                <Text color={"grey"}>Rs. {shippingCost.toFixed(2)}</Text>
+              )}
+            </HStack>
+
+            {isFreeShipping && (
+              <Text fontSize="sm" color="green.600" px="3" pb="2">
+                🎉 Free shipping applied! (Orders above Rs. {freeShippingAbove})
+              </Text>
+            )}
+
+            <Divider my={3} />
 
             <HStack justify="space-between" w="full" p="3">
               <Text fontSize="lg" fontWeight="bold">

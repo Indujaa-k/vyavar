@@ -6,10 +6,12 @@ body{
 /* Slider */
 /* ===================== */
 
+/* All slides sit in the same grid cell, so the slider height
+   follows the banner image (no fixed height, no cropping) */
 .slider{
   position:relative;
   width:100%;
-  height:80vh;
+  display:grid;
   overflow:hidden;
 }
 
@@ -18,28 +20,31 @@ body{
 /* ===================== */
 
 .slide{
-  position:absolute;
-  top:0;
-  left:0;
+  grid-area:1 / 1;
+  position:relative;
   width:100%;
-  height:100%;
   opacity:0;
   transition:opacity 0.8s ease-in-out;
-
-  background-repeat:no-repeat;
-  background-size:cover;
-  background-position:center;
-
   z-index:0;
+  cursor:pointer;
+  pointer-events:none;
 }
 
 .slide.current{
   opacity:1;
   z-index:1;
+  pointer-events:auto;
+}
+
+.slide picture,
+.slide-img{
+  display:block;
+  width:100%;
+  height:auto;
 }
 
 /* ===================== */
-/* Overlay */
+/* Overlay (only on banners that have text) */
 /* ===================== */
 
 .slide-overlay{
@@ -47,6 +52,7 @@ body{
   inset:0;
   background:rgba(0,0,0,0.4);
   z-index:2;
+  pointer-events:none;
 }
 
 /* ===================== */
@@ -56,7 +62,7 @@ body{
 .slide-content{
   position:absolute;
   inset:0;
-  z-index:5;
+  z-index:20;
 
   display:flex;
   flex-direction:column;
@@ -65,6 +71,7 @@ body{
 
   text-align:center;
   padding:0 10%;
+  pointer-events:none;
 }
 
 /* ===================== */
@@ -76,7 +83,6 @@ body{
   font-weight:800;
   color:#fff;
   margin-bottom:12px;
-
   text-shadow:0 2px 10px rgba(0,0,0,0.6);
 }
 
@@ -91,10 +97,12 @@ body{
 }
 
 /* ===================== */
-/* Button */
+/* Button (position comes from admin) */
 /* ===================== */
 
 .shop-now-btn{
+  position:absolute;
+  z-index:21;
   background:#09254a;
   color:white;
   padding:12px 24px;
@@ -102,13 +110,12 @@ body{
   border-radius:6px;
   font-weight:bold;
   cursor:pointer;
-
-  transition:0.3s;
+  transition:background 0.3s, box-shadow 0.3s;
 }
 
 .shop-now-btn:hover{
   background:#153259;
-  transform:translateY(-2px);
+  box-shadow:0 4px 12px rgba(0,0,0,0.3);
 }
 
 /* ===================== */
@@ -121,13 +128,11 @@ body{
   top:50%;
   transform:translateY(-50%);
   color:white;
-
   background:rgba(0,0,0,0.4);
   padding:10px;
   border-radius:50%;
-
   cursor:pointer;
-  z-index:10;
+  z-index:25;
 }
 
 .next{ right:20px; }
@@ -143,11 +148,9 @@ body{
 /* ===================== */
 
 @media(max-width:1024px){
-
-.slider{
-  height:65vh;
-}
-
+  .shop-now-btn{
+    padding:10px 20px;
+  }
 }
 
 /* ===================== */
@@ -156,24 +159,26 @@ body{
 
 @media(max-width:768px){
 
-.slider{
-  height:55vh;
-}
-
 .slide-content{
   justify-content:flex-end;
   align-items:flex-start;
   text-align:left;
-
-  padding:0 6% 8%;
+  padding:0 6% 10%;
 }
 
 .titleslider{
   font-size:1.7rem;
+  margin-bottom:8px;
 }
 
 .subtitleslider{
   font-size:0.95rem;
+  margin-bottom:14px;
+}
+
+.shop-now-btn{
+  padding:8px 16px;
+  font-size:13px;
 }
 
 }
@@ -184,8 +189,12 @@ body{
 
 @media(max-width:480px){
 
-.slider{
-  height:50vh;
+.titleslider{
+  font-size:1.4rem;
+}
+
+.subtitleslider{
+  font-size:0.85rem;
 }
 
 .next,

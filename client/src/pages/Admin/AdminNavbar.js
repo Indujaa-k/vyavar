@@ -84,7 +84,7 @@ const AdminNavbar = ({ setIsSidebarOpen }) => {
                 src={Logo}
                 alt="logo"
                 style={{
-                  height: "px", // 🔥 size increase
+                  height: "px", // size increase
                   width: "auto",
                 }}
               />

@@ -5,6 +5,7 @@ import { processRazorpayPayment } from "../../actions/orderActions";
 
 function RazorpayPayment(props) {
   var totalPrice = props.totalPrice;
+  var couponCode = props.couponCode;
   var onSuccess = props.onSuccess;
 
   var dispatch = useDispatch();
@@ -17,7 +18,8 @@ function RazorpayPayment(props) {
   var order = razorpayPayment.order;
 
   function handlePayment() {
-    dispatch(processRazorpayPayment(totalPrice));
+    // ✅ send coupon code so the backend applies the discount before GST
+    dispatch(processRazorpayPayment(totalPrice, couponCode));
   }
 
   useEffect(

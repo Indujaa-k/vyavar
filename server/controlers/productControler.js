@@ -1645,18 +1645,32 @@ const getCategories = asyncHandler(async (req, res) => {
   const { gender } = req.query;
   const filter = gender ? { "productdetails.gender": gender } : {};
 
-  // ✅ Fix: select the full productdetails object, not nested paths
   const products = await Product.find(filter)
-    .select("productdetails -_id")
+    .select("productdetails.category productdetails.subcategory -_id")
     .lean();
 
   const map = {};
+  const catKeys = {}; // lowercase -> first spelling seen
+
   products.forEach((p) => {
-    const cat = p.productdetails?.category;
-    const sub = p.productdetails?.subcategory;
-    if (!cat) return;
-    if (!map[cat]) map[cat] = [];
-    if (sub && !map[cat].includes(sub)) map[cat].push(sub);
+    const cat = p.productdetails?.category?.trim();
+    const sub = p.productdetails?.subcategory?.trim();
+    if (!cat || cat.toLowerCase() === "combo") return;
+
+    const key = cat.toLowerCase();
+    if (!catKeys[key]) {
+      catKeys[key] = cat;
+      map[cat] = [];
+    }
+    const catName = catKeys[key];
+
+    if (
+      sub &&
+      sub.toLowerCase() !== "combo" &&
+      !map[catName].some((s) => s.toLowerCase() === sub.toLowerCase())
+    ) {
+      map[catName].push(sub);
+    }
   });
 
   res.json(map);

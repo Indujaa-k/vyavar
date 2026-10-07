@@ -2,6 +2,7 @@ import express from "express";
 import {
   getBanners,
   addBanner,
+  updateBanner,
   deleteBanner,
   addvideobanner,
   getvideobanner,
@@ -14,16 +15,21 @@ import {
   deleteOfferBanner,
   activateOfferBanner,
 } from "../controlers/bannerController.js";
-import { uploadSingleImage, uploadSingleVideo } from "../multer/multer.js";
+import {
+  uploadSingleVideo,
+  uploadBannerImages, // ✅ handles image + imageTablet + imageMobile together
+} from "../multer/multer.js";
 import { protect, adminOrSeller } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 // Banner Routes
-// router.route("/banner").post(protect, admin, addBanner);
 router
   .route("/banner")
-  .post(protect, adminOrSeller, uploadSingleImage, addBanner);
+  .post(protect, adminOrSeller, uploadBannerImages, addBanner);
+router
+  .route("/banner/:id")
+  .put(protect, adminOrSeller, uploadBannerImages, updateBanner);
 router.route("/banners/:id").delete(protect, adminOrSeller, deleteBanner);
 router.route("/banners").get(getBanners);
 router

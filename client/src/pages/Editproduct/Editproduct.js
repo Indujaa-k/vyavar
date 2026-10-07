@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import {
   listProductDetails,
@@ -8,7 +9,7 @@ import { PRODUCT_UPDATE_RESET } from "../../constants/productConstants";
 import { useNavigate, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import HashLoader from "react-spinners/HashLoader";
-import { FaEdit } from "react-icons/fa";
+import { FaEdit, FaPlus, FaTimes } from "react-icons/fa";
 import {
   Box,
   Button,
@@ -26,7 +27,7 @@ import {
 } from "@chakra-ui/react";
 import "./CreateProduct.css";
 import WashCareInput from "../../components/WashCareInput";
-const API = process.env.REACT_APP_API_URL;
+const API = (process.env.REACT_APP_API_URL || "").replace(/\/$/, "");
 
 const CATEGORY_DATA = [
   {
@@ -45,16 +46,66 @@ const CATEGORY_DATA = [
   { name: "Hoodies", subcategories: ["Hooded Sweatshirts", "Zip Hoodies"] },
   { name: "Bottomwear", subcategories: ["Pants", "Shorts", "Tracks"] },
   { name: "Innerwear", subcategories: ["Vests", "Bottom Wear"] },
-  { name: "Gym Wears", subcategories: ["T-Shirts", "Tracks", "Shorts"] },
+  { name: "Gym Wears", subcategories: ["T-Shirts", "Tracks", "Shorts "] },
 ];
 
 const options = {
   gender: ["Men", "Women", "Unisex"],
   type: ["Casual", "Formal", "Sports"],
   ageRange: ["Kids", "Teen", "Adult"],
-  fabric: ["Cotton", "Polyester", "Leather"],
+  fabric: [
+    "Cotton",
+    "Polyester",
+    "Leather",
+    "Cotton Polyester",
+    "Polyester Cotton",
+    "Lycra Cotton",
+    "Cotton Lycra",
+    "Ottoman Lycra",
+    "Spandex",
+  ],
   sizes: ["S", "M", "L", "XL", "XXL"],
 };
+
+const sameText = (a = "", b = "") =>
+  a.trim().toLowerCase() === b.trim().toLowerCase();
+
+// Add a category (and optional subcategory) to the list if missing
+const addToList = (list, catName, sub) => {
+  const next = list.map((c) => ({
+    name: c.name,
+    subcategories: [...c.subcategories],
+  }));
+  if (!catName) return next;
+
+  let cat = next.find((c) => sameText(c.name, catName));
+  if (!cat) {
+    cat = { name: catName.trim(), subcategories: [] };
+    next.push(cat);
+  }
+  if (sub && !cat.subcategories.some((s) => sameText(s, sub))) {
+    cat.subcategories.push(sub);
+  }
+  return next;
+};
+
+// Merge { category: [subcategories] } coming from products in the DB
+const mergeCategories = (current, dbMap = {}) => {
+  let list = current;
+  Object.entries(dbMap).forEach(([catName, subs]) => {
+    if (!catName || sameText(catName, "Combo")) return;
+    list = addToList(list, catName, null);
+    (subs || []).forEach((s) => {
+      if (!s || sameText(s, "Combo")) return;
+      list = addToList(list, catName, s);
+    });
+  });
+  return list;
+};
+
+// Make sure a value is selectable even if it isn't in the list
+const withCurrent = (list, value) =>
+  value && !list.some((o) => sameText(o, value)) ? [...list, value] : list;
 
 const EditProductPage = () => {
   const navigate = useNavigate();
@@ -62,8 +113,6 @@ const EditProductPage = () => {
   const { id: productId } = useParams();
 
   // ── image state ──
-  // displayImages: what user sees (blob URL or existing URL)
-  // replacedImages: { [index]: File } — only changed slots
   const [displayImages, setDisplayImages] = useState(["", "", ""]);
   const [replacedImages, setReplacedImages] = useState({});
 
@@ -89,6 +138,13 @@ const EditProductPage = () => {
     sizes: [],
   });
 
+  // ➕ Categories: defaults + categories used by products in DB
+  const [categories, setCategories] = useState(CATEGORY_DATA);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [showAddSubcategory, setShowAddSubcategory] = useState(false);
+  const [newSubcategoryName, setNewSubcategoryName] = useState("");
+
   const [stockBySize, setStockBySize] = useState([]);
 
   const [shippingDetails, setShippingDetails] = useState({
@@ -109,7 +165,20 @@ const EditProductPage = () => {
   } = productUpdate;
 
   const disableNumberScroll = (e) => e.target.blur();
-  setWashCare(product.washCare || []);
+
+  // Load categories already used by products
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const { data } = await axios.get(`${API}/api/products/categories`);
+        setCategories((prev) => mergeCategories(prev, data));
+      } catch (err) {
+        console.error("Failed to load categories:", err);
+      }
+    };
+    fetchCategories();
+  }, []);
+
   // ── Load product ──
   useEffect(() => {
     if (successUpdate) {
@@ -126,6 +195,7 @@ const EditProductPage = () => {
         setSKU(product.SKU || "");
         setHsnCode(product.hsnCode || "6109");
         setIsFeatured(product.isFeatured || false);
+        setWashCare(product.washCare || []);
 
         // Show all existing images (up to 5)
         const imgs = product.images || [];
@@ -142,6 +212,15 @@ const EditProductPage = () => {
           fabric: product.productdetails?.fabric || "",
           sizes: product.productdetails?.sizes || [],
         });
+
+        // make sure this product's own category/subcategory is in the dropdown
+        setCategories((prev) =>
+          addToList(
+            prev,
+            product.productdetails?.category,
+            product.productdetails?.subcategory,
+          ),
+        );
 
         setStockBySize(
           options.sizes.map((size) => ({
@@ -170,6 +249,66 @@ const EditProductPage = () => {
       }
     }
   }, [dispatch, productId, product, successUpdate, navigate]);
+
+  const handleAddCategory = () => {
+    const name = newCategoryName.trim();
+    if (!name) {
+      setMessage("Enter a category name");
+      return;
+    }
+    setMessage(null);
+
+    const existing = categories.find((c) => sameText(c.name, name));
+    if (existing) {
+      setProductdetails((prev) => ({
+        ...prev,
+        category: existing.name,
+        subcategory: "",
+      }));
+    } else {
+      setCategories((prev) => [...prev, { name, subcategories: [] }]);
+      setProductdetails((prev) => ({
+        ...prev,
+        category: name,
+        subcategory: "",
+      }));
+    }
+
+    setNewCategoryName("");
+    setShowAddCategory(false);
+  };
+
+  const handleAddSubcategory = () => {
+    const name = newSubcategoryName.trim();
+    if (!productdetails.category) {
+      setMessage("Select a category first");
+      return;
+    }
+    if (!name) {
+      setMessage("Enter a subcategory name");
+      return;
+    }
+    setMessage(null);
+
+    const currentCat = categories.find((c) =>
+      sameText(c.name, productdetails.category),
+    );
+    const existingSub = currentCat?.subcategories.find((s) =>
+      sameText(s, name),
+    );
+
+    if (existingSub) {
+      setProductdetails((prev) => ({ ...prev, subcategory: existingSub }));
+    } else {
+      setCategories((prev) =>
+        addToList(prev, productdetails.category, name),
+      );
+      setProductdetails((prev) => ({ ...prev, subcategory: name }));
+    }
+
+    setNewSubcategoryName("");
+    setShowAddSubcategory(false);
+  };
 
   const calculatedPrice = () => {
     const op = Number(oldPrice);
@@ -220,6 +359,12 @@ const EditProductPage = () => {
       return;
     }
 
+    if (!productdetails.category || !productdetails.subcategory) {
+      setMessage("Please select or add a category and subcategory");
+      return;
+    }
+    setMessage(null);
+
     const formData = new FormData();
     formData.append("brandname", brandname);
     formData.append("price", calculatedPrice());
@@ -235,8 +380,7 @@ const EditProductPage = () => {
     );
     formData.append("shippingDetails", JSON.stringify(shippingDetails));
     formData.append("washCare", JSON.stringify(washCare));
-    // ✅ Only send changed images + their slot indexes
-    // Backend will splice them into the correct position
+    // Only send changed images + their slot indexes
     Object.entries(replacedImages).forEach(([index, file]) => {
       formData.append("images", file);
       formData.append("imageIndexes", index);
@@ -246,6 +390,10 @@ const EditProductPage = () => {
 
     dispatch(UpdateProduct(productId, formData));
   };
+
+  const currentCatObj = categories.find((c) =>
+    sameText(c.name, productdetails.category),
+  );
 
   // ── Render ──
   return (
@@ -357,6 +505,7 @@ const EditProductPage = () => {
             </select>
           </FormControl>
 
+          {/* ───────── CATEGORY (+ below list) ───────── */}
           <FormControl mt={3}>
             <FormLabel>Category</FormLabel>
             <select
@@ -370,14 +519,54 @@ const EditProductPage = () => {
               }
             >
               <option value="">Select Category</option>
-              {CATEGORY_DATA.map((c) => (
+              {categories.map((c) => (
                 <option key={c.name} value={c.name}>
                   {c.name}
                 </option>
               ))}
             </select>
+
+            <Button
+              mt={2}
+              size="xs"
+              variant="link"
+              colorScheme="teal"
+              leftIcon={showAddCategory ? <FaTimes /> : <FaPlus />}
+              onClick={() => {
+                setShowAddCategory((prev) => !prev);
+                setNewCategoryName("");
+              }}
+            >
+              {showAddCategory ? "Cancel" : "Add new category"}
+            </Button>
+
+            {showAddCategory && (
+              <Flex mt={2} gap={2}>
+                <Input
+                  size="sm"
+                  autoFocus
+                  value={newCategoryName}
+                  placeholder="Enter new category name"
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddCategory();
+                    }
+                  }}
+                />
+                <Button
+                  size="sm"
+                  colorScheme="teal"
+                  onClick={handleAddCategory}
+                >
+                  Add
+                </Button>
+              </Flex>
+            )}
           </FormControl>
 
+          {/* ───────── SUBCATEGORY (+ below list) ───────── */}
           <FormControl mt={3}>
             <FormLabel>Subcategory</FormLabel>
             <select
@@ -388,16 +577,55 @@ const EditProductPage = () => {
                   subcategory: e.target.value,
                 })
               }
+              disabled={!productdetails.category}
             >
               <option value="">Select Subcategory</option>
-              {CATEGORY_DATA.find(
-                (c) => c.name === productdetails.category,
-              )?.subcategories.map((s) => (
+              {currentCatObj?.subcategories.map((s) => (
                 <option key={s} value={s}>
                   {s}
                 </option>
               ))}
             </select>
+
+            <Button
+              mt={2}
+              size="xs"
+              variant="link"
+              colorScheme="teal"
+              leftIcon={showAddSubcategory ? <FaTimes /> : <FaPlus />}
+              isDisabled={!productdetails.category}
+              onClick={() => {
+                setShowAddSubcategory((prev) => !prev);
+                setNewSubcategoryName("");
+              }}
+            >
+              {showAddSubcategory ? "Cancel" : "Add new subcategory"}
+            </Button>
+
+            {showAddSubcategory && (
+              <Flex mt={2} gap={2}>
+                <Input
+                  size="sm"
+                  autoFocus
+                  value={newSubcategoryName}
+                  placeholder={`Enter new subcategory for ${productdetails.category}`}
+                  onChange={(e) => setNewSubcategoryName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddSubcategory();
+                    }
+                  }}
+                />
+                <Button
+                  size="sm"
+                  colorScheme="teal"
+                  onClick={handleAddSubcategory}
+                >
+                  Add
+                </Button>
+              </Flex>
+            )}
           </FormControl>
 
           {["type", "ageRange", "fabric"].map((field) => (
@@ -415,11 +643,13 @@ const EditProductPage = () => {
                 }
               >
                 <option value="">Select {field}</option>
-                {options[field]?.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
+                {withCurrent(options[field] || [], productdetails[field]).map(
+                  (opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ),
+                )}
               </select>
             </FormControl>
           ))}

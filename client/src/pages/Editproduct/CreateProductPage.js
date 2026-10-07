@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import { CreateProduct, listProducts } from "../../actions/productActions";
 import WashCareInput from "../../components/WashCareInput";
@@ -19,10 +20,11 @@ import {
   Divider,
   useToast,
 } from "@chakra-ui/react";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { FaEdit, FaTrash, FaPlus ,FaTimes } from "react-icons/fa";
 import { Helmet } from "react-helmet";
 import "./CreateProduct.css";
 import { useNavigate } from "react-router-dom";
+
 const CATEGORY_DATA = [
   {
     name: "Topwear",
@@ -55,6 +57,35 @@ const CATEGORY_DATA = [
   },
 ];
 
+const sameText = (a = "", b = "") =>
+  a.trim().toLowerCase() === b.trim().toLowerCase();
+
+// Merge current list with { category: [subcategories] } coming from existing products
+const mergeCategories = (current, dbMap = {}) => {
+  const list = current.map((c) => ({
+    name: c.name,
+    subcategories: [...c.subcategories],
+  }));
+
+  Object.entries(dbMap).forEach(([catName, subs]) => {
+    if (!catName || sameText(catName, "Combo")) return;
+
+    let cat = list.find((c) => sameText(c.name, catName));
+    if (!cat) {
+      cat = { name: catName.trim(), subcategories: [] };
+      list.push(cat);
+    }
+    (subs || []).forEach((s) => {
+      if (!s || sameText(s, "Combo")) return;
+      if (!cat.subcategories.some((x) => sameText(x, s))) {
+        cat.subcategories.push(s);
+      }
+    });
+  });
+
+  return list;
+};
+
 const CreateProductPage = () => {
   const navigate = useNavigate();
   const [brandname, setbrandName] = useState("");
@@ -74,6 +105,14 @@ const CreateProductPage = () => {
     color: "",
     fabric: "",
   });
+
+  // ➕ Categories: defaults + categories already used by products in DB
+  const [categories, setCategories] = useState(CATEGORY_DATA);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [showAddSubcategory, setShowAddSubcategory] = useState(false);
+  const [newSubcategoryName, setNewSubcategoryName] = useState("");
+
   const disableNumberScroll = (e) => {
     e.target.blur();
   };
@@ -91,6 +130,78 @@ const CreateProductPage = () => {
       isClosable: true,
       position: "top-right",
     });
+  };
+
+  // Load categories saved with existing products
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const { data } = await axios.get("/api/products/categories");
+        setCategories((prev) => mergeCategories(prev, data));
+      } catch (err) {
+        console.error("Failed to load categories:", err);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  const handleAddCategory = () => {
+    const name = newCategoryName.trim();
+    if (!name) {
+      showError("Enter a category name");
+      return;
+    }
+
+    const existing = categories.find((c) => sameText(c.name, name));
+
+    if (existing) {
+      setProductdetails((prev) => ({
+        ...prev,
+        category: existing.name,
+        subcategory: "",
+      }));
+    } else {
+      setCategories((prev) => [...prev, { name, subcategories: [] }]);
+      setProductdetails((prev) => ({
+        ...prev,
+        category: name,
+        subcategory: "",
+      }));
+    }
+
+    setNewCategoryName("");
+    setShowAddCategory(false);
+  };
+
+  const handleAddSubcategory = () => {
+    const name = newSubcategoryName.trim();
+    if (!productdetails.category) {
+      showError("Select a category first");
+      return;
+    }
+    if (!name) {
+      showError("Enter a subcategory name");
+      return;
+    }
+
+    const currentCat = categories.find((c) => c.name === productdetails.category);
+    const existingSub = currentCat?.subcategories.find((s) => sameText(s, name));
+
+    if (existingSub) {
+      setProductdetails((prev) => ({ ...prev, subcategory: existingSub }));
+    } else {
+      setCategories((prev) =>
+        prev.map((c) =>
+          c.name === productdetails.category
+            ? { ...c, subcategories: [...c.subcategories, name] }
+            : c,
+        ),
+      );
+      setProductdetails((prev) => ({ ...prev, subcategory: name }));
+    }
+
+    setNewSubcategoryName("");
+    setShowAddSubcategory(false);
   };
 
   const dispatch = useDispatch();
@@ -237,129 +348,138 @@ const CreateProductPage = () => {
     return isNaN(num) ? fallback : num;
   };
 
-const submitHandler = (e) => {
-  e.preventDefault();
+  const submitHandler = (e) => {
+    e.preventDefault();
 
-  // 🔴 VALIDATION
-  if (colorVariants.length === 0) {
-    showError("Please add at least one color variant");
-    return;
-  }
-
-  for (let i = 0; i < colorVariants.length; i++) {
-    const v = colorVariants[i];
-
-    if (!v.color) {
-      showError(`Color name missing for variant ${i + 1}`);
+    // 🔴 VALIDATION
+    if (colorVariants.length === 0) {
+      showError("Please add at least one color variant");
       return;
     }
 
-    const imageError = validateImages(colorVariants);
-    if (imageError) {
-      showError(imageError);
-      return;
+    if (productType !== "combo") {
+      if (!productdetails.category) {
+        showError("Please select or add a category");
+        return;
+      }
+      if (!productdetails.subcategory) {
+        showError("Please select or add a subcategory");
+        return;
+      }
     }
 
-    const oldPrice = safeNumber(v.oldPrice);
-    const discount = safeNumber(v.discount);
+    for (let i = 0; i < colorVariants.length; i++) {
+      const v = colorVariants[i];
 
-    if (oldPrice <= 0) {
-      showError(`Enter valid old price for Color ${i + 1}`);
-      return;
+      if (!v.color) {
+        showError(`Color name missing for variant ${i + 1}`);
+        return;
+      }
+
+      const imageError = validateImages(colorVariants);
+      if (imageError) {
+        showError(imageError);
+        return;
+      }
+
+      const oldPrice = safeNumber(v.oldPrice);
+      const discount = safeNumber(v.discount);
+
+      if (oldPrice <= 0) {
+        showError(`Enter valid old price for Color ${i + 1}`);
+        return;
+      }
+
+      if (discount < 0 || discount > 100) {
+        showError(`Invalid discount for Color ${i + 1}`);
+        return;
+      }
     }
 
-    if (discount < 0 || discount > 100) {
-      showError(`Invalid discount for Color ${i + 1}`);
-      return;
-    }
-  }
+    const formData = new FormData();
 
-  const formData = new FormData();
-
-  // 🔹 BASIC
-  formData.append("brandname", brandname);
-  formData.append("description", description);
-  formData.append("SKU", SKU);
-  formData.append("hsnCode", hsnCode);
-  formData.append("isFeatured", isFeatured ? "true" : "false");
-  formData.append("productType", productType);
-  formData.append(
-    "washCare",
-    JSON.stringify(washCare.filter((s) => s.trim() !== "")),
-  );
-  
-  // ✅ NO dispatch here!
-  
-  // 🔹 SHIPPING
-  formData.append("shippingDetails", JSON.stringify(shippingDetails));
-
-  if (productType === "combo") {
-    formData.append("comboName", comboName);
+    // 🔹 BASIC
+    formData.append("brandname", brandname);
+    formData.append("description", description);
+    formData.append("SKU", SKU);
+    formData.append("hsnCode", hsnCode);
+    formData.append("isFeatured", isFeatured ? "true" : "false");
+    formData.append("productType", productType);
     formData.append(
-      "products",
-      JSON.stringify(
-        colorVariants.map((v) => ({
-          color: v.color || "Combo",
-          oldPrice: safeNumber(v.oldPrice),
-          discount: safeNumber(v.discount),
-          price: calculateVariantPrice(v.oldPrice, v.discount),
-          imagesCount: v.images.filter(Boolean).length,
-          productdetails: {
-            ...productdetails,
+      "washCare",
+      JSON.stringify(washCare.filter((s) => s.trim() !== "")),
+    );
+
+    // 🔹 SHIPPING
+    formData.append("shippingDetails", JSON.stringify(shippingDetails));
+
+    if (productType === "combo") {
+      formData.append("comboName", comboName);
+      formData.append(
+        "products",
+        JSON.stringify(
+          colorVariants.map((v) => ({
             color: v.color || "Combo",
-            sizes: v.sizes,
-            stockBySize: v.stockBySize.filter((s) =>
-              v.sizes.includes(s.size),
-            ),
-            category: "Combo",
-            subcategory: "Combo",
-          },
-        })),
-      ),
-    );
-  } else {
-    // ✅ SINGLE PRODUCT VARIANTS
-    formData.append(
-      "products",
-      JSON.stringify(
-        colorVariants.map((v) => ({
-          color: v.color,
-          oldPrice: safeNumber(v.oldPrice),
-          discount: safeNumber(v.discount),
-          price: calculateVariantPrice(v.oldPrice, v.discount),
-          imagesCount: v.images.filter(Boolean).length,
-          productdetails: {
-            ...productdetails,
+            oldPrice: safeNumber(v.oldPrice),
+            discount: safeNumber(v.discount),
+            price: calculateVariantPrice(v.oldPrice, v.discount),
+            imagesCount: v.images.filter(Boolean).length,
+            productdetails: {
+              ...productdetails,
+              color: v.color || "Combo",
+              sizes: v.sizes,
+              stockBySize: v.stockBySize.filter((s) =>
+                v.sizes.includes(s.size),
+              ),
+              category: "Combo",
+              subcategory: "Combo",
+            },
+          })),
+        ),
+      );
+    } else {
+      // ✅ SINGLE PRODUCT VARIANTS
+      formData.append(
+        "products",
+        JSON.stringify(
+          colorVariants.map((v) => ({
             color: v.color,
-            sizes: v.sizes,
-            stockBySize: v.stockBySize.filter((s) =>
-              v.sizes.includes(s.size),
-            ),
-          },
-        })),
-      ),
-    );
-  }
+            oldPrice: safeNumber(v.oldPrice),
+            discount: safeNumber(v.discount),
+            price: calculateVariantPrice(v.oldPrice, v.discount),
+            imagesCount: v.images.filter(Boolean).length,
+            productdetails: {
+              ...productdetails,
+              color: v.color,
+              sizes: v.sizes,
+              stockBySize: v.stockBySize.filter((s) =>
+                v.sizes.includes(s.size),
+              ),
+            },
+          })),
+        ),
+      );
+    }
 
-  // 🔥 IMAGES
-  colorVariants.forEach((variant) => {
-    const validImages = variant.images.filter(Boolean);
-    validImages.forEach((file) => {
-      formData.append("images", file);
+    // 🔥 IMAGES
+    colorVariants.forEach((variant) => {
+      const validImages = variant.images.filter(Boolean);
+      validImages.forEach((file) => {
+        formData.append("images", file);
+      });
     });
-  });
 
-  // 🔹 SIZE CHART
-  if (sizeChartFile) {
-    formData.append("sizeChart", sizeChartFile);
-  }
+    // 🔹 SIZE CHART
+    if (sizeChartFile) {
+      formData.append("sizeChart", sizeChartFile);
+    }
 
-  console.log("Variants:", colorVariants);
-  console.log("Images count:", colorVariants.flatMap((v) => v.images).length);
+    console.log("Variants:", colorVariants);
+    console.log("Images count:", colorVariants.flatMap((v) => v.images).length);
 
-  // 🚀 DISPATCH - ONLY HERE, ONCE!
-  dispatch(CreateProduct(formData));
-};
+    // 🚀 DISPATCH - ONLY HERE, ONCE!
+    dispatch(CreateProduct(formData));
+  };
 
   return (
     <Box
@@ -453,30 +573,75 @@ const submitHandler = (e) => {
             ))}
           </select>
         </FormControl>
+
+        {/* ───────── CATEGORY (+ below list) ───────── */}
         <FormControl>
           <FormLabel>Category</FormLabel>
           {productType === "combo" ? (
             <Input value="Combo" isReadOnly />
           ) : (
-            <select
-              value={productdetails.category}
-              onChange={(e) =>
-                setProductdetails({
-                  ...productdetails,
-                  category: e.target.value,
-                  subcategory: "", // reset subcategory
-                })
-              }
-            >
-              <option value="">Select Category</option>
-              {CATEGORY_DATA.map((cat) => (
-                <option key={cat.name} value={cat.name}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
+            <>
+              <select
+                value={productdetails.category}
+                onChange={(e) =>
+                  setProductdetails({
+                    ...productdetails,
+                    category: e.target.value,
+                    subcategory: "", // reset subcategory
+                  })
+                }
+              >
+                <option value="">Select Category</option>
+                {categories.map((cat) => (
+                  <option key={cat.name} value={cat.name}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+
+              <Button
+                mt={2}
+                size="xs"
+                variant="link"
+                colorScheme="teal"
+                leftIcon={showAddCategory ? <FaTimes /> : <FaPlus />}
+                onClick={() => {
+                  setShowAddCategory((prev) => !prev);
+                  setNewCategoryName("");
+                }}
+              >
+                {showAddCategory ? "Cancel" : "Add new category"}
+              </Button>
+
+              {showAddCategory && (
+                <Flex mt={2} gap={2}>
+                  <Input
+                    size="sm"
+                    autoFocus
+                    value={newCategoryName}
+                    placeholder="Enter new category name"
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddCategory();
+                      }
+                    }}
+                  />
+                  <Button
+                    size="sm"
+                    colorScheme="teal"
+                    onClick={handleAddCategory}
+                  >
+                    Add
+                  </Button>
+                </Flex>
+              )}
+            </>
           )}
         </FormControl>
+
+        {/* ───────── SUBCATEGORY (+ below list) ───────── */}
         {productType !== "combo" && (
           <FormControl>
             <FormLabel>Subcategory</FormLabel>
@@ -491,16 +656,57 @@ const submitHandler = (e) => {
               disabled={!productdetails.category}
             >
               <option value="">Select Subcategory</option>
-              {CATEGORY_DATA.find(
-                (cat) => cat.name === productdetails.category,
-              )?.subcategories.map((sub) => (
-                <option key={sub} value={sub}>
-                  {sub}
-                </option>
-              ))}
+              {categories
+                .find((cat) => cat.name === productdetails.category)
+                ?.subcategories.map((sub) => (
+                  <option key={sub} value={sub}>
+                    {sub}
+                  </option>
+                ))}
             </select>
+
+            <Button
+              mt={2}
+              size="xs"
+              variant="link"
+              colorScheme="teal"
+              leftIcon={showAddSubcategory ? <FaTimes /> : <FaPlus />}
+              isDisabled={!productdetails.category}
+              onClick={() => {
+                setShowAddSubcategory((prev) => !prev);
+                setNewSubcategoryName("");
+              }}
+            >
+              {showAddSubcategory ? "Cancel" : "Add new subcategory"}
+            </Button>
+
+            {showAddSubcategory && (
+              <Flex mt={2} gap={2}>
+                <Input
+                  size="sm"
+                  autoFocus
+                  value={newSubcategoryName}
+                  placeholder={`Enter new subcategory for ${productdetails.category}`}
+                  onChange={(e) => setNewSubcategoryName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddSubcategory();
+                    }
+                  }}
+                />
+                <Button
+                  size="sm"
+                  colorScheme="teal"
+                  onClick={handleAddSubcategory}
+                >
+                  Add
+                </Button>
+              </Flex>
+            )}
           </FormControl>
         )}
+
         <FormControl>
           <FormLabel>Type</FormLabel>
           <select

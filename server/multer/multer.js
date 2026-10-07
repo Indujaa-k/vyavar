@@ -17,6 +17,8 @@ const ensureDir = (dir) => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 };
 
+const BANNER_IMAGE_FIELDS = ["image", "imageTablet", "imageMobile"];
+
 /* ==========================
    STORAGE ENGINE
 ========================== */
@@ -35,7 +37,7 @@ const storage = multer.diskStorage({
       // ✅ sizeChart always goes to pdfs folder (handles both PDF and image size charts)
       relDir = "uploads/pdfs";
     } else if (
-      file.fieldname === "image" &&
+      BANNER_IMAGE_FIELDS.includes(file.fieldname) &&
       req.originalUrl.includes("/api/banners")
     ) {
       relDir = "uploads/banners/images";
@@ -136,6 +138,16 @@ export const uploadProductFiles = [
   upload.fields([
     { name: "images", maxCount: 50 },
     { name: "sizeChart", maxCount: 1 },
+  ]),
+  rewritePaths,
+];
+
+// ✅ For banners — desktop (required), tablet (optional), mobile (optional)
+export const uploadBannerImages = [
+  upload.fields([
+    { name: "image", maxCount: 1 },
+    { name: "imageTablet", maxCount: 1 },
+    { name: "imageMobile", maxCount: 1 },
   ]),
   rewritePaths,
 ];

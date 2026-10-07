@@ -385,7 +385,6 @@ const generateInvoice = asyncHandler(async (req, res) => {
       taxPrice: order.taxPrice,
       shippingPrice: order.shippingPrice,
       totalPrice: order.totalPrice,
-      // ✅ coupon removed from here
     },
     paymentStatus: {
       isPaid: order.isPaid,
@@ -495,8 +494,40 @@ const createRazorpayOrder = async (req, res) => {
     }
     subtotal = parseFloat(subtotal.toFixed(2));
 
-    const cgstAmount = parseFloat(((subtotal * 2.5) / 100).toFixed(2));
-    const sgstAmount = parseFloat(((subtotal * 2.5) / 100).toFixed(2));
+    // ✅ 1. Discount first (on subtotal only)
+    let discountAmount = 0;
+    let couponSnapshot = null;
+
+    if (couponCode) {
+      const offer = await Offer.findOne({
+        code: { $regex: `^${couponCode}$`, $options: "i" },
+      });
+
+      if (!offer) {
+        return res.status(400).json({ message: "Invalid coupon" });
+      }
+
+      if (offer.usedCount >= offer.maxUses) {
+        return res.status(400).json({ message: "Coupon usage limit exceeded" });
+      }
+
+      const rawDiscount = (subtotal * offer.offerPercentage) / 100;
+      discountAmount = Math.max(0, Math.min(rawDiscount, subtotal - 1));
+      discountAmount = parseFloat(discountAmount.toFixed(2));
+
+      couponSnapshot = {
+        code: offer.code,
+        percentage: offer.offerPercentage,
+        discountAmount,
+      };
+    }
+
+    // ✅ 2. Taxable amount = subtotal - discount
+    const taxableAmount = parseFloat((subtotal - discountAmount).toFixed(2));
+
+    // ✅ 3. GST only on the taxable amount
+    const cgstAmount = parseFloat(((taxableAmount * 2.5) / 100).toFixed(2));
+    const sgstAmount = parseFloat(((taxableAmount * 2.5) / 100).toFixed(2));
     const taxAmount = parseFloat((cgstAmount + sgstAmount).toFixed(2));
 
     const shippingSettings = await ShippingCost.findOne();
@@ -529,35 +560,9 @@ const createRazorpayOrder = async (req, res) => {
       shippingAmount = 0;
     }
 
-    let discountAmount = 0;
-    let couponSnapshot = null;
-
-    if (couponCode) {
-      const offer = await Offer.findOne({
-        code: { $regex: `^${couponCode}$`, $options: "i" },
-      });
-
-      if (!offer) {
-        return res.status(400).json({ message: "Invalid coupon" });
-      }
-
-      if (offer.usedCount >= offer.maxUses) {
-        return res.status(400).json({ message: "Coupon usage limit exceeded" });
-      }
-
-      const rawDiscount = (subtotal * offer.offerPercentage) / 100;
-      discountAmount = Math.min(rawDiscount, subtotal + taxAmount + shippingAmount - 1);
-      discountAmount = parseFloat(discountAmount.toFixed(2));
-
-      couponSnapshot = {
-        code: offer.code,
-        percentage: offer.offerPercentage,
-        discountAmount,
-      };
-    }
-
+    // ✅ 4. Total = taxable + GST + shipping
     const finalAmount = parseFloat(
-      (subtotal + taxAmount + shippingAmount - discountAmount).toFixed(2)
+      (taxableAmount + taxAmount + shippingAmount).toFixed(2)
     );
 
     if (finalAmount < 1) {
@@ -579,11 +584,12 @@ const createRazorpayOrder = async (req, res) => {
       keyId: process.env.RAZORPAY_KEY_ID,
       priceBreakdown: {
         subtotal,
+        discountAmount,
+        taxableAmount,
         cgstAmount,
         sgstAmount,
         taxAmount,
         shippingAmount,
-        discountAmount,
         total: roundedFinalAmount,
       },
       coupon: couponSnapshot,
