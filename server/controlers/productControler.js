@@ -1643,7 +1643,16 @@ const getAllReviews = asyncHandler(async (req, res) => {
 });
 const getCategories = asyncHandler(async (req, res) => {
   const { gender } = req.query;
-  const filter = gender ? { "productdetails.gender": gender } : {};
+
+  // Gender match (incl. Unisex / blank) OR any Combo product
+  const filter = gender
+    ? {
+        $or: [
+          { "productdetails.gender": { $in: [gender, "Unisex", "", null] } },
+          { "productdetails.category": "Combo" },
+        ],
+      }
+    : {};
 
   const products = await Product.find(filter)
     .select("productdetails.category productdetails.subcategory -_id")
@@ -1655,7 +1664,7 @@ const getCategories = asyncHandler(async (req, res) => {
   products.forEach((p) => {
     const cat = p.productdetails?.category?.trim();
     const sub = p.productdetails?.subcategory?.trim();
-    if (!cat || cat.toLowerCase() === "combo") return;
+    if (!cat) return;
 
     const key = cat.toLowerCase();
     if (!catKeys[key]) {
@@ -1666,7 +1675,7 @@ const getCategories = asyncHandler(async (req, res) => {
 
     if (
       sub &&
-      sub.toLowerCase() !== "combo" &&
+      sub.toLowerCase() !== key && // skip "Combo" under "Combo"
       !map[catName].some((s) => s.toLowerCase() === sub.toLowerCase())
     ) {
       map[catName].push(sub);
@@ -1675,6 +1684,7 @@ const getCategories = asyncHandler(async (req, res) => {
 
   res.json(map);
 });
+
 export {
   getProducts,
   deleteProduct,
